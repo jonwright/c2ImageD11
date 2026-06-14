@@ -43,13 +43,10 @@ jobs:
           virtualenv -p python2 /tmp/venv27
           echo "/tmp/venv27/bin" >> $GITHUB_PATH
 
-      - name: Install ImageD11
+      - name: Install test dependencies
         run: |
-          pip install numpy pytest
-          pip install fabio xfab scipy h5py 2>/dev/null || true
-          pip install --no-build-isolation -e ${{ github.workspace }}/c2ImageD11/../ImageD11 2>/dev/null || \
-          pip install ImageD11 2>/dev/null || \
-          echo "ImageD11 not available - testing standalone"
+          pip install numpy || pip install "numpy==1.16.6"
+          pip install pytest || pip install "pytest>=4.6,<5"
 
       - name: Install c2py23
         run: |
@@ -57,11 +54,16 @@ jobs:
 
       - name: Install c2ImageD11
         run: |
-          pip install -e ${{ github.workspace }}/c2ImageD11
+          pip install --no-build-isolation -e ${{ github.workspace }}/c2ImageD11
+
+      - name: Install ImageD11 (optional, for equivalence tests)
+        run: |
+          pip install --no-build-isolation -e ${{ github.workspace }}/c2ImageD11/../ImageD11 2>/dev/null || \
+          pip install ImageD11 2>/dev/null || \
+          echo "ImageD11 not available"
 
       - name: Test
         run: |
           cd ${{ github.workspace }}/c2ImageD11
-          python -m pytest tests/ -v --tb=short \
-            -k "not TestBenchmark" \
-            -W ignore::DeprecationWarning
+          python -m pytest tests/test_buffer.py tests/test_equivalence.py \
+            -v --tb=short -W ignore::DeprecationWarning

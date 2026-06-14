@@ -7,7 +7,7 @@ name = "c2ImageD11"
 version = "0.1.0"
 description = "C extensions for ImageD11, built with c2py23"
 authors = [{name = "Jon Wright", email = "wright@esrf.fr"}]
-requires-python = ">=3.8"
+requires-python = ">=2.7"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

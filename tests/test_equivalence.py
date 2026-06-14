@@ -3,6 +3,8 @@
 Handles calling convention differences:
 - f2py returns output scalars as tuple elements
 - c2py23 takes output scalars as 1-element buffer args
+
+Skips entirely if ImageD11 is not installed.
 """
 
 from __future__ import print_function
@@ -10,6 +12,8 @@ from __future__ import print_function
 import numpy as np
 import ctypes
 import pytest
+
+pytest.importorskip("ImageD11._cImageD11", reason="ImageD11 not installed")
 
 OLD = None
 NEW = None

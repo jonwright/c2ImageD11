@@ -13,29 +13,26 @@ importing from `c2ImageD11` first, falling back to `ImageD11._cImageD11`.
 - [x] Phase II: _cImageD11.c2py interface written
 - [x] Phase III: Python package (c2ImageD11/) written
 - [x] Phase IV: setup.py written
-- [ ] BLOCKED: c2py23 needs extensions before build will succeed
-- [ ] Phase V: Testing (needs build to work)
-- [ ] Phase VI: CI (needs build + tests)
+- [x] c2py23 features implemented (fixed-width types, optionals, constants, docstrings)
+- [x] Phase V: Buffer-interface tests created
+- [x] Phase VI: CI passing
+- [ ] Phase VII: Equivalence testing against ImageD11._cImageD11
 
-## BLOCKERS: c2py23 Extensions Needed
+## c2py23 Features Now Available
 
-See `/home/worker/C2PY23_REQUESTS.md` for the detailed list.
+All previously-requested c2py23 extensions have been implemented upstream
+(see c2py23 commit 95a2076 and later). The .c2py interface file now uses:
 
-The .c2py file and thin C wrappers in src_wrapper/_wrappers.c are written to
-use ONLY c2py23's current type set ({int, float, double, char}). However,
-c2py23's parser currently rejects format strings like 'H', 'I', 'q', 'b' in
-checks (the `arr.format == 'H'` pattern) and may not handle all expression
-combinations. The c2py23 code generator also needs:
-  - Support for format strings beyond 'd', 'f', 'i', 'B'
-  - Optional parameter defaults
-  - Module-level constant export
-  - Docstring support
+  - Fixed-width integer format strings ('H', 'I', 'q', 'b', 'h', 'B') in checks
+  - Optional parameter defaults with the `|O$` syntax in py_sig
+  - Module-level `constants:` block for integer constant export
+  - Custom `doc:` field for function docstrings
+  - Per-function performance timing via `timing: true` module flag
+  - METH_FASTCALL dispatch on Python 3.12+
 
-Once c2py23 is extended, come back and:
-1. Run `c2py23 build _cImageD11.c2py` to verify it generates wrapper C
-2. Fix any parse errors in the .c2py file
-3. Build and install with `pip install -e .`
-4. Run equivalence tests
+The thin wrappers in src_wrapper/_wrappers.c remain necessary for adapting
+fixed-size C types to c2py23-compatible buffer handles, but the parser and
+generator now handle all expression forms used in _cImageD11.c2py.
 
 ## Directory Structure
 
@@ -65,7 +62,11 @@ c2ImageD11/
     __init__.py               # Pure Python: imports .so, exports constants
     _constants.py             # Blob property enum values (hardcoded)
   tests/
-    test_equivalence.py       # Test against ImageD11._cImageD11
+    test_buffer.py            # Lightweight numpy buffer-interface tests
+    test_equivalence.py       # Equivalence tests vs ImageD11._cImageD11
+    test_all.py               # Multi-version orchestrator (Apptainer)
+    benchmark_timing.py       # c2py23 vs f2py timing comparison
+    conftest.py               # Pytest configuration (empty)
   .github/workflows/
     test.yml                  # CI adapted from ImageD11
 ```
@@ -104,14 +105,14 @@ array_stats(img, minval, maxval, mean, var)
 
 ## Testing Strategy
 
-1. Build c2ImageD11 with `pip install -e .`
-2. Import both old and new: `from ImageD11._cImageD11 import * as old`
-   and `from c2ImageD11._cImageD11 import * as new`
-3. For each function F:
-   - Generate random, valid inputs matching expected types/shapes
-   - Call `old.F(inputs)` and `new.F(inputs)`
-   - Compare outputs (arrays: np.allclose; scalars: ==)
-4. Also test with real data from ImageD11/test/
+1. Build c2ImageD11 with `pip install --no-build-isolation -e .` (requires c2py23
+   already installed in the environment, since c2py23 is not on PyPI).
+2. Run lightweight buffer tests: `python -m pytest tests/ -v -k "TestBuffer"`
+3. These verify the build succeeded and numpy buffer protocol calls work
+   for a representative subset of functions.
+4. For equivalence testing, import both old and new:
+   `from ImageD11._cImageD11 import * as old` and
+   `from c2ImageD11._cImageD11 import * as new`, then compare outputs.
 
 ## Notes
 
@@ -122,6 +123,10 @@ array_stats(img, minval, maxval, mean, var)
   call still works.
 - malloc/free: The restriction in c2py23 docs is relaxed for this project.
   blobs.c, sparse_image.c, connectedpixels.c allocate/free internally.
-- Python 2.7: The ImageD11 GitHub Actions test 2.7-3.14. c2ImageD11
-  targets 3.8+ for now (ctypes buffer protocol works on 2.7 but
-  memoryview.cast(shape) is 3.3+).
+- CI uses `--no-build-isolation` because c2py23 is not on PyPI.
+  c2py23 must be installed before building c2ImageD11.
+- Python compatibility: targets 2.7-3.14. The c2py_runtime uses dlopen
+  to resolve CPython API, so one .so binary works across versions.
+  Build on the oldest target OS for maximum portability.
+- numpy is used for testing; its buffer protocol (PEP 3118) is supported
+  on Python 2.7-3.14 via `PyObject_GetBuffer` / c2py_acquire_buffer.

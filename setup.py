@@ -78,16 +78,17 @@ class c2py23_build_ext(build_ext):
         module_def = load_c2py(C2PY_FILE)
         wrapper_c = generate(module_def)
 
-        wrapper_path = os.path.join(REPO_ROOT,
-                                     "_{}_wrapper.c".format(MODULE_NAME))
+        wrapper_rel = "_{}_wrapper.c".format(MODULE_NAME)
+        wrapper_path = os.path.join(REPO_ROOT, wrapper_rel)
         with open(wrapper_path, "w") as f:
             f.write(wrapper_c)
         print("c2ImageD11: wrapper written to", wrapper_path)
 
         # Add wrapper + runtime to each extension's sources
+        runtime_rel = os.path.relpath(RUNTIME_C, REPO_ROOT)
         for ext in self.extensions:
-            ext.sources.insert(0, wrapper_path)
-            ext.sources.insert(0, RUNTIME_C)
+            ext.sources.insert(0, wrapper_rel)
+            ext.sources.insert(0, runtime_rel)
             ext.include_dirs.append(C2PY_RUNTIME_DIR)
             ext.include_dirs.append(REPO_ROOT)
             ext.include_dirs.append(SRC_DIR)
@@ -140,7 +141,7 @@ setup(
     packages=[PACKAGE_NAME],
     ext_modules=[ext],
     cmdclass={"build_ext": c2py23_build_ext},
-    python_requires=">=3.8",
+    python_requires=">=2.7",
     install_requires=["c2py23"],
     zip_safe=False,
 )
