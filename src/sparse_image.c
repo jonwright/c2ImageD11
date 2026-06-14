@@ -865,11 +865,11 @@ int coverlaps(uint16_t *restrict row1, uint16_t *restrict col1,
             mat[(labels1[i1] - 1) * npk2 + labels2[i2] - 1] += 1;
             i1++;
             i2++;
-        }
-        if (p1 > p2)
+        } else if (p1 > p2) {
             i2++;
-        if (p1 < p2)
+        } else {
             i1++;
+        }
     }
     npk = 0;
     for (i1 = 0; i1 < npk1; i1++) {
@@ -1012,8 +1012,8 @@ int tosparse_u16_avx512(uint16_t *restrict img, uint8_t *restrict msk,
                                 _mm512_loadu_si512((__m512i_u *)&img[p]), mcut);
         while (bitmask) {
             bit = _lzcnt_u32(bitmask);
-            row[npx] = p / nf;
-            col[npx] = p % nf;
+            row[npx] = (p + bit) / nf;
+            col[npx] = (p + bit) % nf;
             val[npx] = img[p + bit];
             bitmask &= (~(1u << (31 - bit))); /* clear that bit */
             npx++;
