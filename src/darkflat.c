@@ -413,6 +413,9 @@ void array_histogram(float img[], int npx, float low, float high,
     float ostep;
     memset(hist, 0, nhist * sizeof(int32_t));
     /* Compute the multiplier to get the bin numbers */
+    if (high <= low) {
+        return;
+    }
     ostep = nhist / (high - low);
     for (i = 0; i < npx; i++) {
         ibin = (int)floorf((img[i] - low) * ostep);
