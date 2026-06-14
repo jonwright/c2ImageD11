@@ -9,11 +9,11 @@ DLL_LOCAL
 void boundscheck(int jpk, int n2, int ipk, int n1) {
     if ((jpk < 0) || jpk >= n2) {
         printf("Bounds check error, jpk, n2\n");
-        exit(0);
+        return;
     }
     if ((ipk < 0) || ipk >= n1) {
         printf("Bounds check error, jpk, n1\n");
-        exit(0);
+        return;
     }
 }
 
@@ -361,7 +361,7 @@ int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2,
                     printf("merge res2[%d] res2[%d]\n", jpk, ipk);
                 continue;
             }
-            assert("I am not here!");
+            assert(0 && "unreachable: bloboverlaps linking logic");
         }
     }
 
