@@ -203,6 +203,12 @@ compute_xlylzl_xpos_variable_wrapper(const double *s, const double *f,
 }
 
 void
+quickorient_wrapper(double *ubi_ptr, const double *bt_ptr)
+{
+    quickorient(ubi_ptr, (double*)bt_ptr);
+}
+
+void
 blobproperties_wrapper(float *data, int *labels, int np,
                         double *results, float omega,
                         int verbose, int ns, int nf)
