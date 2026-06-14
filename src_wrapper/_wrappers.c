@@ -338,7 +338,7 @@ reorder_u16_a32_a16_wrapper(const char *data_buf, const int *a0_buf,
 /* ---------- int64_t -> char pointer ---------- */
 
 void
-put_incr64_wrapper(float *data, const char *ind_buf, const float *vals,
+put_incr64_wrapper(float *data, const char *ind_buf, float *vals,
                     int boundscheck, int m, int n)
 {
     put_incr64(data, (int64_t *)ind_buf, vals, boundscheck, m, n);
