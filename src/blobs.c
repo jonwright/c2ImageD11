@@ -236,11 +236,13 @@ DLL_LOCAL int32_t *dset_new(int32_t **pS, int32_t *v) {
     current = (++S[S[0] - 1]);
     *v = current;
     if (current + 3 > length) {
-        S = (int32_t *)(realloc(S, length * 2 * sizeof(int32_t)));
-        if (S == NULL) {
+        int32_t *new_S;
+        new_S = (int32_t *)(realloc(S, length * 2 * sizeof(int32_t)));
+        if (new_S == NULL) {
             printf("Memory allocation error in dset_new\n");
             exit(1);
         }
+        S = new_S;
         /*      printf("Realloced S to %d in dset_new\n",length*2); */
         /* Fails on gcc 4 but worked on gcc 3.x
            dont actually what it does or why it is there
