@@ -1,6 +1,7 @@
 
 
 #include "cImageD11.h"
+#include <float.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -192,7 +193,7 @@ void closest(double x[], double v[], int *ribest, double *rbest, int nx,
      */
     int i, j, ibest;
     double best;
-    best = 99.;
+    best = DBL_MAX;
     ibest = 0;
     for (i = 0; i < nx; i++) {
         for (j = 0; j < nv; j++) {
@@ -422,7 +423,7 @@ void refine_assigned(vec ubi[3], vec gv[], int labels[], int label, int *npk,
     n = 0;
     sumsqtot = 0;
     for ( i = 0; i < 3; i++ ){
-        for ( j = 0; j < 3; i++ ){
+        for ( j = 0; j < 3; j++ ){
             R[i][j] = 0.;
             H[i][j] = 0.;
             UB[i][j] = 0.;
@@ -644,7 +645,12 @@ void score_gvec_z(vec ubi[3],    // in
         // Test - is it faster to recompute or cache ?
         //        for many ubi ? Loop over peaks or ubis or ?
         if (recompute) { // Fill in ub, modg, ax_x_gv, ax_ax_x_gv
-            t = 1. / sqrt(g[0] * g[0] + g[1] * g[1] + g[2] * g[2]);
+            t = g[0] * g[0] + g[1] * g[1] + g[2] * g[2];
+            if (t == 0.0) {
+                e[i][0] = e[i][1] = e[i][2] = 0.0;
+                continue;
+            }
+            t = 1. / sqrt(t);
             g0[i][0] = g[0] * t;
             g0[i][1] = g[1] * t;
             g0[i][2] = g[2] * t;
