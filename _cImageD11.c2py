@@ -54,7 +54,7 @@ functions:
         map: {n: n}
 
   - py_sig: "closest_vec(x: buffer, ic: buffer) -> void"
-    doc: >
+    doc: >-
       closest_vec finds the closest neighbors for each row of X
       ignoring the self. Treated as a X=[v1,v2,v3,...], computes
       sum{(vi-vj)**2} for all i!=j and places minimum in ic.
@@ -73,7 +73,7 @@ functions:
           ic: "ic.ptr"
 
   - py_sig: "closest(x: buffer, v: buffer, ibest: buffer, best: buffer) -> void"
-    doc: >
+    doc: >-
       closest finds the value and index in x closest to a value in v.
       e.g. x = cosine of angles between pairs of peaks
       v = idealised values based on hkl geometry
@@ -96,7 +96,7 @@ functions:
           nv: "v.n"
 
   - py_sig: "score(ubi: buffer, gv: buffer, tol: float) -> int"
-    doc: >
+    doc: >-
       score takes a ubi matrix and list of g-vectors and computes
       hkl = dot(ubi, gv), then rounds these g-vectors to integer
       and computes drlv2 = (h-int(h))**2 + (k-int(k))**2 + (l-int(l))**2
@@ -108,7 +108,7 @@ functions:
       - "gv.format == 'd'"
       - "gv.ndim >= 1"
     c_overloads:
-      - sig: "int score(double *ubi, double *gv, double tol, int ng) -> int"
+      - sig: "int score_wrapper(double *ubi, const double *gv, double tol, int ng) -> int"
         map:
           ubi: "ubi.ptr"
           gv: "gv.ptr"
@@ -116,7 +116,7 @@ functions:
           ng: "gv.shape[0]"
 
   - py_sig: "score_and_refine(ubi: buffer, gv: buffer, tol: float, sumdrlv2: buffer) -> int"
-    doc: >
+    doc: >-
       score_and_refine is very similar to score but it also refines the UB
       matrix using the assigned peaks and overwrite the argument.
       It returns the number of peaks. sumdrlv2 is a 1-element buffer output.
@@ -137,7 +137,7 @@ functions:
           ng: "gv.shape[0]"
 
   - py_sig: "score_and_assign(ubi: buffer, gv: buffer, tol: float, drlv2: buffer, labels: buffer, label: int) -> int"
-    doc: >
+    doc: >-
       score_and_assign is similar to score but it assigns peaks to this
       ubi only if they fit the data better than the current UBI.
       It updates drlv2 and labels to use best fitting grain for each peak.
@@ -145,13 +145,12 @@ functions:
       - "ubi.format == 'd'"
       - "ubi.n == 9"
       - "gv.format == 'd'"
-      - "tol >= 0.0 or 1"
       - "drlv2.format == 'd'"
       - "drlv2.n == gv.shape[0]"
       - "labels.format == 'i'"
       - "labels.n == gv.shape[0]"
     c_overloads:
-      - sig: "int score_and_assign(double *ubi, double *gv, double tol, double *drlv2, int *labels, int label, int ng) -> int"
+      - sig: "int score_and_assign_wrapper(double *ubi, const double *gv, double tol, double *drlv2, int *labels, int label, int ng) -> int"
         map:
           ubi: "ubi.ptr"
           gv: "gv.ptr"
@@ -162,7 +161,7 @@ functions:
           ng: "gv.shape[0]"
 
   - py_sig: "refine_assigned(ubi: buffer, gv: buffer, labels: buffer, label: int, npk: buffer, drlv2: buffer) -> void"
-    doc: >
+    doc: >-
       refine_assigned fits a ubi matrix to a set of g-vectors and assignments
       in labels. e.g. where(labels==label) it uses the peaks.
     checks:
@@ -176,7 +175,7 @@ functions:
       - "drlv2.format == 'd'"
       - "drlv2.n == 1"
     c_overloads:
-      - sig: "void refine_assigned(double *ubi, double *gv, int *labels, int label, int *npk, double *drlv2, int ng)"
+      - sig: "void refine_assigned_wrapper(double *ubi, const double *gv, int *labels, int label, int *npk, double *drlv2, int ng)"
         map:
           ubi: "ubi.ptr"
           gv: "gv.ptr"
@@ -187,7 +186,7 @@ functions:
           ng: "gv.shape[0]"
 
   - py_sig: "put_incr32(data: buffer, ind: buffer, vals: buffer, boundscheck: int) -> void"
-    doc: >
+    doc: >-
       put_incr32 does the simple loop: data[ind] += vals
       uses 32 bit addressing
     checks:
@@ -206,7 +205,7 @@ functions:
           n: "ind.n"
 
   - py_sig: "put_incr64(data: buffer, ind: buffer, vals: buffer, boundscheck: int) -> void"
-    doc: >
+    doc: >-
       put_incr64 does the simple loop: data[ind] += vals
       uses 64 bit addressing
     checks:
@@ -248,7 +247,7 @@ functions:
           avgs: "avgs.ptr"
 
   - py_sig: "score_gvec_z(ubi: buffer, ub: buffer, gv: buffer, g0: buffer, g1: buffer, g2: buffer, e: buffer, recompute: int) -> void"
-    doc: >
+    doc: >-
       score_gvec_z reads ubi, ub, gv and recompute.
       For all peaks it computes h = ubi.g, rounds to nearest ih = int(h)
       and then computes gcalc = ub.ih. Error is projected into
@@ -282,7 +281,7 @@ functions:
           n: "gv.shape[0]"
 
   - py_sig: "misori_cubic(u1: buffer, u2: buffer) -> float"
-    doc: >
+    doc: >-
       misori_cubic computes the trace of the smallest misorientation
       for cubic symmetry. u1 and u2 are both orientation matrices U.
     checks:
@@ -291,11 +290,11 @@ functions:
       - "u2.format == 'd'"
       - "u2.n == 9"
     c_overloads:
-      - sig: "double misori_cubic(double *u1, double *u2) -> double"
+      - sig: "double misori_cubic_wrapper(const double *u1, const double *u2) -> double"
         map: {u1: "u1.ptr", u2: "u2.ptr"}
 
   - py_sig: "misori_orthorhombic(u1: buffer, u2: buffer) -> float"
-    doc: >
+    doc: >-
       misori_orthorhombic computes the trace of the smallest misorientation.
       Looks like point group mmm.
     checks:
@@ -304,11 +303,11 @@ functions:
       - "u2.format == 'd'"
       - "u2.n == 9"
     c_overloads:
-      - sig: "double misori_orthorhombic(double *u1, double *u2) -> double"
+      - sig: "double misori_orthorhombic_wrapper(const double *u1, const double *u2) -> double"
         map: {u1: "u1.ptr", u2: "u2.ptr"}
 
   - py_sig: "misori_tetragonal(u1: buffer, u2: buffer) -> float"
-    doc: >
+    doc: >-
       misori_tetragonal computes the trace of the smallest misorientation.
       Looks like point group 4/mmm.
     checks:
@@ -317,11 +316,11 @@ functions:
       - "u2.format == 'd'"
       - "u2.n == 9"
     c_overloads:
-      - sig: "double misori_tetragonal(double *u1, double *u2) -> double"
+      - sig: "double misori_tetragonal_wrapper(const double *u1, const double *u2) -> double"
         map: {u1: "u1.ptr", u2: "u2.ptr"}
 
   - py_sig: "misori_monoclinic(u1: buffer, u2: buffer) -> float"
-    doc: >
+    doc: >-
       misori_monoclinic assumes a unique b axis and only checks
       the flip of b -> -b.
     checks:
@@ -330,18 +329,18 @@ functions:
       - "u2.format == 'd'"
       - "u2.n == 9"
     c_overloads:
-      - sig: "double misori_monoclinic(double *u1, double *u2) -> double"
+      - sig: "double misori_monoclinic_wrapper(const double *u1, const double *u2) -> double"
         map: {u1: "u1.ptr", u2: "u2.ptr"}
 
   - py_sig: "count_shared(pi: buffer, pj: buffer) -> int"
-    doc: >
+    doc: >-
       count_shared takes two sorted arrays in pi and pj and counts
       how many collisions there are.
     checks:
       - "pi.format == 'i'"
       - "pj.format == 'i'"
     c_overloads:
-      - sig: "int count_shared(int *pi, int ni, int *pj, int nj) -> int"
+      - sig: "int count_shared_wrapper(const int *pi, int ni, const int *pj, int nj) -> int"
         map: {pi: "pi.ptr", ni: "pi.n", pj: "pj.ptr", nj: "pj.n"}
 
   # ===================================================================
@@ -349,7 +348,7 @@ functions:
   # ===================================================================
 
   - py_sig: "localmaxlabel(data: buffer, labels: buffer, wrk: buffer) -> int"
-    doc: >
+    doc: >-
       localmaxlabel assigns a label for each pixel so they are grouped
       to the local maximum. Equal values choose to assign towards the earlier
       value in memory.
@@ -375,7 +374,7 @@ functions:
   # ===================================================================
 
   - py_sig: "uint16_to_float_darksub(img: buffer, drk: buffer, data: buffer) -> void"
-    doc: >
+    doc: >-
       uint16_to_float_darksub subtracts image drk(float32) from
       raw data in data (uint16) and returns in img.
     checks:
@@ -393,7 +392,7 @@ functions:
           npx: "img.n"
 
   - py_sig: "uint16_to_float_darkflm(img: buffer, drk: buffer, flm: buffer, data: buffer) -> void"
-    doc: >
+    doc: >-
       uint16_to_float_darkflm subtracts image drk(float32) from
       raw data in data (uint16), multiplies by flm(float32) and returns in img.
     checks:
@@ -443,7 +442,7 @@ functions:
           cut: cut
 
   - py_sig: "array_mean_var_cut(img: buffer, mean: buffer, var: buffer, n: int, cut: float, verbose: int) -> void"
-    doc: >
+    doc: >-
       array_mean_var_cut computes the mean and variance of an image
       with pixels above the value mean+cut*stddev removed. This is iterated
       n times as the mean and variance change as pixels are removed.
@@ -465,7 +464,7 @@ functions:
           verbose: verbose
 
   - py_sig: "array_mean_var_msk(img: buffer, msk: buffer, mean: buffer, var: buffer, n: int, cut: float, verbose: int) -> void"
-    doc: >
+    doc: >-
       array_mean_var_msk computes the mean and variance of an image
       with mask. Pixels above the value mean+cut*stddev removed iteratively.
     checks:
@@ -489,7 +488,7 @@ functions:
           verbose: verbose
 
   - py_sig: "array_stats(img: buffer, minval: buffer, maxval: buffer, mean: buffer, var: buffer) -> void"
-    doc: >
+    doc: >-
       array_stats computes statistics for an image.
       img Input data array (1D or 2D.ravel(), so sparse or dense)
     checks:
@@ -513,7 +512,7 @@ functions:
           var: "var.ptr"
 
   - py_sig: "array_histogram(img: buffer, low: float, high: float, hist: buffer) -> void"
-    doc: >
+    doc: >-
       array_histogram computes the histogram for an image.
       Go through the data to compute a histogram of the values.
     checks:
@@ -530,7 +529,7 @@ functions:
           nhist: "hist.n"
 
   - py_sig: "reorder_u16_a32(data: buffer, adr: buffer, out: buffer) -> void"
-    doc: >
+    doc: >-
       reorder_u16_a32 simple loop with openmp saying out[adr[i]] in data[i].
       e.g. semi-random writing.
     checks:
@@ -596,7 +595,7 @@ functions:
           N: "data.n"
 
   - py_sig: "reorder_u16_a32_a16(data: buffer, adr0: buffer, adr1: buffer, out: buffer) -> void"
-    doc: >
+    doc: >-
       reorder_u16_a32_a16: data source data read in order.
       adr0 output position for the first pixel in each row.
       adr1 difference offset to output next pixel in each row.
@@ -620,7 +619,7 @@ functions:
           nf: "data.shape[1]"
 
   - py_sig: "bgcalc(img: buffer, bg: buffer, msk: buffer, gain: float, sp: float, st: float) -> void"
-    doc: >
+    doc: >-
       bgcalc computes a background on a 1d signal where gain
       and sp and st are defined by:
       diff = difference to neighbors or bg estimate
@@ -651,7 +650,7 @@ functions:
   # ===================================================================
 
   - py_sig: "compute_geometry(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, out: buffer) -> void"
-    doc: >
+    doc: >-
       compute_geometry is for the updateGeometry method of columnfiles.
       From xlylzl it will compute tth, eta, ds, gve into out.
       out should contain: (tth, eta, ds, gx, gy, gz).
@@ -668,7 +667,7 @@ functions:
       - "out.shape[0] == xlylzl.shape[0]"
       - "out.shape[1] == 6"
     c_overloads:
-      - sig: "void compute_geometry(double *xlylzl, double *omega, double omegasign, double wvln, double wedge, double chi, double *t, double *out, int n)"
+      - sig: "void compute_geometry_wrapper(const double *xlylzl, const double *omega, double omegasign, double wvln, double wedge, double chi, const double *t, double *out, int n)"
         map:
           xlylzl: "xlylzl.ptr"
           omega: "omega.ptr"
@@ -681,7 +680,7 @@ functions:
           n: "xlylzl.shape[0]"
 
   - py_sig: "compute_gv(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, gv: buffer) -> void"
-    doc: >
+    doc: >-
       compute_gv computes scattering vectors given the positions of the spot
       in the laboratory in xlylzl[npks], the omega rotation[npks], and
       the rest of the parameters (wedge,wvln,chi,t[3] and omegasign).
@@ -698,7 +697,7 @@ functions:
       - "gv.shape[0] == xlylzl.shape[0]"
       - "gv.shape[1] == 3"
     c_overloads:
-      - sig: "void compute_gv(double *xlylzl, double *omega, double omegasign, double wvln, double wedge, double chi, double *t, double *gv, int n)"
+      - sig: "void compute_gv_wrapper(const double *xlylzl, const double *omega, double omegasign, double wvln, double wedge, double chi, const double *t, double *gv, int n)"
         map:
           xlylzl: "xlylzl.ptr"
           omega: "omega.ptr"
@@ -711,7 +710,7 @@ functions:
           n: "xlylzl.shape[0]"
 
   - py_sig: "compute_xlylzl(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xlylzl: buffer) -> void"
-    doc: >
+    doc: >-
       compute_xlylzl finds spot positions in the laboratory frame
       using packed parameters that are more general.
       s = slow pixel position, f = fast pixel position
@@ -731,7 +730,7 @@ functions:
       - "xlylzl.format == 'd'"
       - "xlylzl.ndim >= 1"
     c_overloads:
-      - sig: "void compute_xlylzl(double *s, double *f, double *p, double *r, double *dist, double *xlylzl, int n)"
+      - sig: "void compute_xlylzl_wrapper(const double *s, const double *f, const double *p, const double *r, const double *dist, double *xlylzl, int n)"
         map:
           s: "s.ptr"
           f: "f.ptr"
@@ -742,7 +741,7 @@ functions:
           n: "s.n"
 
   - py_sig: "compute_xlylzl_xpos_variable(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xpos: buffer, xlylzl: buffer) -> void"
-    doc: >
+    doc: >-
       compute_xlylzl_xpos_variable finds spot positions in the laboratory frame
       like compute_xlylzl but with an extra per-spot x-offset xpos.
     checks:
@@ -760,7 +759,7 @@ functions:
       - "xlylzl.format == 'd'"
       - "xlylzl.ndim >= 1"
     c_overloads:
-      - sig: "void compute_xlylzl_xpos_variable(double *s, double *f, double *p, double *r, double *dist, double *xpos, double *xlylzl, int n)"
+      - sig: "void compute_xlylzl_xpos_variable_wrapper(const double *s, const double *f, const double *p, const double *r, const double *dist, const double *xpos, double *xlylzl, int n)"
         map:
           s: "s.ptr"
           f: "f.ptr"
@@ -772,7 +771,7 @@ functions:
           n: "s.n"
 
   - py_sig: "quickorient(ubi: buffer, bt: buffer) -> void"
-    doc: >
+    doc: >-
       quickorient takes two g-vectors in UBI[0] and UBI[1]
       and overwrites with UBI orientation using cache in bt.
       Algorithm was due to Busing and Levy.
@@ -782,7 +781,7 @@ functions:
       - "bt.format == 'd'"
       - "bt.n == 9"
     c_overloads:
-      - sig: "void quickorient(double *ubi, double *bt)"
+      - sig: "void quickorient_wrapper(double *ubi, const double *bt)"
         map: {ubi: "ubi.ptr", bt: "bt.ptr"}
 
   # ===================================================================
@@ -815,7 +814,7 @@ functions:
   # ===================================================================
 
   - py_sig: "connectedpixels(data: buffer, labels: buffer, threshold: float, verbose: int, con8: int) -> int"
-    doc: >
+    doc: >-
       connectedpixels Determines which pixels in data are above the
       user supplied threshold and assigns them into connected objects
       which are output in labels. Connectivity is 3x3 box (8) by default
@@ -837,7 +836,7 @@ functions:
           nf: "data.shape[1]"
 
   - py_sig: "blobproperties(data: buffer, labels: buffer, np: int, omega: float, verbose: int, results: buffer) -> void"
-    doc: >
+    doc: >-
       blobproperties fills the array results with properties of each labelled
       object described by data (pixel values) and labels. The omega value
       is the angle for this frame. results shape is (np, 35).
@@ -862,7 +861,7 @@ functions:
           nf: "data.shape[1]"
 
   - py_sig: "bloboverlaps(labels1: buffer, npk1: int, results1: buffer, labels2: buffer, npk2: int, results2: buffer) -> int"
-    doc: >
+    doc: >-
       bloboverlaps determines the overlaps between labels1 and labels2
       for an image series. Peaks in labels2 may be merged if they were
       joined by a peak on labels1. Results in results1 are accumulated
@@ -903,7 +902,7 @@ functions:
           np: "results.shape[0]"
 
   - py_sig: "clean_mask(msk: buffer, ret: buffer) -> int"
-    doc: >
+    doc: >-
       clean_mask removes pixels which are not 4 connected from msk
       while copying into ret.
     checks:
@@ -912,7 +911,7 @@ functions:
       - "ret.format == 'b' or ret.format == 'B'"
       - "ret.n == msk.n"
     c_overloads:
-      - sig: "int clean_mask_wrapper_impl(const char *msk, char *ret, int ns, int nf) -> int"
+      - sig: "int clean_mask_wrapper(const char *msk, char *ret, int ns, int nf) -> int"
         map:
           msk: "msk.ptr"
           ret: "ret.ptr"
@@ -920,7 +919,7 @@ functions:
           nf: "msk.shape[1]"
 
   - py_sig: "make_clean_mask(img: buffer, cut: float, msk: buffer, ret: buffer) -> int"
-    doc: >
+    doc: >-
       make_clean_mask is a lot like clean_mask but it generates
       the msk using img and cut.
     checks:
@@ -931,7 +930,7 @@ functions:
       - "ret.format == 'b' or ret.format == 'B'"
       - "ret.n == img.n"
     c_overloads:
-      - sig: "int make_clean_mask_wrapper_impl(const float *img, float cut, const char *msk, char *ret, int ns, int nf) -> int"
+      - sig: "int make_clean_mask_wrapper(const float *img, float cut, const char *msk, char *ret, int ns, int nf) -> int"
         map:
           img: "img.ptr"
           cut: cut
@@ -948,7 +947,7 @@ functions:
   # ===================================================================
 
   - py_sig: "mask_to_coo(msk: buffer, i: buffer, j: buffer, w: buffer) -> int"
-    doc: >
+    doc: >-
       mask_to_coo takes a mask and converts it to a list
       of i,j coordinates in a sparse array coo format.
       Returns: 0=>success, 1=>ns out of range, 2=>nf out of range,
@@ -973,7 +972,7 @@ functions:
           w: "w.ptr"
 
   - py_sig: "sparse_is_sorted(i: buffer, j: buffer) -> int"
-    doc: >
+    doc: >-
       sparse_is_sorted checks whether the indices in i and j of a sparse
       coo format come in the order that they would appear inside an image.
       Returns 0 for all OK, k for first non-sorted element,
@@ -987,7 +986,7 @@ functions:
         map: {i: "i.ptr", j: "j.ptr", nnz: "i.n"}
 
   - py_sig: "sparse_connectedpixels(v: buffer, i: buffer, j: buffer, threshold: float, labels: buffer) -> int"
-    doc: >
+    doc: >-
       sparse_connectedpixels runs the connectedpixels algorithm on
       a sparse image using a supplied threshold putting labels
       into labels array and returning the number of blobs found.
@@ -1010,7 +1009,7 @@ functions:
           labels: "labels.ptr"
 
   - py_sig: "sparse_connectedpixels_splat(v: buffer, i: buffer, j: buffer, th: float, lbl: buffer, Z: buffer, ni: int, nj: int) -> int"
-    doc: >
+    doc: >-
       sparse_connectedpixels_splat is for debugging/timing. It splats
       the sparse array into a dense array and runs the old connectedpixels
       code on that.
@@ -1037,7 +1036,7 @@ functions:
           nj: nj
 
   - py_sig: "sparse_blob2Dproperties(v: buffer, i: buffer, j: buffer, labels: buffer, npk: int, results: buffer) -> void"
-    doc: >
+    doc: >-
       sparse_blob2Dproperties fills the array results with properties of
       each labelled object. results shape is (npk, 11).
     checks:
@@ -1063,7 +1062,7 @@ functions:
           results: "results.ptr"
 
   - py_sig: "sparse_smooth(v: buffer, i: buffer, j: buffer, s: buffer) -> void"
-    doc: >
+    doc: >-
       sparse_smooth smooths data in coo format. Workaround for avoiding
       equal pixels on peak tails for localmaxlabel. Single threaded.
     checks:
@@ -1084,7 +1083,7 @@ functions:
           s: "s.ptr"
 
   - py_sig: "sparse_localmaxlabel(v: buffer, i: buffer, j: buffer, MV: buffer, iMV: buffer, labels: buffer) -> int"
-    doc: >
+    doc: >-
       sparse_localmaxlabel assigns labels to sparse array in sorted coo format
       supplied in (v,(i,j)). MV and iMV are temporaries. Single threaded.
     checks:
@@ -1111,7 +1110,7 @@ functions:
           labels: "labels.ptr"
 
   - py_sig: "sparse_overlaps(i1: buffer, j1: buffer, k1: buffer, i2: buffer, j2: buffer, k2: buffer) -> int"
-    doc: >
+    doc: >-
       sparse_overlaps identifies the pixels in i1,j1 which overlap i2,j2.
       The list of overlaps is returned in k1/k2 such that i1[k1]==i2[k2]
       and j1[k1]==j2[k2].
@@ -1139,7 +1138,7 @@ functions:
           nnz2: "i2.n"
 
   - py_sig: "compress_duplicates(i: buffer, j: buffer, oi: buffer, oj: buffer, tmp: buffer) -> int"
-    doc: >
+    doc: >-
       compress_duplicates removes duplicate i,j labels. On entry then
       i and j are set as the labels from two images. They are sorted
       and on exit i,j hold the unique pairs and oi holds the count
@@ -1165,7 +1164,7 @@ functions:
           nt: "tmp.n"
 
   - py_sig: "coverlaps(row1: buffer, col1: buffer, labels1: buffer, row2: buffer, col2: buffer, labels2: buffer, mat: buffer, results: buffer) -> int"
-    doc: >
+    doc: >-
       coverlaps determines which of (row1,col1,labels1) and (row2,col2,labels2)
       are overlapped.
     checks:
@@ -1199,7 +1198,7 @@ functions:
           results: "results.ptr"
 
   - py_sig: "tosparse_u16(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: int) -> int"
-    doc: >
+    doc: >-
       tosparse_u16 stores pixels from img into row/col/val.
       msk determines whether pixels are masked. Returns the number of pixels found.
     checks:
@@ -1223,7 +1222,7 @@ functions:
           nf: "img.shape[1]"
 
   - py_sig: "tosparse_u32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int"
-    doc: >
+    doc: >-
       tosparse_u32 stores pixels from img into row/col/val.
       Returns the number of pixels found.
     checks:
@@ -1247,7 +1246,7 @@ functions:
           nf: "img.shape[1]"
 
   - py_sig: "tosparse_f32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int"
-    doc: >
+    doc: >-
       tosparse_f32 stores pixels from img into row/col/val.
       Returns the number of pixels found.
     checks:

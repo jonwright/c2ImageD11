@@ -1,0 +1,5 @@
+*.so
+*.o
+*_wrapper.c
+__pycache__/
+*.pyc
