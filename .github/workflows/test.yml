@@ -11,7 +11,7 @@ jobs:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-22.04
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         python-version: ["2.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
@@ -45,12 +45,14 @@ jobs:
 
       - name: Install test dependencies
         run: |
+          pip install setuptools || pip install "setuptools<45"
+          pip install wheel || pip install "wheel<0.35"
           pip install numpy || pip install "numpy==1.16.6"
           pip install pytest || pip install "pytest>=4.6,<5"
 
       - name: Install c2py23
         run: |
-          pip install -e ${{ github.workspace }}/c2py23
+          pip install --no-build-isolation -e ${{ github.workspace }}/c2py23
 
       - name: Install c2ImageD11
         run: |
