@@ -6,6 +6,7 @@
 # (char*, int*, etc.).
 
 module: _cImageD11
+timing: true
 
 source:
   - src/blobs.c

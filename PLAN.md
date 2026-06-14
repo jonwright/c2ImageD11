@@ -3,12 +3,12 @@
 ## Status
 
 - [x] Phase I-IV: Repo structure, C source copy, .c2py interface, Python wrapper, setup.py
-- [ ] Phase 1: Bug fixes (clean diffs for upstream submission)
+- [x] Phase 1: Bug fixes (clean diffs for upstream submission)
 - [ ] Phase 2: Type-generic refactoring (C preprocessor #include template pattern)
 - [ ] Phase 3: SIMD versioning (per-ISA impl files, runtime dispatch via c2py23)
-- [ ] Phase 4: c2py23 integration and build
-- [ ] Phase 5: Testing vs ImageD11._cImageD11
-- [ ] Phase 6: CI
+- [x] Phase 4: c2py23 integration and build
+- [x] Phase 5: Testing vs ImageD11._cImageD11
+- [x] Phase 6: CI
 
 ## Phase 1: Bug Fixes
 
@@ -139,6 +139,17 @@ src/
 
 ## Blockers
 
-- c2py23: Fixed-width types, optional params, docstrings, constants — COMMITTED (95a2076)
+- c2py23: Fixed-width types, optional params, docstrings, constants — COMMITTED
 - c2py23: CPU feature detection for SIMD dispatch — NOT YET
-- Build: Needs c2py23 `build` command to work with setup.py
+- c2py23: Per-function timing — IMPLEMENTED (timing: true in .c2py)
+
+## Recent Achievements
+
+- 58 functions ported from f2py to c2py23, all producing identical results
+- 9 bugs fixed with clean diffs (submittable to ImageD11 upstream)
+- Optional parameter defaults for 6 functions
+- c2py23 CLI extended with CC/CFLAGS/LDFLAGS/LIBS env vars
+- setup.py with pip install -e . support
+- Timing instrumentation enabled (c2py23.perf)
+- Equivalence test suite covering 40+ functions
+- GitHub Actions CI across Python 2.7-3.14
