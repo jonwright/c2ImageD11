@@ -839,7 +839,7 @@ functions:
     doc: >-
       blobproperties fills the array results with properties of each labelled
       object described by data (pixel values) and labels. The omega value
-      is the angle for this frame. results shape is (np, 35).
+      is the angle for this frame. results shape is (np, 36).
     checks:
       - "data.format == 'f'"
       - "data.ndim == 2"
@@ -847,7 +847,7 @@ functions:
       - "labels.n == data.n"
       - "results.format == 'd'"
       - "results.shape[0] == np"
-      - "results.shape[1] == 35"
+      - "results.shape[1] == 36"
     c_overloads:
       - sig: "void blobproperties_wrapper(float *data, int *labels, int np, double *results, float omega, int verbose, int ns, int nf)"
         map:
@@ -873,10 +873,10 @@ functions:
       - "labels2.n == labels1.n"
       - "results1.format == 'd'"
       - "results1.shape[0] == npk1"
-      - "results1.shape[1] == 35"
+      - "results1.shape[1] == 36"
       - "results2.format == 'd'"
       - "results2.shape[0] == npk2"
-      - "results2.shape[1] == 35"
+      - "results2.shape[1] == 36"
     c_overloads:
       - sig: "int bloboverlaps(int *labels1, int npk1, double *results1, int *labels2, int npk2, double *results2, int ns, int nf) -> int"
         map:
@@ -894,7 +894,7 @@ functions:
     checks:
       - "results.format == 'd'"
       - "results.ndim == 2"
-      - "results.shape[1] == 35"
+      - "results.shape[1] == 36"
     c_overloads:
       - sig: "void blob_moments(double *results, int np)"
         map:

@@ -41,7 +41,7 @@ f_cen = 32
 s_cen = 33
 dety = 34
 detz = 35
-NPROPERTY = 35
+NPROPERTY = 36
 
 # NPROPERTY2D enum - 2D blob properties (s2D_1..NPROPERTY2D = 11)
 s2D_1 = 0

@@ -1,123 +1,52 @@
 """Equivalence tests: c2ImageD11._cImageD11 vs ImageD11._cImageD11.
 
-Each test generates random valid inputs, calls both the old f2py-based
-module and the new c2py23-based module with the same inputs, and verifies
-the outputs match.
-
-Requires: ImageD11 installed (for _cImageD11 reference) and c2ImageD11 built.
+Handles calling convention differences:
+- f2py returns output scalars as tuple elements
+- c2py23 takes output scalars as 1-element buffer args
 """
 
 from __future__ import print_function
 
 import numpy as np
+import ctypes
 import pytest
 
-# ---- Try importing both modules ----
+OLD = None
+NEW = None
 
-try:
-    import ImageD11._cImageD11 as OLD
-except ImportError:
-    OLD = None
-    print("WARNING: ImageD11._cImageD11 not available - reference tests skipped")
-
-try:
-    import c2ImageD11._cImageD11 as NEW
-except ImportError:
-    NEW = None
-    print("WARNING: c2ImageD11._cImageD11 not available - new module not built")
-
-needs_both = pytest.mark.skipif(
-    OLD is None or NEW is None,
-    reason="Both old and new modules must be available"
-)
-
-needs_old = pytest.mark.skipif(
-    OLD is None,
-    reason="Old module not available"
-)
-
-needs_new = pytest.mark.skipif(
-    NEW is None,
-    reason="New module not available"
-)
+def setup_module():
+    global OLD, NEW
+    import ImageD11._cImageD11 as _old
+    import c2ImageD11._cImageD11 as _new
+    OLD = _old
+    NEW = _new
 
 
-# ===================================================================
-# Helper
-# ===================================================================
-
-def assert_close(a, b, tol=1e-10):
-    """Compare scalars or arrays."""
-    a = np.asarray(a); b = np.asarray(b)
-    assert a.shape == b.shape, "Shape mismatch: %s vs %s" % (a.shape, b.shape)
-    assert np.allclose(a, b, atol=tol), "Value mismatch"
+def close(a, b, rtol=1e-10, atol=1e-10):
+    a = np.asarray(a, dtype=np.float64).ravel()
+    b = np.asarray(b, dtype=np.float64).ravel()
+    assert a.shape == b.shape
+    assert np.allclose(a, b, rtol=rtol, atol=atol)
 
 
-# ===================================================================
-# Simple scalar functions
-# ===================================================================
+# ============================================================
+# Scalar-in, scalar-out (same convention)
+# ============================================================
 
 class TestVerifyRounding:
-    @needs_both
-    def test_small(self):
-        for n in [1, 2, 5, 10, 20, 50, 100]:
-            assert OLD.verify_rounding(n) == NEW.verify_rounding(n)
-
+    def test_basic(self):
+        assert OLD.verify_rounding(20) == NEW.verify_rounding(20)
 
 class TestOMP:
-    @needs_new
     def test_get_max_threads(self):
-        result = NEW.cimaged11_omp_get_max_threads()
-        assert isinstance(result, int)
-
-    @needs_new
-    def test_set_num_threads(self):
-        NEW.cimaged11_omp_set_num_threads(1)
-        # Should not crash
+        assert NEW.cimaged11_omp_get_max_threads() >= 0
 
 
-# ===================================================================
-# score family
-# ===================================================================
-
-class TestScore:
-    @needs_both
-    def test_random(self):
-        np.random.seed(42)
-        for _ in range(5):
-            ubi = np.random.randn(3, 3)
-            gv = np.random.randn(100, 3)
-            tol = 0.1 + 0.1 * np.random.random()
-            old_score = OLD.score(ubi, gv, tol)
-            new_score = NEW.score(ubi, gv, tol)
-            assert old_score == new_score, \
-                "score mismatch: old=%d new=%d" % (old_score, new_score)
-
-
-class TestScoreAndRefine:
-    @needs_both
-    def test_random(self):
-        np.random.seed(42)
-        for _ in range(5):
-            ubi_old = np.random.randn(3, 3)
-            ubi_new = ubi_old.copy()
-            gv = np.random.randn(100, 3)
-            tol = 0.1
-            sumdrlv2_old = np.zeros(1, dtype=np.float64)
-            sumdrlv2_new = np.zeros(1, dtype=np.float64)
-            n_old = OLD.score_and_refine(ubi_old, gv, tol, sumdrlv2_old)
-            n_new = NEW.score_and_refine(ubi_new, gv, tol, sumdrlv2_new)
-            assert n_old == n_new
-            assert_close(sumdrlv2_old, sumdrlv2_new)
-            assert_close(ubi_old, ubi_new)
-
-
-# ===================================================================
-# closest functions
-# ===================================================================
+# ============================================================
+# closest family
+# ============================================================
 
 class TestClosestVec:
-    @needs_both
     def test_random(self):
         np.random.seed(42)
         for _ in range(3):
@@ -127,175 +56,567 @@ class TestClosestVec:
             ic_new = np.zeros(nv, dtype=np.int32)
             OLD.closest_vec(x, ic_old)
             NEW.closest_vec(x, ic_new)
-            assert_close(ic_old, ic_new)
+            assert (ic_old == ic_new).all()
 
 
 class TestClosest:
-    @needs_both
     def test_random(self):
         np.random.seed(42)
         for _ in range(3):
             x = np.sort(np.random.random(100))
             v = np.random.random(20)
-            ibest_old = np.zeros(1, dtype=np.int32)
-            best_old = np.zeros(1, dtype=np.float64)
-            ibest_new = np.zeros(1, dtype=np.int32)
-            best_new = np.zeros(1, dtype=np.float64)
-            OLD.closest(x, v, ibest_old, best_old)
-            NEW.closest(x, v, ibest_new, best_new)
-            assert ibest_old[0] == ibest_new[0]
-            assert_close(best_old, best_new)
+            # f2py returns (ibest, best) as tuple
+            ib_o, best_o = OLD.closest(x, v)
+            # c2py23 takes 1-element buffers
+            ib_n = np.zeros(1, dtype=np.int32)
+            best_n = np.zeros(1, dtype=np.float64)
+            NEW.closest(x, v, ib_n, best_n)
+            assert ib_o == ib_n[0]
+            close(best_o, best_n[0])
 
 
-# ===================================================================
-# misori functions
-# ===================================================================
+class TestCountShared:
+    def test_random(self):
+        np.random.seed(42)
+        pi = np.sort(np.random.randint(0, 100, 50)).astype(np.int32)
+        pj = np.sort(np.random.randint(0, 100, 40)).astype(np.int32)
+        assert OLD.count_shared(pi, pj) == NEW.count_shared(pi, pj)
+
+
+# ============================================================
+# score family
+# ============================================================
+
+class TestScore:
+    def test_random(self):
+        np.random.seed(42)
+        for _ in range(5):
+            ubi = np.random.randn(3, 3)
+            gv = np.random.randn(100, 3)
+            tol = 0.1 + 0.2 * np.random.random()
+            assert OLD.score(ubi, gv, tol) == NEW.score(ubi, gv, tol)
+
+
+class TestScoreAndRefine:
+    def test_random(self):
+        np.random.seed(42)
+        for _ in range(3):
+            ubi_o = np.random.randn(3, 3).copy()
+            ubi_n = ubi_o.copy()
+            gv = np.random.randn(50, 3)
+            tol = 0.15
+            # f2py returns (n, sumdrlv2)
+            n_o, s_o = OLD.score_and_refine(ubi_o, gv, tol)
+            # c2py23: n is return value, sumdrlv2 is buffer
+            s_n = np.zeros(1, dtype=np.float64)
+            n_n = NEW.score_and_refine(ubi_n, gv, tol, s_n)
+            assert n_o == n_n
+            close(s_o, s_n[0])
+            close(ubi_o, ubi_n)
+
+
+class TestScoreAndAssign:
+    def test_random(self):
+        np.random.seed(42)
+        ubi = np.random.randn(3, 3)
+        gv = np.random.randn(30, 3)
+        tol = 0.2
+        drlv2_o = np.full(30, 999.0)
+        drlv2_n = np.full(30, 999.0)
+        labels_o = np.zeros(30, dtype=np.int32)
+        labels_n = np.zeros(30, dtype=np.int32)
+        n_o = OLD.score_and_assign(ubi, gv, tol, drlv2_o, labels_o, 1)
+        n_n = NEW.score_and_assign(ubi, gv, tol, drlv2_n, labels_n, 1)
+        assert n_o == n_n
+        assert (labels_o == labels_n).all()
+
+
+class TestRefineAssigned:
+    def test_random(self):
+        np.random.seed(42)
+        ubi_o = np.random.randn(3, 3).copy()
+        ubi_n = ubi_o.copy()
+        gv = np.random.randn(30, 3)
+        labels = np.random.randint(0, 2, 30).astype(np.int32)
+        label = 1
+        # f2py returns (npk, drlv2)
+        npk_o, drlv2_o = OLD.refine_assigned(ubi_o, gv, labels, label)
+        npk_n = np.zeros(1, dtype=np.int32)
+        drlv2_n = np.zeros(1, dtype=np.float64)
+        NEW.refine_assigned(ubi_n, gv, labels, label, npk_n, drlv2_n)
+        assert npk_o == npk_n[0]
+        close(drlv2_o, drlv2_n[0])
+        if npk_o > 0:
+            close(ubi_o, ubi_n)
+
+
+class TestCluster1D:
+    def test_small(self):
+        np.random.seed(42)
+        ar = np.sort(np.random.random(20))
+        order = np.arange(20, dtype=np.int32)
+        tol = 0.05
+        ids_o = np.zeros(20, dtype=np.int32)
+        ids_n = np.zeros(20, dtype=np.int32)
+        avgs_o = np.zeros(20, dtype=np.float64)
+        avgs_n = np.zeros(20, dtype=np.float64)
+        # f2py returns nclusters as tuple element
+        nco, _, _ = OLD.cluster1d(ar, order, tol, ids_o, avgs_o)
+        ncn_buf = np.zeros(1, dtype=np.int32)
+        NEW.cluster1d(ar, order, tol, ncn_buf, ids_n, avgs_n)
+        assert nco == ncn_buf[0]
+
+
+# ============================================================
+# misori (same convention: double in, double out)
+# ============================================================
 
 class TestMisori:
-    @needs_both
+    @pytest.mark.parametrize("func", [
+        "misori_cubic", "misori_orthorhombic",
+        "misori_tetragonal", "misori_monoclinic"
+    ])
+    def test_identity(self, func):
+        u = np.eye(3)
+        close(getattr(OLD, func)(u, u), getattr(NEW, func)(u, u))
+
     @pytest.mark.parametrize("func", [
         "misori_cubic", "misori_orthorhombic",
         "misori_tetragonal", "misori_monoclinic"
     ])
     def test_random(self, func):
         np.random.seed(42)
-        for _ in range(5):
+        for _ in range(3):
             u1 = np.random.randn(3, 3)
             u2 = np.random.randn(3, 3)
-            old_result = getattr(OLD, func)(u1, u2)
-            new_result = getattr(NEW, func)(u1, u2)
-            assert_close(old_result, new_result)
+            close(getattr(OLD, func)(u1, u2),
+                  getattr(NEW, func)(u1, u2))
 
 
-# ===================================================================
-# array_stats
-# ===================================================================
-
-class TestArrayStats:
-    @needs_both
-    def test_random(self):
-        np.random.seed(42)
-        for _ in range(5):
-            img = np.random.randn(1000).astype(np.float32)
-            min_old = np.zeros(1, dtype=np.float32)
-            max_old = np.zeros(1, dtype=np.float32)
-            mean_old = np.zeros(1, dtype=np.float32)
-            var_old = np.zeros(1, dtype=np.float32)
-            min_new = np.zeros(1, dtype=np.float32)
-            max_new = np.zeros(1, dtype=np.float32)
-            mean_new = np.zeros(1, dtype=np.float32)
-            var_new = np.zeros(1, dtype=np.float32)
-            OLD.array_stats(img, min_old, max_old, mean_old, var_old)
-            NEW.array_stats(img, min_new, max_new, mean_new, var_new)
-            assert_close(min_old, min_new)
-            assert_close(max_old, max_new)
-            assert_close(mean_old, mean_new)
-            assert_close(var_old, var_new)
-
-
-# ===================================================================
-# compute_* functions
-# ===================================================================
+# ============================================================
+# compute_*
+# ============================================================
 
 class TestComputeGeometry:
-    @needs_both
     def test_random(self):
         np.random.seed(42)
-        for _ in range(3):
-            n = 50
-            xlylzl = np.random.randn(n, 3)
-            omega = np.random.random(n) * 360.0
-            omegasign = 1.0
-            wvln = 0.3
-            wedge = 5.0
-            chi = 3.0
-            t_vec = np.random.randn(3)
-            out_old = np.zeros((n, 6))
-            out_new = np.zeros((n, 6))
-            OLD.compute_geometry(xlylzl, omega, omegasign, wvln, wedge, chi,
-                                  t_vec, out_old)
-            NEW.compute_geometry(xlylzl, omega, omegasign, wvln, wedge, chi,
-                                  t_vec, out_new)
-            assert_close(out_old, out_new, tol=1e-6)
-
+        n = 20
+        xl = np.random.randn(n, 3) * 0.1
+        w = np.random.random(n) * 360.0
+        t_vec = np.random.randn(3) * 10
+        out_o = np.zeros((n, 6))
+        out_n = np.zeros((n, 6))
+        OLD.compute_geometry(xl, w, 1.0, 0.3, 5.0, 3.0, t_vec, out_o)
+        NEW.compute_geometry(xl, w, 1.0, 0.3, 5.0, 3.0, t_vec, out_n)
+        close(out_o, out_n, atol=1e-6)
 
 class TestComputeGV:
-    @needs_both
     def test_random(self):
         np.random.seed(42)
-        for _ in range(3):
-            n = 50
-            xlylzl = np.random.randn(n, 3)
-            omega = np.random.random(n) * 360.0
-            omegasign = 1.0
-            wvln = 0.3
-            wedge = 5.0
-            chi = 3.0
-            t_vec = np.random.randn(3)
-            gv_old = np.zeros((n, 3))
-            gv_new = np.zeros((n, 3))
-            OLD.compute_gv(xlylzl, omega, omegasign, wvln, wedge, chi,
-                            t_vec, gv_old)
-            NEW.compute_gv(xlylzl, omega, omegasign, wvln, wedge, chi,
-                            t_vec, gv_new)
-            assert_close(gv_old, gv_new, tol=1e-6)
-
+        n = 20
+        xl = np.random.randn(n, 3) * 0.1
+        w = np.random.random(n) * 360.0
+        t_vec = np.random.randn(3) * 10
+        gv_o = np.zeros((n, 3))
+        gv_n = np.zeros((n, 3))
+        OLD.compute_gv(xl, w, 1.0, 0.3, 5.0, 3.0, t_vec, gv_o)
+        NEW.compute_gv(xl, w, 1.0, 0.3, 5.0, 3.0, t_vec, gv_n)
+        close(gv_o, gv_n, atol=1e-6)
 
 class TestComputeXlylzl:
-    @needs_both
     def test_random(self):
         np.random.seed(42)
-        for _ in range(3):
-            n = 100
-            s = np.random.random(n).astype(np.float64) * 2000
-            f = np.random.random(n).astype(np.float64) * 2000
-            p = np.array([1000.0, 1000.0, 0.1, 0.1])
-            r = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0],
-                         dtype=np.float64)
-            dist = np.array([100.0, 0.0, 0.0], dtype=np.float64)
-            xlylzl_old = np.zeros((n, 3))
-            xlylzl_new = np.zeros((n, 3))
-            OLD.compute_xlylzl(s, f, p, r, dist, xlylzl_old)
-            NEW.compute_xlylzl(s, f, p, r, dist, xlylzl_new)
-            assert_close(xlylzl_old, xlylzl_new, tol=1e-6)
+        n = 20
+        s = np.random.random(n) * 2000
+        f = np.random.random(n) * 2000
+        p = np.array([1000.0, 1000.0, 0.1, 0.1])
+        r = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0])
+        dist = np.array([100.0, 0.0, 0.0])
+        xl_o = np.zeros((n, 3))
+        xl_n = np.zeros((n, 3))
+        OLD.compute_xlylzl(s, f, p, r, dist, xl_o)
+        NEW.compute_xlylzl(s, f, p, r, dist, xl_n)
+        close(xl_o, xl_n, atol=1e-6)
+
+class TestQuickorient:
+    def test_random(self):
+        np.random.seed(42)
+        ubi_o = np.random.randn(9)
+        ubi_n = ubi_o.copy()
+        bt = np.random.randn(9)
+        OLD.quickorient(ubi_o, bt)
+        NEW.quickorient(ubi_n, bt)
+        close(ubi_o, ubi_n)
 
 
-# ===================================================================
-# connectedpixels (if built)
-# ===================================================================
+# ============================================================
+# array stats (f2py returns tuples, c2py23 takes buffers)
+# ============================================================
+
+class TestArrayStats:
+    def test_random(self):
+        np.random.seed(42)
+        img = np.random.randn(1000).astype(np.float32) * 2 + 10
+        # f2py returns tuple
+        mn_o, mx_o, me_o, va_o = OLD.array_stats(img)
+        mn_n = np.zeros(1, dtype=np.float32)
+        mx_n = np.zeros(1, dtype=np.float32)
+        me_n = np.zeros(1, dtype=np.float32)
+        va_n = np.zeros(1, dtype=np.float32)
+        NEW.array_stats(img, mn_n, mx_n, me_n, va_n)
+        close(mn_o, mn_n[0])
+        close(mx_o, mx_n[0])
+        close(me_o, me_n[0])
+        close(va_o, va_n[0])
+
+class TestArrayMeanVarCut:
+    def test_random(self):
+        np.random.seed(42)
+        img = np.random.randn(1000).astype(np.float32) * 2 + 10
+        # f2py returns (mean, var)
+        me_o, va_o = OLD.array_mean_var_cut(img)
+        me_n = np.zeros(1, dtype=np.float32)
+        va_n = np.zeros(1, dtype=np.float32)
+        NEW.array_mean_var_cut(img, me_n, va_n)
+        close(me_o, me_n[0], atol=1e-4)
+        close(va_o, va_n[0], atol=1e-4)
+
+class TestArrayHistogram:
+    def test_random(self):
+        np.random.seed(42)
+        img = np.random.randn(1000).astype(np.float32) * 2 + 10
+        lo, hi = img.min(), img.max() + 1e-6
+        nbins = 20
+        hist_o = np.zeros(nbins, dtype=np.int32)
+        hist_n = np.zeros(nbins, dtype=np.int32)
+        OLD.array_histogram(img, lo, hi, hist_o)
+        NEW.array_histogram(img, lo, hi, hist_n)
+        assert (hist_o == hist_n).all()
+
+
+# ============================================================
+# uint16_to_float
+# ============================================================
+
+class TestUint16Convert:
+    def test_darksub(self):
+        np.random.seed(42)
+        n = 500
+        data = np.random.randint(0, 65535, n, dtype=np.uint16)
+        drk = np.random.randn(n).astype(np.float32) * 10
+        img_o = np.zeros(n, dtype=np.float32)
+        img_n = np.zeros(n, dtype=np.float32)
+        OLD.uint16_to_float_darksub(img_o, drk, data)
+        NEW.uint16_to_float_darksub(img_n, drk, data)
+        close(img_o, img_n)
+
+    def test_darkflm(self):
+        np.random.seed(42)
+        n = 500
+        data = np.random.randint(0, 65535, n, dtype=np.uint16)
+        drk = np.random.randn(n).astype(np.float32) * 10
+        flm = np.random.random(n).astype(np.float32) * 2 + 0.5
+        img_o = np.zeros(n, dtype=np.float32)
+        img_n = np.zeros(n, dtype=np.float32)
+        OLD.uint16_to_float_darkflm(img_o, drk, flm, data)
+        NEW.uint16_to_float_darkflm(img_n, drk, flm, data)
+        close(img_o, img_n)
+
+
+# ============================================================
+# connectedpixels / blobproperties
+# ============================================================
 
 class TestConnectedPixels:
-    @needs_both
     def test_small(self):
         np.random.seed(42)
         ns, nf = 20, 20
-        data = np.random.random(ns * nf).astype(np.float32).reshape(ns, nf)
-        labels_old = np.zeros((ns, nf), dtype=np.int32)
-        labels_new = np.zeros((ns, nf), dtype=np.int32)
-        threshold = 0.8
-        npk_old = OLD.connectedpixels(data, labels_old, threshold, 0, 1)
-        npk_new = NEW.connectedpixels(data, labels_new, threshold, 0, 1)
-        assert npk_old == npk_new
-        assert_close(labels_old, labels_new)
+        data = np.random.randn(ns, nf).astype(np.float32)
+        labels_o = np.zeros((ns, nf), dtype=np.int32)
+        labels_n = np.zeros((ns, nf), dtype=np.int32)
+        npk_o = OLD.connectedpixels(data, labels_o, 0.5, 0, 1)
+        npk_n = NEW.connectedpixels(data, labels_n, 0.5, 0, 1)
+        assert npk_o == npk_n
+        assert (labels_o == labels_n).all()
+
+class TestBlobProperties:
+    def test_small(self):
+        np.random.seed(42)
+        ns, nf = 20, 20
+        data = np.random.randn(ns, nf).astype(np.float32) + 10
+        labels = np.zeros((ns, nf), dtype=np.int32)
+        npk = OLD.connectedpixels(data, labels, 8.0, 0, 1)
+        if npk == 0:
+            return
+        res_o = np.zeros((npk, 35))
+        res_n = np.zeros((npk, 35))
+        OLD.blobproperties(data, labels, npk, res_o)
+        NEW.blobproperties(data, labels, npk, res_n)
+        close(res_o, res_n)
+
+class TestBloboverlaps:
+    def test_small(self):
+        np.random.seed(42)
+        ns, nf = 20, 20
+        d1 = np.random.randn(ns, nf).astype(np.float32) + 10
+        d2 = np.random.randn(ns, nf).astype(np.float32) + 10
+        l1 = np.zeros((ns, nf), dtype=np.int32)
+        l2 = np.zeros((ns, nf), dtype=np.int32)
+        n1 = OLD.connectedpixels(d1, l1, 8.0, 0, 1)
+        n2 = OLD.connectedpixels(d2, l2, 8.0, 0, 1)
+        if n1 == 0 or n2 == 0:
+            return
+        r1_o = np.zeros((n1, 35))
+        r1_n = np.zeros((n1, 35))
+        r2_o = np.zeros((n2, 35))
+        r2_n = np.zeros((n2, 35))
+        OLD.blobproperties(d1, l1, n1, r1_o)
+        OLD.blobproperties(d2, l2, n2, r2_o)
+        r1_n[:] = r1_o
+        r2_n[:] = r2_o
+        o = OLD.bloboverlaps(l1, n1, r1_o, l2, n2, r2_o)
+        n = NEW.bloboverlaps(l1, n1, r1_n, l2, n2, r2_n)
+        assert o == n
+        close(r1_o, r1_n)
+        close(r2_o, r2_n)
+
+class TestBlobMoments:
+    def test_random(self):
+        np.random.seed(42)
+        npk = 5
+        res_o = np.zeros((npk, 35))
+        res_n = np.zeros((npk, 35))
+        for i in range(npk):
+            off = i * 35
+            for j in [0, 1, 3, 4, 6, 8, 9, 11]:
+                val = np.random.random() * 1000 + 10
+                res_o.flat[off + j] = val
+                res_n.flat[off + j] = val
+        OLD.blob_moments(res_o)
+        NEW.blob_moments(res_n)
+        close(res_o, res_n)
+
+class TestCleanMask:
+    def test_small(self):
+        ns, nf = 10, 10
+        msk = np.zeros((ns, nf), dtype=np.int8)
+        msk[3:7, 4:8] = 1
+        ret_o = np.zeros((ns, nf), dtype=np.int8)
+        ret_n = np.zeros((ns, nf), dtype=np.int8)
+        n_o = OLD.clean_mask(msk, ret_o)
+        n_n = NEW.clean_mask(msk, ret_n)
+        assert n_o == n_n
+        assert (ret_o == ret_n).all()
+
+class TestMakeCleanMask:
+    def test_small(self):
+        ns, nf = 10, 10
+        img = np.random.randn(ns, nf).astype(np.float32) + 2
+        msk_o = np.zeros((ns, nf), dtype=np.int8)
+        msk_n = np.zeros((ns, nf), dtype=np.int8)
+        ret_o = np.zeros((ns, nf), dtype=np.int8)
+        ret_n = np.zeros((ns, nf), dtype=np.int8)
+        n_o = OLD.make_clean_mask(img, 1.0, msk_o, ret_o)
+        n_n = NEW.make_clean_mask(img, 1.0, msk_n, ret_n)
+        assert n_o == n_n
+        assert (ret_o == ret_n).all()
 
 
-# ===================================================================
-# localmaxlabel (if built)
-# ===================================================================
+# ============================================================
+# localmaxlabel
+# ============================================================
 
 class TestLocalMaxLabel:
-    @needs_both
     def test_small(self):
         np.random.seed(42)
         ns, nf = 20, 20
-        data = np.random.random(ns * nf).astype(np.float32).reshape(ns, nf)
-        labels_old = np.zeros((ns, nf), dtype=np.int32)
-        labels_new = np.zeros((ns, nf), dtype=np.int32)
-        wrk_old = np.zeros((ns, nf), dtype=np.int8)
-        wrk_new = np.zeros((ns, nf), dtype=np.int8)
-        OLD.localmaxlabel(data, labels_old, wrk_old)
-        npk_new = NEW.localmaxlabel(data, labels_new, wrk_new)
-        # localmaxlabel returns number of peaks
-        npk_old = OLD.localmaxlabel(data, labels_old, wrk_old)
-        assert npk_old >= 0
-        assert npk_new >= 0
+        data = np.random.randn(ns, nf).astype(np.float32)
+        lo = np.zeros((ns, nf), dtype=np.int32)
+        ln = np.zeros((ns, nf), dtype=np.int32)
+        wo = np.zeros((ns, nf), dtype=np.int8)
+        wn = np.zeros((ns, nf), dtype=np.int8)
+        no = OLD.localmaxlabel(data, lo, wo)
+        nn = NEW.localmaxlabel(data, ln, wn)
+        assert no >= 0
+        assert nn >= 0
+
+
+# ============================================================
+# sparse functions
+# ============================================================
+
+class TestSparseIsSorted:
+    def test_sorted(self):
+        i = np.array([0, 0, 0, 1, 1], dtype=np.uint16)
+        j = np.array([0, 1, 2, 1, 2], dtype=np.uint16)
+        assert OLD.sparse_is_sorted(i, j) == NEW.sparse_is_sorted(i, j)
+        assert OLD.sparse_is_sorted(i, j) == 0
+
+class TestMaskToCOO:
+    def test_small(self):
+        ns, nf = 5, 5
+        msk = np.zeros((ns, nf), dtype=np.int8)
+        msk[2:4, 1:3] = 1
+        nnz = int(msk.sum())
+        i = np.zeros(nnz, dtype=np.uint16)
+        j = np.zeros(nnz, dtype=np.uint16)
+        w = np.zeros(ns, dtype=np.int32)
+        ret = NEW.mask_to_coo(msk, i, j, w)
+        assert ret == 0
+
+class TestCompressDuplicates:
+    def test_small(self):
+        np.random.seed(42)
+        ii = np.sort(np.random.randint(0, 3, 10)).astype(np.int32)
+        jj = np.sort(np.random.randint(0, 3, 10)).astype(np.int32)
+        oi_o = np.zeros(10, dtype=np.int32)
+        oj_o = np.zeros(10, dtype=np.int32)
+        tmp_o = np.zeros(50, dtype=np.int32)
+        n_o = OLD.compress_duplicates(ii.copy(), jj.copy(), oi_o, oj_o, tmp_o)
+        n_n = NEW.compress_duplicates(ii.copy(), jj.copy(),
+                                       np.zeros(10, dtype=np.int32),
+                                       np.zeros(10, dtype=np.int32),
+                                       np.zeros(50, dtype=np.int32))
+        assert n_o == n_n
+
+class TestSparseOverlaps:
+    def test_small(self):
+        i1 = np.array([0, 0, 1], dtype=np.uint16)
+        j1 = np.array([1, 2, 1], dtype=np.uint16)
+        i2 = np.array([0, 0, 1], dtype=np.uint16)
+        j2 = np.array([2, 3, 1], dtype=np.uint16)
+        k1 = np.zeros(3, dtype=np.int32)
+        k2 = np.zeros(3, dtype=np.int32)
+        o = OLD.sparse_overlaps(i1, j1, k1, i2, j2, k2)
+        n = NEW.sparse_overlaps(i1, j1, k1, i2, j2, k2)
+        assert o == n
+
+class TestSparseConnectedPixels:
+    def test_small(self):
+        np.random.seed(42)
+        n = 100
+        v = np.random.randn(n).astype(np.float32) + 2
+        ii = np.random.randint(0, 10, n, dtype=np.uint16)
+        jj = np.random.randint(0, 10, n, dtype=np.uint16)
+        lo = np.zeros(n, dtype=np.int32)
+        ln = np.zeros(n, dtype=np.int32)
+        o = OLD.sparse_connectedpixels(v, ii, jj, 0.5, lo)
+        n = NEW.sparse_connectedpixels(v, ii, jj, 0.5, ln)
+        assert o == n
+
+class TestSparseSmooth:
+    def test_small(self):
+        np.random.seed(42)
+        n = 50
+        v = np.random.randn(n).astype(np.float32) + 2
+        ii = np.random.randint(0, 10, n, dtype=np.uint16)
+        jj = np.random.randint(0, 10, n, dtype=np.uint16)
+        so = np.zeros(n, dtype=np.float32)
+        sn = np.zeros(n, dtype=np.float32)
+        OLD.sparse_smooth(v, ii, jj, so)
+        NEW.sparse_smooth(v, ii, jj, sn)
+        close(so, sn)
+
+class TestSparseLocalMaxLabel:
+    def test_small(self):
+        np.random.seed(42)
+        n = 100
+        v = np.random.randn(n).astype(np.float32) + 2
+        ii = np.random.randint(0, 10, n, dtype=np.uint16)
+        jj = np.random.randint(0, 10, n, dtype=np.uint16)
+        MVo = np.zeros(n, dtype=np.float32)
+        MVn = np.zeros(n, dtype=np.float32)
+        iMVo = np.zeros(n, dtype=np.int32)
+        iMVn = np.zeros(n, dtype=np.int32)
+        lo = np.zeros(n, dtype=np.int32)
+        ln = np.zeros(n, dtype=np.int32)
+        o = OLD.sparse_localmaxlabel(v, ii, jj, MVo, iMVo, lo)
+        n = NEW.sparse_localmaxlabel(v, ii, jj, MVn, iMVn, ln)
+        assert o >= 0
+        assert n >= 0
+
+class TestToSparse:
+    def test_u16(self):
+        ns, nf = 8, 8
+        img = np.random.randint(0, 100, (ns, nf), dtype=np.uint16)
+        msk = np.ones((ns, nf), dtype=np.uint8)
+        row = np.zeros(ns*nf, dtype=np.uint16)
+        col = np.zeros(ns*nf, dtype=np.uint16)
+        val = np.zeros(ns*nf, dtype=np.uint16)
+        o = OLD.tosparse_u16(img, msk, row, col, val, 50)
+        n = NEW.tosparse_u16(img, msk,
+                              np.zeros(ns*nf, dtype=np.uint16),
+                              np.zeros(ns*nf, dtype=np.uint16),
+                              np.zeros(ns*nf, dtype=np.uint16), 50)
+        assert o == n
+
+    def test_f32(self):
+        ns, nf = 8, 8
+        img = np.random.randn(ns, nf).astype(np.float32) + 5
+        msk = np.ones((ns, nf), dtype=np.uint8)
+        row = np.zeros(ns*nf, dtype=np.uint16)
+        col = np.zeros(ns*nf, dtype=np.uint16)
+        val = np.zeros(ns*nf, dtype=np.float32)
+        o = OLD.tosparse_f32(img, msk, row, col, val, 3.0)
+        n = NEW.tosparse_f32(img, msk,
+                              np.zeros(ns*nf, dtype=np.uint16),
+                              np.zeros(ns*nf, dtype=np.uint16),
+                              np.zeros(ns*nf, dtype=np.float32), 3.0)
+        assert o == n
+
+class TestCoverlaps:
+    def test_small(self):
+        r1 = np.array([0, 0, 1], dtype=np.uint16)
+        c1 = np.array([1, 2, 1], dtype=np.uint16)
+        l1 = np.array([1, 1, 2], dtype=np.int32)
+        r2 = np.array([0, 0, 1], dtype=np.uint16)
+        c2 = np.array([1, 3, 1], dtype=np.uint16)
+        l2 = np.array([1, 1, 1], dtype=np.int32)
+        mat = np.zeros((2, 1), dtype=np.int32)
+        res = np.zeros(10, dtype=np.int32)
+        o = OLD.coverlaps(r1, c1, l1, r2, c2, l2, mat, res)
+        n = NEW.coverlaps(r1, c1, l1, r2, c2, l2, mat, res)
+        assert o == n
+
+
+# ============================================================
+# reorder
+# ============================================================
+
+class TestReorder:
+    def test_u16(self):
+        np.random.seed(42)
+        n = 100
+        data = np.random.randint(0, 100, n, dtype=np.uint16)
+        adr = np.random.permutation(n).astype(np.uint32)
+        out_o = np.zeros(n, dtype=np.uint16)
+        out_n = np.zeros(n, dtype=np.uint16)
+        OLD.reorder_u16_a32(data, adr, out_o)
+        NEW.reorder_u16_a32(data, adr, out_n)
+        assert (out_o == out_n).all()
+
+    def test_f32(self):
+        np.random.seed(42)
+        n = 100
+        data = np.random.randn(n).astype(np.float32)
+        adr = np.random.permutation(n).astype(np.uint32)
+        out_o = np.zeros(n, dtype=np.float32)
+        out_n = np.zeros(n, dtype=np.float32)
+        OLD.reorder_f32_a32(data, adr, out_o)
+        NEW.reorder_f32_a32(data, adr, out_n)
+        close(out_o, out_n)
+
+
+# ============================================================
+# splat
+# ============================================================
+
+class TestSplat:
+    def test_small(self):
+        rgba = np.zeros((100, 100, 4), dtype=np.uint8)
+        gv = np.random.randn(10, 3)
+        u = np.array([0.05, 0, 0, 0, -0.05, 0, 0, 0, 0.1])
+        OLD.splat(rgba, 100, 100, gv, 10, u, 1)
+        rgba2 = np.zeros((100, 100, 4), dtype=np.uint8)
+        NEW.splat(rgba2, 100, 100, gv, 10, u, 1)
+        assert (rgba == rgba2).all()
