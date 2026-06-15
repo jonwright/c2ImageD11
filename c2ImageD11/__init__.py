@@ -10,8 +10,11 @@ Provides:
   - All C functions re-exported from _cImageD11
   - Module-level blob property constants (s_1, s_I, NPROPERTY, etc.)
   - put_incr dispatch (32 vs 64 bit addressing)
-  - Optional parameter defaults for functions needing them
   - OpenMP / multiprocessing safety
+
+c2py23 now handles optional parameter defaults and fixed-width
+integer types directly, so Python-level wrapper functions are no
+longer needed.
 """
 
 from __future__ import print_function
@@ -20,10 +23,7 @@ import os
 import struct
 import warnings
 
-# Import compiled C module
 from c2ImageD11._cImageD11 import *
-
-# Re-export constants
 from c2ImageD11._constants import *
 
 
@@ -78,44 +78,6 @@ elif _nbyte == 4:
     def put_incr(*a, **k):
         """Redirects to put_incr32 (32-bit addressing)."""
         return put_incr32(*a, **k)
-
-
-# ---------------------------------------------------------------------------
-# Optional parameter defaults
-# ---------------------------------------------------------------------------
-# c2py23 does not yet support |O$ optional args, so we wrap here.
-# Each wrapper shadows the C-function name imported via *, providing defaults.
-# The imported function is saved under a _raw_* alias before redefinition.
-
-# -- array_mean_var_cut --
-if 'array_mean_var_cut' in dir():
-    _raw_array_mean_var_cut = array_mean_var_cut
-
-    def array_mean_var_cut(img, mean, var, n=3, cut=3.0, verbose=0):
-        return _raw_array_mean_var_cut(img, mean, var,
-                                        int(n), float(cut), int(verbose))
-
-# -- array_mean_var_msk --
-if 'array_mean_var_msk_wrapper' in dir():
-    _raw_array_mean_var_msk = array_mean_var_msk_wrapper
-
-    def array_mean_var_msk(img, msk, mean, var, n=3, cut=3.0, verbose=0):
-        return _raw_array_mean_var_msk(img, msk, mean, var,
-                                        int(n), float(cut), int(verbose))
-
-# -- put_incr64 --
-if 'put_incr64' in dir():
-    _raw_put_incr64 = put_incr64
-
-    def put_incr64(data, ind, vals, boundscheck=0):
-        return _raw_put_incr64(data, ind, vals, int(boundscheck))
-
-# -- put_incr32 --
-if 'put_incr32' in dir():
-    _raw_put_incr32 = put_incr32
-
-    def put_incr32(data, ind, vals, boundscheck=0):
-        return _raw_put_incr32(data, ind, vals, int(boundscheck))
 
 
 # ---------------------------------------------------------------------------

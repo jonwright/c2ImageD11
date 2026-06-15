@@ -1,9 +1,11 @@
 # c2py23 interface definition for c2ImageD11
 #
 # Maps all ImageD11 C functions to Python signatures.
-# Thin C wrappers in src_wrapper/_wrappers.c adapt fixed-size integer
-# types (uint16_t*, int32_t*, etc.) to c2py23-compatible types
-# (char*, int*, etc.).
+# c2py23 now natively supports all fixed-width integer types
+# (int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t,
+#  int64_t, uint64_t), so thin type-adapting wrappers are no
+# longer needed.  Only 2D-array-to-flat-pointer wrappers remain
+# in src_wrapper/_wrappers.c for vec[3] / double[][N] parameters.
 
 module: _cImageD11
 timing: true
@@ -196,14 +198,14 @@ functions:
       - "ind.n == vals.n"
       - "vals.format == 'f'"
     c_overloads:
-      - sig: "void put_incr32(float *data, const int *ind, const float *vals, int boundscheck, int m, int n)"
+      - sig: "void put_incr32(float *data, const int32_t *ind, const float *vals, int boundscheck, int n, int m)"
         map:
           data: "data.ptr"
           ind: "ind.ptr"
           vals: "vals.ptr"
           boundscheck: boundscheck
-          m: "data.n"
           n: "ind.n"
+          m: "data.n"
 
   - py_sig: "put_incr64(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void"
     doc: >-
@@ -215,14 +217,14 @@ functions:
       - "ind.n == vals.n"
       - "vals.format == 'f'"
     c_overloads:
-      - sig: "void put_incr64_wrapper(float *data, const char *ind, const float *vals, int boundscheck, int m, int n)"
+      - sig: "void put_incr64(float *data, const int64_t *ind, const float *vals, int boundscheck, int n, int m)"
         map:
           data: "data.ptr"
           ind: "ind.ptr"
           vals: "vals.ptr"
           boundscheck: boundscheck
-          m: "data.n"
           n: "ind.n"
+          m: "data.n"
 
   - py_sig: "cluster1d(ar: buffer, order: buffer, tol: float, nclusters: buffer, ids: buffer, avgs: buffer) -> void"
     doc: "cluster1d is used to find clusters of peaks. Work in progress."
@@ -341,7 +343,7 @@ functions:
       - "pi.format == 'i'"
       - "pj.format == 'i'"
     c_overloads:
-      - sig: "int count_shared_wrapper(const int *pi, int ni, const int *pj, int nj) -> int"
+      - sig: "int count_shared(int *pi, int ni, int *pj, int nj) -> int"
         map: {pi: "pi.ptr", ni: "pi.n", pj: "pj.ptr", nj: "pj.n"}
 
   # ===================================================================
@@ -361,13 +363,13 @@ functions:
       - "wrk.format == 'B' or wrk.format == 'b'"
       - "wrk.n == data.n"
     c_overloads:
-      - sig: "int localmaxlabel_wrapper(float *data, int *labels, char *wrk, int ns, int nf) -> int"
+      - sig: "int localmaxlabel(const float *im, int32_t *lout, uint8_t *l, int dim0, int dim1) -> int"
         map:
-          data: "data.ptr"
-          labels: "labels.ptr"
-          wrk: "wrk.ptr"
-          ns: "data.shape[0]"
-          nf: "data.shape[1]"
+          im: "data.ptr"
+          lout: "labels.ptr"
+          l: "wrk.ptr"
+          dim0: "data.shape[0]"
+          dim1: "data.shape[1]"
 
   # ===================================================================
   # darkflat.c - uint16_to_float, frelon_lines, array_stats,
@@ -385,7 +387,7 @@ functions:
       - "data.format == 'H' or data.itemsize == 2"
       - "data.n == img.n"
     c_overloads:
-      - sig: "void uint16_to_float_darksub_wrapper(float *img, const float *drk, const char *data, int npx)"
+      - sig: "void uint16_to_float_darksub(float *img, const float *drk, const uint16_t *data, int npx)"
         map:
           img: "img.ptr"
           drk: "drk.ptr"
@@ -405,7 +407,7 @@ functions:
       - "data.format == 'H' or data.itemsize == 2"
       - "data.n == img.n"
     c_overloads:
-      - sig: "void uint16_to_float_darkflm_wrapper(float *img, const float *drk, const float *flm, const char *data, int npx)"
+      - sig: "void uint16_to_float_darkflm(float *img, const float *drk, const float *flm, const uint16_t *data, int npx)"
         map:
           img: "img.ptr"
           drk: "drk.ptr"
@@ -477,7 +479,7 @@ functions:
       - "var.format == 'f'"
       - "var.n == 1"
     c_overloads:
-      - sig: "void array_mean_var_msk_wrapper(float *img, char *msk, int npx, float *mean, float *std, int n, float cut, int verbose)"
+      - sig: "void array_mean_var_msk(float *img, uint8_t *msk, int npx, float *mean, float *std, int n, float cut, int verbose)"
         map:
           img: "img.ptr"
           msk: "msk.ptr"
@@ -520,7 +522,7 @@ functions:
       - "img.format == 'f'"
       - "hist.format == 'i'"
     c_overloads:
-      - sig: "void array_histogram_wrapper(float *img, int npx, float low, float high, int *hist, int nhist)"
+      - sig: "void array_histogram(float *img, int npx, float low, float high, int32_t *hist, int nhist)"
         map:
           img: "img.ptr"
           npx: "img.n"
@@ -540,7 +542,7 @@ functions:
       - "out.format == 'H' or out.itemsize == 2"
       - "out.n >= data.n"
     c_overloads:
-      - sig: "void reorder_u16_a32_wrapper(const char *data, const int *adr, char *out, int N)"
+      - sig: "void reorder_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, int N)"
         map:
           data: "data.ptr"
           adr: "adr.ptr"
@@ -556,7 +558,7 @@ functions:
       - "out.format == 'f'"
       - "out.n >= data.n"
     c_overloads:
-      - sig: "void reorder_f32_a32_wrapper(const float *data, const int *adr, float *out, int N)"
+      - sig: "void reorder_f32_a32(const float *data, const uint32_t *adr, float *out, int N)"
         map:
           data: "data.ptr"
           adr: "adr.ptr"
@@ -572,7 +574,7 @@ functions:
       - "out.format == 'H' or out.itemsize == 2"
       - "out.n == data.n"
     c_overloads:
-      - sig: "void reorderlut_u16_a32_wrapper(char *data, int *adr, char *out, int N)"
+      - sig: "void reorderlut_u16_a32(uint16_t *data, uint32_t *adr, uint16_t *out, int N)"
         map:
           data: "data.ptr"
           adr: "adr.ptr"
@@ -588,7 +590,7 @@ functions:
       - "out.format == 'f'"
       - "out.n == data.n"
     c_overloads:
-      - sig: "void reorderlut_f32_a32_wrapper(const float *data, int *adr, float *out, int N)"
+      - sig: "void reorderlut_f32_a32(const float *data, uint32_t *adr, float *out, int N)"
         map:
           data: "data.ptr"
           adr: "adr.ptr"
@@ -610,11 +612,11 @@ functions:
       - "out.format == 'H' or out.itemsize == 2"
       - "out.n >= data.n"
     c_overloads:
-      - sig: "void reorder_u16_a32_a16_wrapper(const char *data, const int *adr0, const char *adr1, char *out, int ns, int nf)"
+      - sig: "void reorder_u16_a32_a16(const uint16_t *data, const uint32_t *a0, const int16_t *a1, uint16_t *out, int ns, int nf)"
         map:
           data: "data.ptr"
-          adr0: "adr0.ptr"
-          adr1: "adr1.ptr"
+          a0: "adr0.ptr"
+          a1: "adr1.ptr"
           out: "out.ptr"
           ns: "data.shape[0]"
           nf: "data.shape[1]"
@@ -635,7 +637,7 @@ functions:
       - "msk.format == 'B' or msk.format == 'b'"
       - "msk.n == img.n"
     c_overloads:
-      - sig: "void bgcalc_wrapper(const float *img, float *bg, char *msk, int ns, int nf, float gain, float sigmap, float sigmat)"
+      - sig: "void bgcalc(const float *img, float *bg, uint8_t *msk, int ns, int nf, float gain, float sigmap, float sigmat)"
         map:
           img: "img.ptr"
           bg: "bg.ptr"
@@ -782,7 +784,7 @@ functions:
       - "bt.format == 'd'"
       - "bt.n == 9"
     c_overloads:
-      - sig: "void quickorient_wrapper(double *ubi, const double *bt)"
+      - sig: "void quickorient(double *ubi, const double *bt)"
         map: {ubi: "ubi.ptr", bt: "bt.ptr"}
 
   # ===================================================================
@@ -799,7 +801,7 @@ functions:
       - "u.format == 'd'"
       - "u.n == 9"
     c_overloads:
-      - sig: "void splat_wrapper(char *rgba, int w, int h, const double *gve, int ng, const double *u, int npx)"
+      - sig: "void splat_wrapper(uint8_t *rgba, int w, int h, const double *gve, int ng, const double *u, int npx)"
         map:
           rgba: "rgba.ptr"
           w: w
@@ -826,7 +828,7 @@ functions:
       - "labels.format == 'i'"
       - "labels.n == data.n"
     c_overloads:
-      - sig: "int connectedpixels_wrapper(float *data, int *labels, float threshold, int verbose, int eightconnected, int ns, int nf) -> int"
+      - sig: "int connectedpixels(float *data, int32_t *labels, float threshold, int verbose, int eightconnected, int ns, int nf) -> int"
         map:
           data: "data.ptr"
           labels: "labels.ptr"
@@ -850,16 +852,16 @@ functions:
       - "results.shape[0] == np"
       - "results.shape[1] == 36"
     c_overloads:
-      - sig: "void blobproperties_wrapper(float *data, int *labels, int np, double *results, float omega, int verbose, int ns, int nf)"
+      - sig: "void blobproperties(float *data, int32_t *labels, int32_t npk, float omega, int verbose, int ns, int nf, double *res)"
         map:
           data: "data.ptr"
           labels: "labels.ptr"
-          np: np
-          results: "results.ptr"
+          npk: np
           omega: omega
           verbose: verbose
           ns: "data.shape[0]"
           nf: "data.shape[1]"
+          res: "results.ptr"
 
   - py_sig: "bloboverlaps(labels1: buffer, npk1: int, results1: buffer, labels2: buffer, npk2: int, results2: buffer) -> int"
     doc: >-
@@ -879,15 +881,15 @@ functions:
       - "results2.shape[0] == npk2"
       - "results2.shape[1] == 36"
     c_overloads:
-      - sig: "int bloboverlaps(int *labels1, int npk1, double *results1, int *labels2, int npk2, double *results2, int verbose, int ns, int nf) -> int"
+      - sig: "int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2, double *res2, int verbose, int ns, int nf) -> int"
         map:
-          labels1: "labels1.ptr"
-          npk1: npk1
-          results1: "results1.ptr"
-          labels2: "labels2.ptr"
-          npk2: npk2
-          results2: "results2.ptr"
-          verbose: "0"
+          b1: "labels1.ptr"
+          n1: npk1
+          res1: "results1.ptr"
+          b2: "labels2.ptr"
+          n2: npk2
+          res2: "results2.ptr"
+          verbose: 0
           ns: "labels1.shape[0]"
           nf: "labels1.shape[1]"
 
@@ -913,7 +915,7 @@ functions:
       - "ret.format == 'b' or ret.format == 'B'"
       - "ret.n == msk.n"
     c_overloads:
-      - sig: "int clean_mask_wrapper(const char *msk, char *ret, int ns, int nf) -> int"
+      - sig: "int clean_mask(const int8_t *msk, int8_t *ret, int ns, int nf) -> int"
         map:
           msk: "msk.ptr"
           ret: "ret.ptr"
@@ -932,7 +934,7 @@ functions:
       - "ret.format == 'b' or ret.format == 'B'"
       - "ret.n == img.n"
     c_overloads:
-      - sig: "int make_clean_mask_wrapper(const float *img, float cut, const char *msk, char *ret, int ns, int nf) -> int"
+      - sig: "int make_clean_mask(const float *img, float cut, const int8_t *msk, int8_t *ret, int ns, int nf) -> int"
         map:
           img: "img.ptr"
           cut: cut
@@ -963,7 +965,7 @@ functions:
       - "w.format == 'i'"
       - "w.n == msk.shape[0]"
     c_overloads:
-      - sig: "int mask_to_coo_wrapper(const char *msk, int ns, int nf, char *i, char *j, int nnz, int *w) -> int"
+      - sig: "int mask_to_coo(int8_t *msk, int ns, int nf, uint16_t *i, uint16_t *j, int nnz, int *w) -> int"
         map:
           msk: "msk.ptr"
           ns: "msk.shape[0]"
@@ -984,7 +986,7 @@ functions:
       - "j.format == 'H' or j.itemsize == 2"
       - "j.n == i.n"
     c_overloads:
-      - sig: "int sparse_is_sorted_wrapper(const char *i, const char *j, int nnz) -> int"
+      - sig: "int sparse_is_sorted(uint16_t *i, uint16_t *j, int nnz) -> int"
         map: {i: "i.ptr", j: "j.ptr", nnz: "i.n"}
 
   - py_sig: "sparse_connectedpixels(v: buffer, i: buffer, j: buffer, threshold: float, labels: buffer) -> int"
@@ -1001,7 +1003,7 @@ functions:
       - "labels.format == 'i'"
       - "labels.n == i.n"
     c_overloads:
-      - sig: "int sparse_connectedpixels_wrapper(float *v, const char *i, const char *j, int nnz, float threshold, int *labels) -> int"
+      - sig: "int sparse_connectedpixels(float *v, uint16_t *i, uint16_t *j, int nnz, float threshold, int32_t *labels) -> int"
         map:
           v: "v.ptr"
           i: "i.ptr"
@@ -1025,17 +1027,17 @@ functions:
       - "lbl.n == i.n"
       - "Z.format == 'i'"
     c_overloads:
-      - sig: "int sparse_connectedpixels_splat_wrapper(float *v, const char *i, const char *j, int nnz, float threshold, int *lbl, int *Z, int ni, int nj) -> int"
+      - sig: "int sparse_connectedpixels_splat(float *v, uint16_t *i, uint16_t *j, int nnz, float threshold, int32_t *labels, int32_t *Z, int imax, int jmax) -> int"
         map:
           v: "v.ptr"
           i: "i.ptr"
           j: "j.ptr"
           nnz: "i.n"
           threshold: th
-          lbl: "lbl.ptr"
+          labels: "lbl.ptr"
           Z: "Z.ptr"
-          ni: ni
-          nj: nj
+          imax: ni
+          jmax: nj
 
   - py_sig: "sparse_blob2Dproperties(v: buffer, i: buffer, j: buffer, labels: buffer, npk: int, results: buffer) -> void"
     doc: >-
@@ -1053,7 +1055,7 @@ functions:
       - "results.shape[0] == npk"
       - "results.shape[1] == 11"
     c_overloads:
-      - sig: "void sparse_blob2Dproperties_wrapper(float *v, const char *i, const char *j, int nnz, int *labels, int npk, double *results)"
+      - sig: "void sparse_blob2Dproperties(float *v, uint16_t *i, uint16_t *j, int nnz, int32_t *labels, int32_t npk, double *res)"
         map:
           v: "v.ptr"
           i: "i.ptr"
@@ -1061,7 +1063,7 @@ functions:
           nnz: "i.n"
           labels: "labels.ptr"
           npk: npk
-          results: "results.ptr"
+          res: "results.ptr"
 
   - py_sig: "sparse_smooth(v: buffer, i: buffer, j: buffer, s: buffer) -> void"
     doc: >-
@@ -1076,7 +1078,7 @@ functions:
       - "s.format == 'f'"
       - "s.n == i.n"
     c_overloads:
-      - sig: "void sparse_smooth_wrapper(float *v, const char *i, const char *j, int nnz, float *s)"
+      - sig: "void sparse_smooth(float *v, uint16_t *i, uint16_t *j, int nnz, float *s)"
         map:
           v: "v.ptr"
           i: "i.ptr"
@@ -1101,7 +1103,7 @@ functions:
       - "labels.format == 'i'"
       - "labels.n == i.n"
     c_overloads:
-      - sig: "int sparse_localmaxlabel_wrapper(float *v, const char *i, const char *j, int nnz, float *MV, int *iMV, int *labels) -> int"
+      - sig: "int sparse_localmaxlabel(float *v, uint16_t *i, uint16_t *j, int nnz, float *MV, int32_t *iMV, int32_t *labels) -> int"
         map:
           v: "v.ptr"
           i: "i.ptr"
@@ -1128,7 +1130,7 @@ functions:
       - "k2.format == 'i'"
       - "k2.n == i2.n"
     c_overloads:
-      - sig: "int sparse_overlaps_wrapper(const char *i1, const char *j1, int *k1, int nnz1, const char *i2, const char *j2, int *k2, int nnz2) -> int"
+      - sig: "int sparse_overlaps(uint16_t *i1, uint16_t *j1, int *k1, int nnz1, uint16_t *i2, uint16_t *j2, int *k2, int nnz2) -> int"
         map:
           i1: "i1.ptr"
           j1: "j1.ptr"
@@ -1184,7 +1186,7 @@ functions:
       - "mat.ndim == 2"
       - "results.format == 'i'"
     c_overloads:
-      - sig: "int coverlaps_wrapper(const char *row1, const char *col1, int *labels1, int nnz1, const char *row2, const char *col2, int *labels2, int nnz2, int *mat, int npk1, int npk2, int *results) -> int"
+      - sig: "int coverlaps(uint16_t *row1, uint16_t *col1, int *labels1, int nnz1, uint16_t *row2, uint16_t *col2, int *labels2, int nnz2, int *mat, int npk1, int npk2, int *results) -> int"
         map:
           row1: "row1.ptr"
           col1: "col1.ptr"
@@ -1212,7 +1214,7 @@ functions:
       - "col.format == 'H' or col.itemsize == 2"
       - "val.format == 'H' or val.itemsize == 2"
     c_overloads:
-      - sig: "int tosparse_u16_wrapper(const char *img, const char *msk, char *row, char *col, char *val, int cut, int ns, int nf) -> int"
+      - sig: "int tosparse_u16(uint16_t *img, uint8_t *msk, uint16_t *row, uint16_t *col, uint16_t *val, int cut, int ns, int nf) -> int"
         map:
           img: "img.ptr"
           msk: "msk.ptr"
@@ -1236,7 +1238,7 @@ functions:
       - "col.format == 'H' or col.itemsize == 2"
       - "val.format == 'I' or val.itemsize == 4"
     c_overloads:
-      - sig: "int tosparse_u32_wrapper(const int *img, const char *msk, char *row, char *col, int *val, float cut, int ns, int nf) -> int"
+      - sig: "int tosparse_u32(uint32_t *img, uint8_t *msk, uint16_t *row, uint16_t *col, uint32_t *val, float cut, int ns, int nf) -> int"
         map:
           img: "img.ptr"
           msk: "msk.ptr"
@@ -1260,7 +1262,7 @@ functions:
       - "col.format == 'H' or col.itemsize == 2"
       - "val.format == 'f'"
     c_overloads:
-      - sig: "int tosparse_f32_wrapper(const float *img, const char *msk, char *row, char *col, float *val, float cut, int ns, int nf) -> int"
+      - sig: "int tosparse_f32(float *img, uint8_t *msk, uint16_t *row, uint16_t *col, float *val, float cut, int ns, int nf) -> int"
         map:
           img: "img.ptr"
           msk: "msk.ptr"

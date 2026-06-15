@@ -1,11 +1,13 @@
 /*
- * Thin C wrappers for c2ImageD11.
+ * C wrappers for c2ImageD11 - 2D array to flat pointer adaptation.
  *
- * Adapts original ImageD11 C functions to c2py23-compatible signatures
- * using only {int, float, double, char} types.
+ * c2py23 now natively supports all fixed-width integer types
+ * (int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t,
+ *  int64_t, uint64_t), so thin type-adapting wrappers are no longer needed.
  *
- * All type-punning casts are valid C (strict aliasing exception for char*).
- * The Python caller ensures the buffer has the correct PEP 3118 format.
+ * These wrappers remain for functions with multi-dimensional array
+ * parameters (vec[3], double[][3], double[][6]) that the .c2py
+ * grammar cannot express directly.
  */
 
 #include "src/cImageD11.h"
@@ -95,7 +97,12 @@ double my_get_time(void);
 
 
 /* ================================================================
- * Thick wrapper functions (2D array -> flat pointer adaptation)
+ * 2D-array-to-flat-pointer wrappers
+ *
+ * These adapt the vec[3] / double[][N] multi-dimensional array
+ * parameters used by ImageD11 functions.  c2py23 handles flat
+ * buffers via .ptr, so we cast flat double* back to vec* or
+ * double(*)[N] here to match the original function signatures.
  * ================================================================ */
 
 int
@@ -156,12 +163,6 @@ misori_monoclinic_wrapper(const double *u1_ptr, const double *u2_ptr)
     return misori_monoclinic((vec *)u1_ptr, (vec *)u2_ptr);
 }
 
-int
-count_shared_wrapper(const int *pi, int ni, const int *pj, int nj)
-{
-    return count_shared((int *)pi, ni, (int *)pj, nj);
-}
-
 void
 compute_geometry_wrapper(const double *xlylzl_ptr, const double *omega,
                           double omegasign, double wvln, double wedge,
@@ -203,268 +204,8 @@ compute_xlylzl_xpos_variable_wrapper(const double *s, const double *f,
 }
 
 void
-quickorient_wrapper(double *ubi_ptr, const double *bt_ptr)
+splat_wrapper(uint8_t *rgba_buf, int w, int h, const double *gve_ptr,
+              int ng, const double *u_ptr, int npx)
 {
-    quickorient(ubi_ptr, (double*)bt_ptr);
-}
-
-void
-blobproperties_wrapper(float *data, int *labels, int np,
-                        double *results, float omega,
-                        int verbose, int ns, int nf)
-{
-    blobproperties(data, (int32_t *)labels, np, omega,
-                   verbose, ns, nf, results);
-}
-
-void
-splat_wrapper(char *rgba_buf, int w, int h, const double *gve_ptr,
-               int ng, const double *u_ptr, int npx)
-{
-    splat((uint8_t *)rgba_buf, w, h, (double(*)[3])gve_ptr, ng,
-          (double*)u_ptr, npx);
-}
-
-
-/* ================================================================
- * Thin type-adapting wrappers (fixed-size int types -> char/int)
- * ================================================================ */
-
-/* ---------- uint16_t -> char pointer ---------- */
-
-void
-uint16_to_float_darksub_wrapper(float *img, const float *drk,
-                                 const char *data_buf, int npx)
-{
-    uint16_to_float_darksub(img, drk, (const uint16_t *)data_buf, npx);
-}
-
-void
-uint16_to_float_darkflm_wrapper(float *img, const float *drk,
-                                 const float *flm, const char *data_buf, int npx)
-{
-    uint16_to_float_darkflm(img, drk, flm, (const uint16_t *)data_buf, npx);
-}
-
-/* ---------- uint8_t -> char pointer ---------- */
-
-void
-array_mean_var_msk_wrapper(float *img, char *msk_buf, int npx,
-                            float *mean, float *std, int n, float cut, int verbose)
-{
-    array_mean_var_msk(img, (uint8_t *)msk_buf, npx, mean, std, n, cut, verbose);
-}
-
-void
-bgcalc_wrapper(const float *img, float *bg, char *msk_buf,
-                int ns, int nf, float gain, float sigmap, float sigmat)
-{
-    bgcalc(img, bg, (uint8_t *)msk_buf, ns, nf, gain, sigmap, sigmat);
-}
-
-/* ---------- int32_t -> int pointer ---------- */
-
-void
-array_histogram_wrapper(float img[], int npx, float low, float high,
-                         int *hist_buf, int nhist)
-{
-    array_histogram(img, npx, low, high, (int32_t *)hist_buf, nhist);
-}
-
-int
-connectedpixels_wrapper(float *data, int *labels_p, float threshold,
-                         int verbose, int eightconnected, int ns, int nf)
-{
-    return connectedpixels(data, (int32_t *)labels_p, threshold, verbose,
-                           eightconnected, ns, nf);
-}
-
-int
-localmaxlabel_wrapper(float *data, int *labels_p, char *wrk_buf,
-                       int ns, int nf)
-{
-    return localmaxlabel(data, (int32_t *)labels_p, (uint8_t *)wrk_buf,
-                         ns, nf);
-}
-
-/* ---------- int8_t -> char pointer ---------- */
-
-int
-clean_mask_wrapper(const char *msk_buf, char *ret_buf, int ns, int nf)
-{
-    return clean_mask((const int8_t *)msk_buf, (int8_t *)ret_buf, ns, nf);
-}
-
-int
-make_clean_mask_wrapper(const float *img, float cut,
-                         char *msk_buf, char *ret_buf, int ns, int nf)
-{
-    return make_clean_mask((float*)img, cut, (int8_t *)msk_buf,
-                           (int8_t *)ret_buf, ns, nf);
-}
-
-/* ---------- uint32_t -> int pointer ---------- */
-
-void
-reorder_u16_a32_wrapper(const char *data_buf, const int *adr_buf,
-                         char *out_buf, int N)
-{
-    reorder_u16_a32((const uint16_t *)data_buf, (const uint32_t *)adr_buf,
-                    (uint16_t *)out_buf, N);
-}
-
-void
-reorder_f32_a32_wrapper(const float *data, const int *adr_buf,
-                         float *out, int N)
-{
-    reorder_f32_a32(data, (const uint32_t *)adr_buf, out, N);
-}
-
-void
-reorderlut_u16_a32_wrapper(char *data_buf, int *lut_buf,
-                            char *out_buf, int N)
-{
-    reorderlut_u16_a32((uint16_t *)data_buf, (uint32_t *)lut_buf,
-                       (uint16_t *)out_buf, N);
-}
-
-void
-reorderlut_f32_a32_wrapper(const float *data, int *lut_buf,
-                            float *out, int N)
-{
-    reorderlut_f32_a32(data, (uint32_t *)lut_buf, out, N);
-}
-
-void
-reorder_u16_a32_a16_wrapper(const char *data_buf, const int *a0_buf,
-                             const char *a1_buf, char *out_buf,
-                             int ns, int nf)
-{
-    reorder_u16_a32_a16((uint16_t *)data_buf, (uint32_t *)a0_buf,
-                        (int16_t *)a1_buf, (uint16_t *)out_buf, ns, nf);
-}
-
-/* ---------- int64_t -> char pointer ---------- */
-
-void
-put_incr64_wrapper(float *data, const char *ind_buf, float *vals,
-                    int boundscheck, int m, int n)
-{
-    put_incr64(data, (int64_t *)ind_buf, vals, boundscheck, m, n);
-}
-
-/* ---------- sparse_image uint16_t -> char pointer ---------- */
-
-int
-mask_to_coo_wrapper(const char *msk_buf, int ns, int nf,
-                     char *i_buf, char *j_buf, int nnz, int *w_buf)
-{
-    return mask_to_coo((int8_t *)msk_buf, ns, nf,
-                       (uint16_t *)i_buf, (uint16_t *)j_buf, nnz, w_buf);
-}
-
-int
-sparse_is_sorted_wrapper(const char *i_buf, const char *j_buf, int nnz)
-{
-    return sparse_is_sorted((uint16_t *)i_buf, (uint16_t *)j_buf, nnz);
-}
-
-int
-sparse_connectedpixels_wrapper(float *v, const char *i_buf, const char *j_buf,
-                                int nnz, float threshold, int *labels_p)
-{
-    return sparse_connectedpixels(v, (uint16_t *)i_buf, (uint16_t *)j_buf,
-                                  nnz, threshold, (int32_t *)labels_p);
-}
-
-int
-sparse_connectedpixels_splat_wrapper(float *v, const char *i_buf,
-                                      const char *j_buf, int nnz,
-                                      float threshold, int *labels_p,
-                                      int *Z_buf, int imax, int jmax)
-{
-    return sparse_connectedpixels_splat(v, (uint16_t *)i_buf,
-                                        (uint16_t *)j_buf, nnz, threshold,
-                                        (int32_t *)labels_p,
-                                        (int32_t *)Z_buf, imax, jmax);
-}
-
-void
-sparse_blob2Dproperties_wrapper(float *v, const char *i_buf, const char *j_buf,
-                                 int nnz, int *labels_p, int npk,
-                                 double *results)
-{
-    sparse_blob2Dproperties(v, (uint16_t *)i_buf, (uint16_t *)j_buf,
-                            nnz, (int32_t *)labels_p, results, npk);
-}
-
-void
-sparse_smooth_wrapper(float *v, const char *i_buf, const char *j_buf,
-                       int nnz, float *s)
-{
-    sparse_smooth(v, (uint16_t *)i_buf, (uint16_t *)j_buf, nnz, s);
-}
-
-int
-sparse_localmaxlabel_wrapper(float *v, const char *i_buf, const char *j_buf,
-                              int nnz, float *MV, int *iMV, int *labels_p)
-{
-    return sparse_localmaxlabel(v, (uint16_t *)i_buf, (uint16_t *)j_buf,
-                                nnz, MV, (int32_t *)iMV, (int32_t *)labels_p);
-}
-
-int
-sparse_overlaps_wrapper(const char *i1_buf, const char *j1_buf,
-                         int *k1, int nnz1,
-                         const char *i2_buf, const char *j2_buf,
-                         int *k2, int nnz2)
-{
-    return sparse_overlaps((uint16_t *)i1_buf, (uint16_t *)j1_buf,
-                           k1, nnz1,
-                           (uint16_t *)i2_buf, (uint16_t *)j2_buf,
-                           k2, nnz2);
-}
-
-int
-tosparse_u16_wrapper(const char *img_buf, const char *msk_buf,
-                      char *row_buf, char *col_buf, char *val_buf,
-                      int cut, int ns, int nf)
-{
-    return tosparse_u16((uint16_t *)img_buf, (uint8_t *)msk_buf,
-                        (uint16_t *)row_buf, (uint16_t *)col_buf,
-                        (uint16_t *)val_buf, cut, ns, nf);
-}
-
-int
-tosparse_u32_wrapper(const int *img_buf, const char *msk_buf,
-                      char *row_buf, char *col_buf, int *val_buf,
-                      float cut, int ns, int nf)
-{
-    return tosparse_u32((uint32_t *)img_buf, (uint8_t *)msk_buf,
-                        (uint16_t *)row_buf, (uint16_t *)col_buf,
-                        (uint32_t *)val_buf, cut, ns, nf);
-}
-
-int
-tosparse_f32_wrapper(const float *img, const char *msk_buf,
-                      char *row_buf, char *col_buf, float *val,
-                      float cut, int ns, int nf)
-{
-    return tosparse_f32((float*)img, (uint8_t *)msk_buf,
-                        (uint16_t *)row_buf, (uint16_t *)col_buf,
-                        val, cut, ns, nf);
-}
-
-int
-coverlaps_wrapper(const char *row1_buf, const char *col1_buf,
-                   int *labels1, int nnz1,
-                   const char *row2_buf, const char *col2_buf,
-                   int *labels2, int nnz2,
-                   int *mat, int npk1, int npk2, int *results)
-{
-    return coverlaps((uint16_t *)row1_buf, (uint16_t *)col1_buf,
-                     labels1, nnz1,
-                     (uint16_t *)row2_buf, (uint16_t *)col2_buf,
-                     labels2, nnz2,
-                     mat, npk1, npk2, results);
+    splat(rgba_buf, w, h, (double(*)[3])gve_ptr, ng, (double*)u_ptr, npx);
 }
