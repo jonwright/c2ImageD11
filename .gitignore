@@ -3,3 +3,6 @@
 *_wrapper.c
 __pycache__/
 *.pyc
+.ci_venv/
+*.egg-info/
+ci_all.log

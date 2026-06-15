@@ -879,7 +879,7 @@ functions:
       - "results2.shape[0] == npk2"
       - "results2.shape[1] == 36"
     c_overloads:
-      - sig: "int bloboverlaps(int *labels1, int npk1, double *results1, int *labels2, int npk2, double *results2, int ns, int nf) -> int"
+      - sig: "int bloboverlaps(int *labels1, int npk1, double *results1, int *labels2, int npk2, double *results2, int verbose, int ns, int nf) -> int"
         map:
           labels1: "labels1.ptr"
           npk1: npk1
@@ -887,6 +887,7 @@ functions:
           labels2: "labels2.ptr"
           npk2: npk2
           results2: "results2.ptr"
+          verbose: "0"
           ns: "labels1.shape[0]"
           nf: "labels1.shape[1]"
 
