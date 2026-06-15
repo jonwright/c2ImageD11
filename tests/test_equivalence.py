@@ -170,11 +170,12 @@ class TestCluster1D:
         ids_n = np.zeros(20, dtype=np.int32)
         avgs_o = np.zeros(20, dtype=np.float64)
         avgs_n = np.zeros(20, dtype=np.float64)
-        # f2py returns nclusters as tuple element
-        nco, _, _ = OLD.cluster1d(ar, order, tol, ids_o, avgs_o)
+        # f2py returns nclusters as bare int (single intent(out) scalar)
+        nco = OLD.cluster1d(ar, order, tol, ids_o, avgs_o)
         ncn_buf = np.zeros(1, dtype=np.int32)
         NEW.cluster1d(ar, order, tol, ncn_buf, ids_n, avgs_n)
         assert nco == ncn_buf[0]
+        assert (ids_o == ids_n).all()
 
 
 # ============================================================
@@ -251,12 +252,14 @@ class TestComputeXlylzl:
 class TestQuickorient:
     def test_random(self):
         np.random.seed(42)
-        ubi_o = np.random.randn(9)
-        ubi_n = ubi_o.copy()
+        # quickorient expects flat 9-element arrays (C API uses double[9])
+        # f2py wraps as (3,3); c2py23 exposes flat 9 directly
+        ubi_3x3 = np.random.randn(3, 3).copy()
+        ubi_n = ubi_3x3.ravel().copy()
         bt = np.random.randn(9)
-        OLD.quickorient(ubi_o, bt)
+        OLD.quickorient(ubi_3x3, bt.reshape(3, 3))
         NEW.quickorient(ubi_n, bt)
-        close(ubi_o, ubi_n)
+        close(ubi_3x3.ravel(), ubi_n)
 
 
 # ============================================================
@@ -568,28 +571,29 @@ class TestToSparse:
         ns, nf = 8, 8
         img = np.random.randint(0, 100, (ns, nf), dtype=np.uint16)
         msk = np.ones((ns, nf), dtype=np.uint8)
-        row = np.zeros(ns*nf, dtype=np.uint16)
-        col = np.zeros(ns*nf, dtype=np.uint16)
-        val = np.zeros(ns*nf, dtype=np.uint16)
+        # f2py expects 2D (ns, nf) for row/col/val
+        row = np.zeros((ns, nf), dtype=np.uint16)
+        col = np.zeros((ns, nf), dtype=np.uint16)
+        val = np.zeros((ns, nf), dtype=np.uint16)
         o = OLD.tosparse_u16(img, msk, row, col, val, 50)
         n = NEW.tosparse_u16(img, msk,
-                              np.zeros(ns*nf, dtype=np.uint16),
-                              np.zeros(ns*nf, dtype=np.uint16),
-                              np.zeros(ns*nf, dtype=np.uint16), 50)
+                              np.zeros((ns, nf), dtype=np.uint16),
+                              np.zeros((ns, nf), dtype=np.uint16),
+                              np.zeros((ns, nf), dtype=np.uint16), 50)
         assert o == n
 
     def test_f32(self):
         ns, nf = 8, 8
         img = np.random.randn(ns, nf).astype(np.float32) + 5
         msk = np.ones((ns, nf), dtype=np.uint8)
-        row = np.zeros(ns*nf, dtype=np.uint16)
-        col = np.zeros(ns*nf, dtype=np.uint16)
-        val = np.zeros(ns*nf, dtype=np.float32)
+        row = np.zeros((ns, nf), dtype=np.uint16)
+        col = np.zeros((ns, nf), dtype=np.uint16)
+        val = np.zeros((ns, nf), dtype=np.float32)
         o = OLD.tosparse_f32(img, msk, row, col, val, 3.0)
         n = NEW.tosparse_f32(img, msk,
-                              np.zeros(ns*nf, dtype=np.uint16),
-                              np.zeros(ns*nf, dtype=np.uint16),
-                              np.zeros(ns*nf, dtype=np.float32), 3.0)
+                              np.zeros((ns, nf), dtype=np.uint16),
+                              np.zeros((ns, nf), dtype=np.uint16),
+                              np.zeros((ns, nf), dtype=np.float32), 3.0)
         assert o == n
 
 class TestCoverlaps:
@@ -644,7 +648,8 @@ class TestSplat:
         rgba = np.zeros((100, 100, 4), dtype=np.uint8)
         gv = np.random.randn(10, 3)
         u = np.array([0.05, 0, 0, 0, -0.05, 0, 0, 0, 0.1])
-        OLD.splat(rgba, 100, 100, gv, 10, u, 1)
+        # f2py auto-detects w, h from rgba.shape; ng from gv.shape
+        OLD.splat(rgba, gv, u, 1)
         rgba2 = np.zeros((100, 100, 4), dtype=np.uint8)
         NEW.splat(rgba2, 100, 100, gv, 10, u, 1)
         assert (rgba == rgba2).all()
