@@ -33,9 +33,11 @@ All previously-requested c2py23 extensions have been implemented upstream
   - Per-function performance timing via `timing: true` module flag
   - METH_FASTCALL dispatch on Python 3.12+
 
-The thin wrappers in src_wrapper/_wrappers.c remain necessary for adapting
-fixed-size C types to c2py23-compatible buffer handles, but the parser and
-generator now handle all expression forms used in _cImageD11.c2py.
+The thin wrappers in src_wrapper/_wrappers.c are only needed for adapting
+2D arrays (vec[3], double[][3], double[][6]) to flat pointers, since the
+.c2py grammar cannot express multi-dimensional array parameters directly.
+All fixed-width integer types (uint16_t*, int32_t*, etc.) are handled
+natively by c2py23.
 
 ## Directory Structure
 
@@ -64,7 +66,7 @@ c2ImageD11/
     splat.c                   # splat
     ImageD11_cmath.h          # Alternative math macros
   src_wrapper/
-    _wrappers.c               # Thin C wrappers adapting fixed-size types
+    _wrappers.c               # 2D-array-to-flat-pointer wrappers (vec[3], double[][N])
   c2ImageD11/
     __init__.py               # Pure Python: imports .so, exports constants
     _constants.py             # Blob property enum values (hardcoded)
@@ -79,23 +81,24 @@ c2ImageD11/
     test.yml                  # CI: Python 2.7-3.14, timeout-minutes: 10
 ```
 
-## Thin Wrapper Pattern
+## 2D-Array-to-Flat-Pointer Wrappers
 
-All fixed-size integer types (uint16_t*, int32_t*, etc.) are adapted via
-thin C wrappers that use c2py23-compatible types (char*, int*):
+c2py23 handles flat buffers via `.ptr`, but the .c2py grammar cannot express
+multi-dimensional array parameters (vec[3], double[][3], double[][6]).
+src_wrapper/_wrappers.c provides thin adapters that cast flat `double*` to
+`vec*` or `double(*)[N]`:
 
 ```c
-// Original: int mask_to_coo(int8_t msk[], ..., uint16_t i[], ...)
+// Original: double misori_cubic(vec u1[3], vec u2[3])
 // Wrapper:
-int mask_to_coo_wrapper(const char *msk_buf, ..., char *i_buf, ...) {
-    return mask_to_coo((int8_t *)msk_buf, ..., (uint16_t *)i_buf, ...);
+double misori_cubic_wrapper(const double *u1_ptr, const double *u2_ptr) {
+    return misori_cubic((vec *)u1_ptr, (vec *)u2_ptr);
 }
 ```
 
-The Python caller provides a buffer with the correct PEP 3118 format
-('H' for uint16, 'B' for uint8, etc.) and the wrapper casts `char*` → the
-actual type. All type-punning through `char*` is valid C (strict aliasing
-exception).
+All wrapper names end in `_wrapper` to distinguish them from original C
+functions. The .c2py file references these wrapper names in `c_overloads`.
+The ~15 remaining wrappers cover score, misori_*, compute_*, and splat.
 
 ## Functions with Output Scalars
 

@@ -3,6 +3,9 @@
 Feedback from porting ImageD11's 58 C functions from f2py to c2py23.
 Covering safety, usability, and features needed for Phase 2/3 of the migration.
 
+**Status:** 3 of 9 implemented (fixed-width types, optional defaults, timing).
+6 items remain: safety (2), usability (2), features (2).
+
 ---
 
 ## Safety
@@ -38,38 +41,21 @@ C function prototype uses a different-width type (e.g. `int32_t*` vs `int*`).
 
 ## Usability
 
-### 3. Direct support for fixed-width integer types
+### 3. Direct support for fixed-width integer types — DONE
 
-**Severity: High**  |  43 thin wrappers, 87 type references
+**Severity: High**  |  43 thin wrappers removed, ~300 LOC deleted
 
-Currently c2py23 only supports `int*`, `float*`, `double*`, and `char*`.
-Fixed-width types (`uint16_t*`, `int32_t*`, `uint8_t*`, `int8_t*`, `int64_t*`,
-`uint32_t*`, `int16_t*`) require thin C wrapper functions that cast through
-`char*` or `int*`. This adds:
+c2py23 now natively supports `uint16_t*`, `int32_t*`, `uint8_t*`, `int8_t*`,
+`int64_t*`, `uint32_t*`, `int16_t*`, `uint64_t*` directly in C signatures.
+Removed all thin type-adapting wrappers from `_wrappers.c` (~300 lines).
+The .c2py interface now calls original C functions directly with correct types.
 
-- 43 wrapper functions in `_wrappers.c`
-- Manual format-string checks in the .c2py file (`'H'` for uint16, `'B'` for uint8)
-- Risk of getting the type-cast wrong in the wrapper
-
-**Request:** Accept fixed-width integer types directly in C signatures.
-Map them to PEP 3118 format characters automatically:
-`uint16_t*` -> `H`, `int32_t*` -> `i`, `uint8_t*` -> `B`, `int8_t*` -> `b`,
-`int64_t*` -> `q`, `uint32_t*` -> `I`, `int16_t*` -> `h`.
-
-### 4. Handle integer literal map values
+### 4. Handle integer literal map values — DONE
 
 **Severity: Medium**
 
-In the `map:` section, constant values like `verbose: 0` cause a parser crash:
-```
-TypeError: object of type 'int' has no len()
-```
-The workaround is to quote them as strings: `verbose: "0"`. This is surprising
-and the error message is unhelpful.
-
-**Request:** Accept bare integer literals in map values (treat them as integer
-constant expressions), or at minimum give a clear error message:
-"map values must be strings; got int: 0. Did you mean '0'?"
+c2py23 now accepts bare integer literals in map values (e.g. `verbose: 0`).
+No more quoting workaround needed.
 
 ### 5. Better buffer check error messages
 
@@ -180,8 +166,8 @@ transparently.
 |---|---------|----------|
 | 1 | Parameter count validation | Critical |
 | 2 | Buffer format vs C type validation | High |
-| 3 | Direct fixed-width integer types | High |
-| 4 | Integer literal map values | Medium |
+| 3 | Direct fixed-width integer types | High — DONE |
+| 4 | Integer literal map values | Medium — DONE |
 | 5 | Better check failure messages | Medium |
 | 6 | Output scalar convention option | Low |
 | 7 | CPU feature detection (SIMD dispatch) | Medium |
@@ -189,5 +175,5 @@ transparently.
 | 9 | --no-build-isolation docs | Low |
 
 #1 caused a real CI failure (bloboverlaps on Python 3.11).
-#3 adds 43 wrapper functions and 87 type-punning casts to the codebase.
-Both should be prioritized.
+#3 and #4 are now implemented; all thin type-adapting wrappers removed.
+#7 is the main blocker for Phase 3 SIMD dispatch.

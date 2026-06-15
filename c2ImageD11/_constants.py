@@ -1,7 +1,8 @@
 """Blob property constants from ImageD11/src/blobs.h enum values.
 
-These are compile-time C enum values that are hardcoded here
-until c2py23 supports a 'constants:' section in .c2py files.
+These are compile-time C enum values.  c2py23's `constants:` block
+in the .c2py file handles export automatically, but the flat enum
+values are defined here for compatibility.
 """
 
 # NPROPERTY enum - 3D blob properties (s_1..NPROPERTY = 35)
