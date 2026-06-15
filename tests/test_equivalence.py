@@ -15,6 +15,10 @@ import pytest
 
 pytest.importorskip("ImageD11._cImageD11", reason="ImageD11 not installed")
 
+import ImageD11 as _ImageD11_pkg
+_IMAGE_D11_VERSION = tuple(int(x) for x in _ImageD11_pkg.__version__.split("."))
+_REFINE_ASSIGNED_FIXED = _IMAGE_D11_VERSION >= (2, 1, 4)
+
 OLD = None
 NEW = None
 
@@ -135,6 +139,8 @@ class TestScoreAndAssign:
         assert (labels_o == labels_n).all()
 
 
+@pytest.mark.skipif(not _REFINE_ASSIGNED_FIXED,
+                    reason="ImageD11 refine_assigned has infinite loop (fixed in >=2.1.4)")
 class TestRefineAssigned:
     def test_random(self):
         np.random.seed(42)
@@ -344,18 +350,39 @@ class TestConnectedPixels:
         assert (labels_o == labels_n).all()
 
 class TestBlobProperties:
-    def test_small(self):
+    def test_simulated_blobs(self):
+        """Create a simulated image with gaussian peaks, label them,
+        then compute blobproperties by both old and new APIs."""
         np.random.seed(42)
-        ns, nf = 20, 20
-        data = np.random.randn(ns, nf).astype(np.float32) + 10
+        ns, nf = 64, 64
+        sig = 3.0
+        i, j = np.mgrid[0:ns, 0:nf]
+
+        def gaussian(x, y, cx, cy, s):
+            dx = i - cx
+            dy = j - cy
+            return np.exp(-(dx * dx + dy * dy) / (2 * s * s))
+
+        # Place 4 well-separated gaussian peaks
+        im = np.zeros((ns, nf), dtype=np.float32)
+        peaks = [(16, 16), (48, 16), (16, 48), (48, 48)]
+        for cx, cy in peaks:
+            im += gaussian(i, j, cx, cy, sig)
+        im *= 1000.0
+
+        # Label via connectedpixels (use OLD for both)
         labels = np.zeros((ns, nf), dtype=np.int32)
-        npk = OLD.connectedpixels(data, labels, 8.0, 0, 1)
-        if npk == 0:
-            return
-        res_o = np.zeros((npk, 35))
-        res_n = np.zeros((npk, 35))
-        OLD.blobproperties(data, labels, npk, res_o)
-        NEW.blobproperties(data, labels, npk, res_n)
+        npk = OLD.connectedpixels(im, labels, 100.0, 0, 1)
+        assert npk >= 1, "Expected at least 1 connected component"
+
+        # OLD: f2py allocates and returns the result array
+        res_o = OLD.blobproperties(im, labels, npk)
+
+        # NEW: c2py23 writes into pre-allocated buffer (npk rows x 36 cols)
+        res_n = np.zeros((npk, 36), dtype=np.float64)
+        NEW.blobproperties(im, labels, npk, res_n)
+
+        assert res_o.shape == res_n.shape
         close(res_o, res_n)
 
 class TestBloboverlaps:
@@ -370,14 +397,11 @@ class TestBloboverlaps:
         n2 = OLD.connectedpixels(d2, l2, 8.0, 0, 1)
         if n1 == 0 or n2 == 0:
             return
-        r1_o = np.zeros((n1, 35))
-        r1_n = np.zeros((n1, 35))
-        r2_o = np.zeros((n2, 35))
-        r2_n = np.zeros((n2, 35))
-        OLD.blobproperties(d1, l1, n1, r1_o)
-        OLD.blobproperties(d2, l2, n2, r2_o)
-        r1_n[:] = r1_o
-        r2_n[:] = r2_o
+        # f2py blobproperties allocates and returns result arrays
+        r1_o = OLD.blobproperties(d1, l1, n1)
+        r2_o = OLD.blobproperties(d2, l2, n2)
+        r1_n = r1_o.copy()
+        r2_n = r2_o.copy()
         o = OLD.bloboverlaps(l1, n1, r1_o, l2, n2, r2_o)
         n = NEW.bloboverlaps(l1, n1, r1_n, l2, n2, r2_n)
         assert o == n
@@ -388,10 +412,10 @@ class TestBlobMoments:
     def test_random(self):
         np.random.seed(42)
         npk = 5
-        res_o = np.zeros((npk, 35))
-        res_n = np.zeros((npk, 35))
+        res_o = np.zeros((npk, 36))
+        res_n = np.zeros((npk, 36))
         for i in range(npk):
-            off = i * 35
+            off = i * 36
             for j in [0, 1, 3, 4, 6, 8, 9, 11]:
                 val = np.random.random() * 1000 + 10
                 res_o.flat[off + j] = val
