@@ -15,8 +15,11 @@ importing from `c2ImageD11` first, falling back to `ImageD11._cImageD11`.
 - [x] Phase IV: setup.py written
 - [x] c2py23 features implemented (fixed-width types, optionals, constants, docstrings)
 - [x] Phase V: Buffer-interface tests created
-- [x] Phase VI: CI passing
-- [ ] Phase VII: Equivalence testing against ImageD11._cImageD11
+- [x] Phase VI: CI passing on all 8 Python versions (2.7-3.14)
+- [x] Phase VII: Equivalence testing against ImageD11._cImageD11 (53/54 pass)
+  - 1 test skipped: TestRefineAssigned (ImageD11 PyPI release < 2.1.4 has bug;
+    git head has the fix but version string not yet bumped; skip remains until
+    fix is released on PyPI)
 
 ## c2py23 Features Now Available
 
@@ -39,9 +42,13 @@ generator now handle all expression forms used in _cImageD11.c2py.
 ```
 c2ImageD11/
   AGENTS.md                   # This file
+  c2py23_requests.md          # c2py23 improvement requests (9 items)
+  PLAN.md                     # Migration & refactoring roadmap
   _cImageD11.c2py             # c2py23 interface definition (~40 functions)
   setup.py                    # Build with c2py23
   pyproject.toml              # Minimal
+  run_ci.sh                   # Single-version local CI (mirrors GHA steps)
+  run_ci_all.sh               # Multi-version CI via snakepit Apptainer containers
   src/                        # Copied C sources from ImageD11/src
     cImageD11.h               # Platform macros, DLL visibility
     blobs.h                   # Disjoint set, NPROPERTY enums
@@ -66,9 +73,10 @@ c2ImageD11/
     test_equivalence.py       # Equivalence tests vs ImageD11._cImageD11
     test_all.py               # Multi-version orchestrator (Apptainer)
     benchmark_timing.py       # c2py23 vs f2py timing comparison
+    run_multiversion.sh       # Build + test script for inside containers
     conftest.py               # Pytest configuration (empty)
   .github/workflows/
-    test.yml                  # CI adapted from ImageD11
+    test.yml                  # CI: Python 2.7-3.14, timeout-minutes: 10
 ```
 
 ## Thin Wrapper Pattern
@@ -105,14 +113,29 @@ array_stats(img, minval, maxval, mean, var)
 
 ## Testing Strategy
 
-1. Build c2ImageD11 with `pip install --no-build-isolation -e .` (requires c2py23
-   already installed in the environment, since c2py23 is not on PyPI).
-2. Run lightweight buffer tests: `python -m pytest tests/ -v -k "TestBuffer"`
-3. These verify the build succeeded and numpy buffer protocol calls work
-   for a representative subset of functions.
-4. For equivalence testing, import both old and new:
-   `from ImageD11._cImageD11 import * as old` and
-   `from c2ImageD11._cImageD11 import * as new`, then compare outputs.
+### Local CI (pre-push)
+```bash
+bash run_ci.sh          # Single Python version, ~30s
+bash run_ci_all.sh      # All 8 Python versions via Apptainer, ~5min
+```
+
+Both scripts must pass before pushing. `run_ci.sh` creates a clean venv,
+installs c2py23 from a sibling directory, builds c2ImageD11, installs
+ImageD11 from git head with `--no-deps`, and runs the full test suite.
+
+### Test Files
+1. `test_buffer.py`: Lightweight numpy buffer-interface tests. No ImageD11
+   dependency. Verifies the build succeeded and buffer protocol calls work.
+2. `test_equivalence.py`: Compares c2ImageD11 output against ImageD11._cImageD11
+   for every function. Skips if ImageD11 is not importable. All 53 tests pass;
+   TestRefineAssigned skipped (PyPI ImageD11 < 2.1.4 has infinite-loop bug).
+3. `benchmark_timing.py`: Timing comparison using c2py23.perf module.
+
+### GitHub Actions CI
+Mirrors the local scripts. Checks out c2py23 from `jonwright/c2py23`,
+installs ImageD11 from git head with `--no-deps`, runs both test files
+across Python 2.7-3.14. `timeout-minutes: 10` prevents infinite-loop hangs.
+`fail-fast: true` stops other jobs on first failure.
 
 ## Notes
 
@@ -130,3 +153,11 @@ array_stats(img, minval, maxval, mean, var)
   Build on the oldest target OS for maximum portability.
 - numpy is used for testing; its buffer protocol (PEP 3118) is supported
   on Python 2.7-3.14 via `PyObject_GetBuffer` / c2py_acquire_buffer.
+- ImageD11 is installed from git head with `--no-deps` to avoid pulling
+  500MB+ of heavy runtime deps (numba, scikit-image, etc.). Only numpy
+  and setuptools are needed at build time since we only test against
+  the C code in `ImageD11._cImageD11`.
+- Snakepit Apptainer containers (ubuntu20.04.sif, ubuntu24.04.sif) provide
+  all 8 Python versions. Run `bash run_ci_all.sh` for multi-version testing.
+- c2py23 improvement requests from this migration are documented in
+  `c2py23_requests.md` (9 items covering safety, usability, and features).
