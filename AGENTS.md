@@ -20,6 +20,200 @@ importing from `c2ImageD11` first, falling back to `ImageD11._cImageD11`.
   - 1 test skipped: TestRefineAssigned (ImageD11 PyPI release < 2.1.4 has bug;
     git head has the fix but version string not yet bumped; skip remains until
     fix is released on PyPI)
+- [x] Phase VIII: SIMD dispatch (SSE/AVX2/AVX-512) for hot-path functions
+
+## Phase VIII: amd64 SIMD Dispatch (SSE, AVX2, AVX-512)
+
+### Motivation
+
+ImageD11 columnfiles hold up to 1e9 peaks. The indexing, geometry, and
+reconstruction functions in `indexing.py`, `columnfile.py`, `refinegrains.py`,
+and `transform.py` call C functions in hot loops over all peaks. Multi-flag
+compilation with c2py23's grouped variant dispatch auto-vectorizes these
+loops at the installed ISA level (SSE4.2 / AVX2 / AVX-512F).
+
+### Which Functions Get SIMD
+
+Based on call-frequency analysis across all ImageD11 Python files (202 calls,
+44 files), prioritized by data volume and hot-path impact:
+
+**Tier 1 -- Indexing hot path (columnfile/indexing core):**
+
+| Function | .c2py name | Calls | Data per call | Source |
+|----------|-----------|-------|---------------|--------|
+| `score` | `score` | 10 | gv=`(ng,3)`, ubi=9 | `indexing.py:1095`, `unitcell.py:800` |
+| `score_and_refine` | `score_and_refine` | 10 | gv=`(ng,3)`, ubi=9 | `indexing.py:825`, `refinegrains.py:389` |
+| `score_and_assign` | `score_and_assign` | 6 | gv=`(ng,3)`, ubi=9 | `indexing.py:888,1080` |
+| `compute_gv` | `compute_gv` | 5 | xyz=`(n,3)`, omega=`(n,)` | `refinegrains.py:721`, `transform.py:717` |
+| `compute_geometry` | `compute_geometry` | 1 | xyz=`(n,3)`, out=`(n,6)` | `transform.py:764` |
+| `compute_xlylzl` | `compute_xlylzl` | 1 | s/f=`(n,)`, out=`(n,3)` | `transform.py:705` |
+| `compute_xlylzl_xpos_variable` | `compute_xlylzl_xpos_variable` | 1 | s/f/xpos=`(n,)`, out=`(n,3)` | `transform.py:748` |
+
+**Tier 2 -- High-volume element-wise / gather-scatter:**
+
+| Function | .c2py name | Calls | Data per call | Where |
+|----------|-----------|-------|---------------|-------|
+| `put_incr32` | `put_incr32` | 10+ | data=`(m,)`, ind/vals=`(n,)` | tomography, sinogram |
+| `put_incr64` | `put_incr64` | 10+ | data=`(m,)`, ind/vals=`(n,)` | volume mapping |
+| `reorder_f32_a32` | `reorder_f32_a32` | 3 | 4.2e6 floats | `fazit.py:281` |
+| `reorder_f32_a32` (lut) | `reorderlut_f32_a32` | 3 | 4.2e6 floats | `fazit.py:290` |
+| `reorder_u16_a32` | `reorder_u16_a32` | 3 | 4.2e6 uint16 | `fazit.py:261` |
+| `reorder_u16_a32` (lut) | `reorderlut_u16_a32` | 3 | 4.2e6 uint16 | `fazit.py:270` |
+
+**Tier 3 -- Dense per-frame image processing:**
+
+| Function | .c2py name | Calls | Data per call | Where |
+|----------|-----------|-------|---------------|-------|
+| `blobproperties` | `blobproperties` | 7 | 4.2e6 pixels x 36 props | `frelon_peaksearch.py:366` |
+| `uint16_to_float_darksub` | `uint16_to_float_darksub` | 2 | 4.2e6 pixels | `frelon_peaksearch.py` |
+| `uint16_to_float_darkflm` | `uint16_to_float_darkflm` | 2 | 4.2e6 pixels | `frelon_peaksearch.py` |
+
+**NOT SIMD-targeted** (tiny data, graph algorithms, or called <2x):
+`misori_*`, `quickorient`, `closest`, `closest_vec`, `cluster1d`,
+`count_shared`, `verify_rounding`, `connectedpixels`, `bloboverlaps`,
+`blob_moments`, `clean_mask`, `make_clean_mask`, `sparse_*`,
+`tosparse_*`, `coverlaps`, `compress_duplicates`, `bgcalc`,
+`frelon_lines`, `array_*`, `localmaxlabel`, `mask_to_coo`, `splat`,
+`sparse_is_sorted`, `splat`. These ~25 functions keep their existing
+flat overloads unchanged.
+
+### Architecture
+
+```
+Python caller
+  → _cImageD11.score(ubi, gv, tol)
+    → _wrapper: buffer acquire + checks
+    → _impl: outer when: (format check, per-call)
+      → inner switch: _score_group_variant (pre-resolved at init)
+        → score_avx512 / score_avx2 / score_sse42
+
+Module init:
+  c2py_runtime_init()
+    → cpuid probing → sets c2py_amd64_avx2, c2py_amd64_avx512f
+  _score_group_resolve()
+    → if (c2py_amd64_avx512f) _score_group_variant = 0
+      else if (c2py_amd64_avx2) _score_group_variant = 1
+      else _score_group_variant = 2
+```
+
+### Kernel File Structure
+
+One `.c` file per function in `src_simd/`, each following the c2py23
+`KERNEL_FN` pattern from `examples/simd_dispatch/`:
+
+```c
+// src_simd/score_kernel.c
+#include "cImageD11.h"    // for restrict, stdint
+#include <math.h>
+
+#ifndef KERNEL_FN
+#define KERNEL_FN score_sse42
+#endif
+
+// Magic constant for fast double-to-int rounding
+#define MAGIC 6755399441055744.0
+static inline double fast_round(double x) { return (x + MAGIC) - MAGIC; }
+
+int KERNEL_FN(const double *restrict ubi, const double *restrict gv,
+              double tol, int ng) {
+    double atol = tol * tol;
+    int n = 0, k;
+    #pragma omp parallel for reduction(+:n)
+    for (k = 0; k < ng; k++) {
+        const double *g = gv + k * 3;
+        double h0 = ubi[0]*g[0] + ubi[1]*g[1] + ubi[2]*g[2];
+        // ... original score() inner loop ...
+    }
+    return n;
+}
+```
+
+Key design choices:
+- Kernels take **flat `double*`** (not `vec[3]`), matching c2py23 `.ptr` output
+- This eliminates the wrapper layer for SIMD paths (speed: one fewer call)
+- `conv_double_to_int_fast` is `static inline` in each kernel (DLL_LOCAL in original)
+- `add_pixel` from blobs.c is duplicated as `static inline` in blobproperties kernel
+- OMP pragmas preserved from original code
+
+### Multi-Flag Compilation
+
+Each kernel compiled 3 times by setup.py pre-build hook:
+
+```bash
+gcc -c -O3 -fPIC -fopenmp -ffast-math -Wall \
+    -mavx512f -DKERNEL_FN=score_avx512 src_simd/score_kernel.c -o score_avx512.o
+gcc -c -O3 -fPIC -fopenmp -ffast-math -Wall \
+    -mavx2 -DKERNEL_FN=score_avx2    src_simd/score_kernel.c -o score_avx2.o
+gcc -c -O3 -fPIC -fopenmp -ffast-math -Wall \
+    -msse4.2 -DKERNEL_FN=score_sse42 src_simd/score_kernel.c -o score_sse42.o
+```
+
+On non-x86_64: compile only `_sse42` variant without `-m` flags (generic -O3).
+cpuid globals resolve to 0, dispatch falls through to sse42 variant.
+
+### .c2py Syntax (Grouped Variant Dispatch)
+
+```yaml
+- py_sig: "score(ubi: buffer, gv: buffer, tol: float) -> int"
+  doc: "..."
+  checks: [...]
+  gil_release: true                                  # NEW
+  c_overloads:
+    - when: "ubi.format == 'd' and gv.format == 'd'" # per-call format check
+      map: {ubi: "ubi.ptr", gv: "gv.ptr", tol: tol, ng: "gv.shape[0]"}
+      group: score
+      variants:
+        - name: "avx512"
+          sig: "int score_avx512(const double *ubi, const double *gv, double tol, int ng) -> int"
+          when: "c2py_amd64_avx512f"
+        - name: "avx2"
+          sig: "int score_avx2(const double *ubi, const double *gv, double tol, int ng) -> int"
+          when: "c2py_amd64_avx2"
+        - name: "sse"
+          sig: "int score_sse42(const double *ubi, const double *gv, double tol, int ng) -> int"
+```
+
+### Rebind API
+
+Auto-generated per function:
+```python
+_cImageD11._rebind_score('avx2')   # force AVX2 variant
+_cImageD11._rebind_score(None)     # back to auto-resolve
+```
+
+### New Features Adopted from Updated c2py23
+
+- **`gil_release: true`**: Release GIL during heavy C calls (no Python API usage)
+- **`c2py_amd64.h`**: CPU feature globals in headers block
+- **`variants:` dispatch**: Two-level (buffer format + CPU feature) resolution
+- **Free-threaded 3.14t support**: Transparent; no changes needed
+- **Contiguity check**: Auto-applied by updated c2py23 runtime
+- **Per-variant timing**: `read_perf()` returns `variant_name`, `variant`, `group_idx`
+
+### File Changes
+
+| File | Change |
+|------|--------|
+| `src_simd/score_kernel.c` | NEW |
+| `src_simd/score_and_refine_kernel.c` | NEW |
+| `src_simd/score_and_assign_kernel.c` | NEW |
+| `src_simd/compute_gv_kernel.c` | NEW |
+| `src_simd/compute_geometry_kernel.c` | NEW |
+| `src_simd/compute_xlylzl_kernel.c` | NEW |
+| `src_simd/compute_xlylzl_xpos_kernel.c` | NEW |
+| `src_simd/put_incr32_kernel.c` | NEW |
+| `src_simd/put_incr64_kernel.c` | NEW |
+| `src_simd/blobproperties_kernel.c` | NEW |
+| `src_simd/darksub_kernel.c` | NEW |
+| `src_simd/darkflm_kernel.c` | NEW |
+| `src_simd/reorder_f32_a32_kernel.c` | NEW |
+| `src_simd/reorderlut_f32_a32_kernel.c` | NEW |
+| `src_simd/reorder_u16_a32_kernel.c` | NEW |
+| `src_simd/reorderlut_u16_a32_kernel.c` | NEW |
+| `_cImageD11.c2py` | ~15 functions: flat→grouped variants; add `gil_release`; add `c2py_amd64.h` |
+| `setup.py` | Add `_compile_simd_variants()` pre-build; link .o files |
+| `c2py23_requests.md` | Mark #7 DONE |
+| `AGENTS.md` | This Phase VIII section |
 
 ## c2py23 Features Now Available
 

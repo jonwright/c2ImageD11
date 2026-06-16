@@ -3,7 +3,7 @@
 Feedback from porting ImageD11's 58 C functions from f2py to c2py23.
 Covering safety, usability, and features needed for Phase 2/3 of the migration.
 
-**Status:** 7 of 9 implemented. 2 items remain: SIMD dispatch (#7), build-isolation (#9).
+**Status:** 8 of 9 implemented. 1 item remains: build-isolation (#9).
 
 ---
 
@@ -112,7 +112,7 @@ so c2py23 returns them as Python return values, matching f2py behavior.
 
 ## Features
 
-### 7. CPU feature detection for SIMD dispatch
+### 7. CPU feature detection for SIMD dispatch -- DONE
 
 **Severity: Medium**  |  Phase 3 blocker (PLAN.md)
 
@@ -128,9 +128,13 @@ c_overloads:
     when: "1"
 ```
 
-**Request:** Support `when:` conditions in `c_overloads` with a set of
-built-in CPU feature predicates: `cpu_has_avx2`, `cpu_has_avx512`,
-`cpu_has_neon`, etc. The condition is evaluated once at module load time.
+**Resolution:** Done. c2py23 commit 645356d implements two-level
+group/variant dispatch with CPU feature detection. Standard headers
+(`c2py_amd64.h`, `c2py_arm64.h`, `c2py_ppc64.h`) provide `c2py_amd64_avx2`,
+`c2py_amd64_avx512f` etc. globals. `variants:` sub-lists in `c_overloads`
+dispatch via `when:` conditions on CPU features, resolved once at init.
+Per-variant rebind API (`_rebind_<func>()`), timing, and docstrings.
+See `examples/simd_dispatch/` for a complete worked example.
 
 ### 8. Preprocessor template pattern support — DONE
 
@@ -185,10 +189,9 @@ transparently.
 | 4 | Integer literal map values | Medium | DONE |
 | 5 | Better check failure messages | Medium | DONE |
 | 6 | Output scalar convention option | Low | DONE |
-| 7 | CPU feature detection (SIMD dispatch) | Medium | OPEN |
+| 7 | CPU feature detection (SIMD dispatch) | Medium | DONE |
 | 8 | Template pattern support | Low | DONE |
 | 9 | --no-build-isolation docs | Low | DEFERRED |
 
-#7 is the main blocker for Phase 3 SIMD dispatch.
-#9 deferred: plan is binary wheels to PyPI (one per platform/arch,
-Python-version-independent), eliminating need for build isolation.
+#7 implemented in c2py23 commit 645356d. Standard CPU feature headers, two-level
+group/variant dispatch, rebind API. c2ImageD11 Phase VIII uses these features.
