@@ -26,17 +26,7 @@ from c2ImageD11._cImageD11 import (
     bszstd_csc_u32,
 )
 
-version = "0.1.0"
-
-
-def npbuf(buf):
-    """Convert bytes/memoryview/ndarray to writable numpy uint8 array."""
-    if isinstance(buf, np.ndarray):
-        return buf
-    elif isinstance(buf, memoryview):
-        return np.frombuffer(buf, np.uint8)
-    else:
-        return np.frombuffer(buf, np.uint8)
+version = "0.2.0"
 
 
 class chunk2sparse:
@@ -74,7 +64,7 @@ class chunk2sparse:
         )[itemsize]
 
     def __call__(self, buffer, cut):
-        npixels = self.fun(npbuf(buffer), self.mask,
+        npixels = self.fun(buffer, self.mask,
                            self.values, self.indices, cut)
         return npixels, (self.values, self.indices)
 
@@ -119,11 +109,11 @@ def bslz4_to_sparse(ds, num, cut, mask=None, pixelbuffer=None):
         values, indices = pixelbuffer
     filtinfo, buffer = ds.id.read_direct_chunk((num, 0, 0))
     if ds.dtype == np.uint16:
-        npixels = bslz4_u16(npbuf(buffer), mask, values, indices, cut)
+        npixels = bslz4_u16(buffer, mask, values, indices, cut)
     elif ds.dtype == np.uint32:
-        npixels = bslz4_u32(npbuf(buffer), mask, values, indices, cut)
+        npixels = bslz4_u32(buffer, mask, values, indices, cut)
     elif ds.dtype == np.uint8:
-        npixels = bslz4_u8(npbuf(buffer), mask, values, indices, cut)
+        npixels = bslz4_u8(buffer, mask, values, indices, cut)
     else:
         raise Exception("no decoder for your type")
     if npixels < 0:
@@ -177,7 +167,7 @@ class chunk2sparseCSC:
         Returns npixels, (values, indices), powder_sum
         """
         npixels = self.fun(
-            npbuf(buffer),
+            buffer,
             self.mask,
             self.values,
             self.indices,

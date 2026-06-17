@@ -58,10 +58,7 @@ def bench_variant(vname, engine, chunks, mask):
     t0 = timeit.default_timer()
     for _ in range(NREPEATS):
         for buf in chunks:
-            chunk_buf = np.frombuffer(buf, dtype=np.uint8)
-            vals = np.zeros(N, dtype=np.uint16)
-            inds = np.zeros(N, dtype=np.uint32)
-            npx = func(chunk_buf, mask_flat, vals, inds, CUT)
+            npx = func(buf, mask_flat, vals, inds, CUT)
             total_npx += npx
     elapsed = timeit.default_timer() - t0
     nframes_total = NREPEATS * len(chunks)
@@ -101,13 +98,12 @@ def main():
     ref_fps = None
     try:
         from bslz4_to_sparse import bslz4_uint16_t as f2py_fn
+        vo = np.empty(mask.size, dtype=np.uint16)
+        io = np.empty(mask.size, dtype=np.uint32)
         t0 = timeit.default_timer()
         for _ in range(NREPEATS):
             for buf in chunks:
-                cb = np.frombuffer(buf, dtype=np.uint8)
-                vo = np.zeros(mask.size, dtype=np.uint16)
-                io = np.zeros(mask.size, dtype=np.uint32)
-                f2py_fn(cb, mask.ravel(), vo, io, CUT)
+                f2py_fn(np.frombuffer(buf, np.uint8), mask.ravel(), vo, io, CUT)
         ref_fps = (NREPEATS * len(chunks)) / (timeit.default_timer() - t0)
     except ImportError:
         pass

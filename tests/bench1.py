@@ -45,8 +45,7 @@ def bench_basic(engine, backend, isa, dtype_name, chunks, mask_flat, out_dtype):
     t0 = timeit.default_timer()
     for _ in range(NREPEATS):
         for buf in chunks:
-            chunk_buf = np.frombuffer(buf, dtype=np.uint8)
-            npx = func(chunk_buf, mask_flat, vals, inds, CUT)
+            npx = func(buf, mask_flat, vals, inds, CUT)
             total_npx += npx
     elapsed = timeit.default_timer() - t0
     fps = (NREPEATS * len(chunks)) / elapsed
@@ -72,8 +71,7 @@ def bench_csc(engine, backend, isa, dtype_name, chunks, mask_flat,
     for _ in range(NREPEATS):
         powder[:] = 0.0
         for buf in chunks:
-            chunk_buf = np.frombuffer(buf, dtype=np.uint8)
-            npx = func(chunk_buf, mask_flat, outpx, outP, CUT,
+            npx = func(buf, mask_flat, outpx, outP, CUT,
                        powder, csc_data, csc_indices, csc_indptr)
             total_npx += npx
     elapsed = timeit.default_timer() - t0

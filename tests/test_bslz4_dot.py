@@ -84,8 +84,7 @@ def test_csc_vs_pyfai(sparsetest, integrator):
     outP = np.empty(N, dtype=np.uint32)
 
     for i, (filt_info, chunk) in enumerate(chunks):
-        chunk_buf = np.frombuffer(chunk, dtype=np.uint8)
-        npx = _m.bslz4_csc_u16(chunk_buf, mask.ravel(),
+        npx = _m.bslz4_csc_u16(chunk, mask.ravel(),
                                 outpx, outP, 1,
                                 powder_out,
                                 data, indices, indptr)

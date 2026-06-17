@@ -7,3 +7,4 @@ __pycache__/
 *.egg-info/
 ci_all.log
 tests/*testdata.h5
+tests/sparsetest_dot.h5

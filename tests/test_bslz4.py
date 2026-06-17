@@ -156,8 +156,7 @@ class TestBitPerfectLZ4:
             for frame in range(nframes):
                 ref_vals, ref_inds = _pysparse(ds[frame], mask, cut)
                 chunk_info, chunk = ds.id.read_direct_chunk((frame, 0, 0))
-                chunk_buf = np.frombuffer(chunk, dtype=np.uint8)
-                npx = func(chunk_buf, mask.ravel(), vals, inds, cut)
+                npx = func(chunk, mask.ravel(), vals, inds, cut)
                 assert npx == len(ref_vals), \
                     f"npx mismatch: {npx} vs {len(ref_vals)} at frame={frame} cut={cut}"
                 np.testing.assert_array_equal(vals[:npx], ref_vals,
@@ -188,8 +187,7 @@ class TestBitPerfectLZ4:
                 ref_vals, ref_inds = _pysparse_csc(ds[frame], mask, cut,
                                                    data, indices, indptr, powder_ref)
                 chunk_info, chunk = ds.id.read_direct_chunk((frame, 0, 0))
-                chunk_buf = np.frombuffer(chunk, dtype=np.uint8)
-                npx = func(chunk_buf, flat, outpx, outP, cut,
+                npx = func(chunk, flat, outpx, outP, cut,
                           powder, data, indices, indptr)
                 assert npx == len(ref_vals), f"CSC npx mismatch frame={frame}"
                 np.testing.assert_array_equal(outpx[:npx], ref_vals,
@@ -243,8 +241,8 @@ class TestBitPerfectZSTD:
                 for frame in range(min(shape[0], 2)):
                     ref_vals, ref_inds = _pysparse(ds[frame], mask, 0)
                     chunk_info, chunk = ds.id.read_direct_chunk((frame, 0, 0))
-                    chunk_buf = np.frombuffer(chunk, dtype=np.uint8)
-                    npx = func(chunk_buf, mask.ravel(), vals, inds, 0)
+                    chunk_buf = chunk
+                    npx = func(chunk, mask.ravel(), vals, inds, 0)
                     assert npx == len(ref_vals)
                     np.testing.assert_array_equal(vals[:npx], ref_vals)
                     np.testing.assert_array_equal(inds[:npx], ref_inds)
@@ -286,10 +284,9 @@ class TestF2pyEquivalence:
             nframes = min(ds.shape[0], 10)
             for i in range(nframes):
                 _, chunk = ds.id.read_direct_chunk((i, 0, 0))
-                chunk_buf = np.frombuffer(chunk, dtype=np.uint8)
 
-                npx1 = f2py_fn(chunk_buf, mask.ravel(), vals1, inds1, 0)
-                npx2 = _m.bslz4_u16(chunk_buf, mask.ravel(), vals2, inds2, 0)
+                npx1 = f2py_fn(np.frombuffer(chunk, np.uint8), mask.ravel(), vals1, inds1, 0)
+                npx2 = _m.bslz4_u16(chunk, mask.ravel(), vals2, inds2, 0)
 
                 assert npx1 == npx2, f"frame {i}: npx mismatch"
                 np.testing.assert_array_equal(vals1[:npx1], vals2[:npx2],
@@ -331,11 +328,10 @@ class TestF2pyEquivalence:
 
             for i in range(min(ds.shape[0], 5)):
                 _, chunk = ds.id.read_direct_chunk((i, 0, 0))
-                chunk_buf = np.frombuffer(chunk, dtype=np.uint8)
 
-                npx1 = f2py_fn(chunk_buf, flat, outpx1, outP1, 0,
+                npx1 = f2py_fn(np.frombuffer(chunk, np.uint8), flat, outpx1, outP1, 0,
                                powder1, data, indices, indptr)
-                npx2 = _m.bslz4_csc_u16(chunk_buf, flat, outpx2, outP2, 0,
+                npx2 = _m.bslz4_csc_u16(chunk, flat, outpx2, outP2, 0,
                                         powder2, data, indices, indptr)
 
                 assert npx1 == npx2, f"frame {i}: npx mismatch"
