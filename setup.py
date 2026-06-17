@@ -30,6 +30,9 @@ REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.join(REPO_ROOT, "src")
 WRAPPER_DIR = os.path.join(REPO_ROOT, "src_wrapper")
 SIMD_DIR = os.path.join(REPO_ROOT, "src_simd")
+LZ4_DIR = os.path.join(REPO_ROOT, "lz4")
+KCB_DIR = os.path.join(REPO_ROOT, "kcb")
+BITSHUFFLE_DIR = os.path.join(REPO_ROOT, "bitshuffle")
 C2PY_FILE = os.path.join(REPO_ROOT, "_cImageD11.c2py")
 MODULE_NAME = "_cImageD11"
 PACKAGE_NAME = "c2ImageD11"
@@ -90,6 +93,11 @@ _SIMD_KERNELS = [
     ("reorderlut_u16_a32", "reorderlut_u16_a32_kernel.c"),
 ]
 
+# bslz4_to_sparse kernel compilation: one source → 6 ISA×backend variants
+_BSLZ4_KERNELS = [
+    ("bslz4_to_sparse", "src/bslz4_to_sparse.c"),
+]
+
 # ISA variants: (variant_suffix, compiler_flag)
 _IS_AMD64 = sys.maxsize > 2**32 and hasattr(os, 'uname') and os.uname()[4] == 'x86_64'
 
@@ -142,6 +150,67 @@ def _compile_simd_variants(build_dir):
     return objects
 
 
+def _compile_bslz4_variants(build_dir):
+    """Compile bslz4_to_sparse.c with backend×ISA combinations.
+
+    Each compilation produces all 6 type-variant functions
+    (uint8/uint16/uint32 × basic/CSC) with names like
+    bslz4_uint16_t_kcb_avx512(), bslz4_uint16_t_bs_sse42(), etc.
+
+    Backends:
+       - kcb:  uses KCB bitshuffle  (-DUSE_KCB)
+       - bs:   uses bitshuffle-core  (original kiyo-masui)
+
+    ISA levels: sse42, avx2, avx512 (on x86-64); sse42 only (otherwise)
+    """
+    cc = os.environ.get("CC", "gcc")
+    objects = []
+
+    include_dirs = [
+        "-I" + SRC_DIR,
+        "-I" + REPO_ROOT,
+        "-I" + LZ4_DIR + "/lib",
+        "-I" + KCB_DIR + "/src",
+        "-I" + BITSHUFFLE_DIR + "/src",
+    ]
+
+    src_path = os.path.join(REPO_ROOT, "src", "bslz4_to_sparse.c")
+    if not os.path.isfile(src_path):
+        print("c2ImageD11: WARNING - bslz4 kernel not found: {}".format(src_path))
+        return objects
+
+    for kernel_name, src_file in _BSLZ4_KERNELS:
+        src_path_full = os.path.join(REPO_ROOT, src_file)
+
+        # Backend suffix + extra flags
+        for backend_suffix, backend_cflags in [
+            ("kcb", ["-DUSE_KCB"]),
+            ("bs", []),
+        ]:
+            for variant_name, simd_flag in _SIMD_VARIANTS:
+                full_suffix = "_{}_{}".format(backend_suffix, variant_name)
+                obj_name = "{}{}.o".format(kernel_name, full_suffix)
+                obj_path = os.path.join(build_dir, obj_name)
+
+                cflags = _CFLAGS_BASE[:]
+                if simd_flag:
+                    cflags.append(simd_flag)
+                cflags.extend(backend_cflags)
+
+                fn_suffix = "_{}_{}".format(backend_suffix, variant_name)
+                cmd = [cc, "-c"] + include_dirs + cflags + [
+                    "-DKERNEL_SUFFIX=" + fn_suffix,
+                    src_path_full, "-o", obj_path,
+                ]
+                print("c2ImageD11: BSLZ4 compile {}".format(obj_name))
+                rc = subprocess.call(cmd)
+                if rc != 0:
+                    sys.exit(rc)
+                objects.append(obj_path)
+
+    return objects
+
+
 # ---------------------------------------------------------------------------
 # Build command
 # ---------------------------------------------------------------------------
@@ -159,6 +228,10 @@ class c2py23_build_ext(build_ext):
         if not os.path.isdir(build_dir):
             os.makedirs(build_dir)
         simd_objects = _compile_simd_variants(build_dir)
+
+        # Step 0b: Compile bslz4 kernel variants (backend × ISA)
+        print("c2ImageD11: compiling BSLZ4 kernel variants...")
+        bslz4_objects = _compile_bslz4_variants(build_dir)
 
         # Step 1: Generate wrapper C code
         from c2py23.parser import load_c2py
@@ -184,6 +257,9 @@ class c2py23_build_ext(build_ext):
             ext.include_dirs.append(SRC_DIR)
             ext.include_dirs.append(WRAPPER_DIR)
             ext.include_dirs.append(SIMD_DIR)
+            ext.include_dirs.append(os.path.join(LZ4_DIR, "lib"))
+            ext.include_dirs.append(os.path.join(KCB_DIR, "src"))
+            ext.include_dirs.append(os.path.join(BITSHUFFLE_DIR, "src"))
             for flag in _EXTRA_COMPILE_ARGS:
                 if flag not in ext.extra_compile_args:
                     ext.extra_compile_args.append(flag)
@@ -196,9 +272,12 @@ class c2py23_build_ext(build_ext):
             if simd_objects:
                 for obj in simd_objects:
                     ext.extra_objects.append(os.path.relpath(obj, REPO_ROOT))
+            if bslz4_objects:
+                for obj in bslz4_objects:
+                    ext.extra_objects.append(os.path.relpath(obj, REPO_ROOT))
 
-        print("c2ImageD11: linked {} SIMD kernel objects".format(
-            len(simd_objects)))
+        print("c2ImageD11: linked {} SIMD + {} BSLZ4 kernel objects".format(
+            len(simd_objects), len(bslz4_objects)))
 
         # Step 2: Standard compilation
         build_ext.build_extensions(self)
@@ -219,6 +298,11 @@ SOURCES = [
     os.path.join("src", "sparse_image.c"),
     os.path.join("src", "splat.c"),
     os.path.join("src_wrapper", "_wrappers.c"),
+    # bslz4 dependencies
+    os.path.join("lz4", "lib", "lz4.c"),
+    os.path.join("kcb", "src", "bitshuffle.c"),
+    os.path.join("bitshuffle", "src", "bitshuffle_core.c"),
+    os.path.join("bitshuffle", "src", "iochain.c"),
 ]
 
 ext = Extension(

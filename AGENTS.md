@@ -358,3 +358,133 @@ across Python 2.7-3.14. `timeout-minutes: 10` prevents infinite-loop hangs.
   all 8 Python versions. Run `bash run_ci_all.sh` for multi-version testing.
 - c2py23 improvement requests from this migration are documented in
   `c2py23_requests.md` (9 items covering safety, usability, and features).
+
+## Phase IX: bslz4_to_sparse Import (bslz4_import)
+
+Import the bslz4_to_sparse C extension (bitshuffle-lz4 decompress→sparse)
+into c2ImageD11.  ImageD11/sinograms/ uses `chunk2sparse` and `chunk2sparseCSC`
+for fast frame decoding from Dectris HDF5 files (bitshuffle-lz4 filter 32008).
+
+### API Surface (users depend on)
+
+From `ImageD11/sinograms/lima_segmenter.py`:
+```python
+from bslz4_to_sparse import chunk2sparse       # optional, falls back to numpy
+fun = chunk2sparse(mask, dtype=frms.dtype)
+npx, row, col, val = fun.coo(chunk, cut)         # → (npx, row, col, val)
+```
+
+From `ImageD11/sinograms/sinogram2crysalis.py`:
+```python
+import bslz4_to_sparse
+dc = bslz4_to_sparse.chunk2sparse(image_mask, dt)
+npx, (vals, inds) = dc(b, 0)                     # → (npx, (vals, inds))
+```
+
+Also: `chunk2sparseCSC` (CSC powder integration) and `bslz4_to_sparse()` (HDF5
+dataset convenience function).
+
+### Submodules (git)
+
+| Submodule | URL | Purpose |
+|-----------|-----|---------|
+| lz4       | https://github.com/lz4/lz4 | LZ4 decompression (lz4/lz4.c) |
+| kcb       | https://github.com/kalcutter/bitshuffle | KCB bitshuffle backend (priority) |
+| bitshuffle | https://github.com/kiyo-masui/bitshuffle | Original bitshuffle backend (fallback) |
+
+### C Source Files
+
+| File | Origin | Changes |
+|------|--------|---------|
+| `src/bslz4_to_sparse.c` | master compilation unit | Updated include paths; `KERNEL_SUFFIX` support for multi-ISA |
+| `src/bshuf.c` | template for basic sparse decompress | `BSLZ4_FN` macro for `KERNEL_SUFFIX` in function names |
+| `src/bshufdot.c` | template for CSC sparse decompress | Same `BSLZ4_FN` change |
+| `src/bslz4_functions.h` | NEW | Forward declarations for c2py23 to see template-generated functions |
+
+### Multi-ISA Compilation
+
+`bslz4_to_sparse.c` compiled 3x with `-DKERNEL_SUFFIX=_<isa>`:
+
+```
+gcc -DKERNEL_SUFFIX=_avx512 -mavx512f   → bslz4_uint16_t_avx512()
+gcc -DKERNEL_SUFFIX=_avx2   -mavx2      → bslz4_uint16_t_avx2()
+gcc -DKERNEL_SUFFIX=_sse42  -msse4.2    → bslz4_uint16_t_sse42()
+```
+
+The mask/loop in bshuf.c auto-vectorizes at the given ISA level.
+KCB's `bitshuffle.c` and LZ4's `lz4.c` are compiled once each.
+KCB has internal `ifunc` dispatch for its own SIMD selection.
+
+### c2py23 Variant Dispatch
+
+Two-level dispatch per function (6 functions × 2 backends):
+
+Level 1: bit-width (uint8, uint16, uint32) — per-call buffer check
+Level 2: ISA + backend — resolved at init time
+
+```yaml
+- py_sig: "bslz4_uint16(compressed: buffer, mask: buffer,
+             out: buffer, outP: buffer, thresh: int) -> int"
+  c_overloads:
+    - when: "compressed.format == 'B' and mask.format == 'B' and out.format == 'H' and outP.format == 'I'"
+      map: {compressed: "compressed.ptr", cmpN: "compressed.shape[0]", ...}
+      group: bslz4_uint16
+      variants:
+        - name: "kcb_avx512"
+          sig: "int bslz4_uint16_t_kcb_avx512(...)"
+          when: "c2py_amd64_avx512f"
+        - name: "kcb_avx2"
+          sig: "int bslz4_uint16_t_kcb_avx2(...)"
+          when: "c2py_amd64_avx2"
+        - name: "kcb_sse42"
+          sig: "int bslz4_uint16_t_kcb_sse42(...)"
+        - name: "bs_avx512"
+          sig: "int bslz4_uint16_t_bs_avx512(...)"
+          when: "c2py_amd64_avx512f"
+        - name: "bs_avx2"
+          sig: "int bslz4_uint16_t_bs_avx2(...)"
+          when: "c2py_amd64_avx2"
+        - name: "bs_sse42"
+          sig: "int bslz4_uint16_t_bs_sse42(...)"
+```
+
+### KCB ifunc Discussion (open)
+
+KCB's `bitshuffle.c` uses `__attribute__((ifunc))` for internal dispatch
+(SSE2/AVX2/AVX-512) across 11 internal functions. Options:
+1. Keep KCB's ifunc as-is; compile bitshuffle.c once; our dispatch at bslz4 level
+2. Port KCB's ifunc up one level: compile bitshuffle.c 3x with ISA flags,
+   removing ifunc and using `KERNEL_FN`-style renaming
+
+Option 1 is implemented first for simplicity. Option 2 gives explicit control
+and consistent architecture with the rest of the codebase.
+
+### Python API (c2ImageD11/bslz4.py)
+
+Port of `src/__init__.py` from bslz4_to_sparse. Functions import from
+`_cImageD11` instead of f2py module. h5py imported lazily.
+
+### Build System Changes
+
+- Add `lz4/lib/lz4.c`, `kcb/src/bitshuffle.c`, `bitshuffle/src/bitshuffle_core.c`,
+  `bitshuffle/src/iochain.c` to SOURCES
+- Add include dirs for submodule headers
+- Compile `bslz4_to_sparse.c` 3x for ISA variants (like SIMD kernels)
+- Add `-DUSE_KCB` to KCB compilation, `-DBSLZ4_BACKEND=bs` to bitshuffle
+- Rename KCB functions via `-DKERNEL_SUFFIX=_kcb` when compiling with KCB,
+  and bitshuffle functions via `-DKERNEL_SUFFIX=_bs` when compiling with bitshuffle
+
+### Tests
+
+- `tests/test_bslz4.py`: buffer-level tests (no h5py needed) + equivalence
+  tests against original bslz4_to_sparse (with h5py/hdf5plugin skip markers)
+- Port `test_vs_hdf5plugin.py` and `test_dot.py` with pytest.importorskip
+
+### Remaining Open Questions
+
+- MSVC / Windows: KCB's ifunc won't work; need `-DBITSHUF_USE_IFUNC=0` on MSVC.
+  Original bslz4_to_sparse already supports this.
+- ImageD11 `cImageD11.py` update: after extensive testing, add `try: from
+  c2ImageD11.bslz4 import chunk2sparse; except ImportError: ...` pattern
+- Vector sparse masking: the mask loop in bshuf.c can be further optimized
+  with hand-written SIMD intrinsics (post-MVP)

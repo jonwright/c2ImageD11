@@ -37,6 +37,11 @@ source:
   - src_simd/reorderlut_f32_a32_kernel.c
   - src_simd/reorder_u16_a32_kernel.c
   - src_simd/reorderlut_u16_a32_kernel.c
+  - src/bslz4_to_sparse.c
+  - lz4/lib/lz4.c
+  - kcb/src/bitshuffle.c
+  - bitshuffle/src/bitshuffle_core.c
+  - bitshuffle/src/iochain.c
 
 headers:
   - src/cImageD11.h
@@ -44,6 +49,11 @@ headers:
   - src/cdiffraction.h
   - src/ImageD11_cmath.h
   - c2py_amd64.h
+  - src/bslz4_functions.h
+  - lz4/lib/lz4.h
+  - kcb/src/bitshuffle.h
+  - bitshuffle/src/bitshuffle_core.h
+  - bitshuffle/src/iochain.h
 
 functions:
 
@@ -1371,3 +1381,226 @@ functions:
           cut: cut
           ns: "img.shape[0]"
           nf: "img.shape[1]"
+
+  # ===================================================================
+  # bslz4_to_sparse.c -- bitshuffle-lz4 decompress to sparse
+  # ===================================================================
+
+  - py_sig: "bslz4_uint8(compressed: buffer, mask: buffer, out: buffer, outP: buffer, thresh: int) -> int"
+    doc: >-
+      Decompress a bitshuffle-lz4 compressed buffer (uint8_t pixels)
+      and store pixels above threshold into (out, outP). Returns npx.
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "out.format == 'B'"
+      - "outP.format == 'I'"
+      - "mask.n == out.n"
+      - "mask.n == outP.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and out.format == 'B' and outP.format == 'I'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", output: "out.ptr", output_adr: "outP.ptr", threshold: thresh}
+        group: bslz4_uint8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_uint8_t_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_uint8_t_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_uint8_t_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *output, uint32_t *output_adr, int threshold) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_uint8_t_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_uint8_t_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_uint8_t_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *output, uint32_t *output_adr, int threshold) -> int"
+
+  - py_sig: "bslz4_uint16(compressed: buffer, mask: buffer, out: buffer, outP: buffer, thresh: int) -> int"
+    doc: >-
+      Decompress a bitshuffle-lz4 compressed buffer (uint16_t pixels)
+      and store pixels above threshold into (out, outP). Returns npx.
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "out.format == 'H'"
+      - "outP.format == 'I'"
+      - "mask.n == out.n"
+      - "mask.n == outP.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and out.format == 'H' and outP.format == 'I'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", output: "out.ptr", output_adr: "outP.ptr", threshold: thresh}
+        group: bslz4_uint16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_uint16_t_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_uint16_t_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_uint16_t_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *output, uint32_t *output_adr, int threshold) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_uint16_t_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_uint16_t_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_uint16_t_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *output, uint32_t *output_adr, int threshold) -> int"
+
+  - py_sig: "bslz4_uint32(compressed: buffer, mask: buffer, out: buffer, outP: buffer, thresh: int) -> int"
+    doc: >-
+      Decompress a bitshuffle-lz4 compressed buffer (uint32_t pixels)
+      and store pixels above threshold into (out, outP). Returns npx.
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "out.format == 'I'"
+      - "outP.format == 'I'"
+      - "mask.n == out.n"
+      - "mask.n == outP.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and out.format == 'I' and outP.format == 'I'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", output: "out.ptr", output_adr: "outP.ptr", threshold: thresh}
+        group: bslz4_uint32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_uint32_t_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_uint32_t_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_uint32_t_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *output, uint32_t *output_adr, int threshold) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_uint32_t_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_uint32_t_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *output, uint32_t *output_adr, int threshold) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_uint32_t_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *output, uint32_t *output_adr, int threshold) -> int"
+
+  - py_sig: "bslz4_csc_uint8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer) -> int"
+    doc: >-
+      Decompress a bitshuffle-lz4 compressed buffer (uint8_t pixels),
+      accumulate into a CSC sparse matrix, and store pixels above
+      threshold into (outpx, outP). Returns npx.
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'B'"
+      - "outP.format == 'I'"
+      - "out.format == 'd'"
+      - "data.format == 'f'"
+      - "indices.format == 'I'"
+      - "indptr.format == 'I'"
+      - "mask.n == outpx.n"
+      - "mask.n == outP.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'B' and outP.format == 'I' and out.format == 'd' and data.format == 'f' and indices.format == 'I' and indptr.format == 'I'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", data: "data.ptr", indices: "indices.ptr", indptr: "indptr.ptr"}
+        group: bslz4_csc_uint8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc_uint8_t_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc_uint8_t_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc_uint8_t_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc_uint8_t_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc_uint8_t_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc_uint8_t_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+
+  - py_sig: "bslz4_csc_uint16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer) -> int"
+    doc: >-
+      Decompress a bitshuffle-lz4 compressed buffer (uint16_t pixels),
+      accumulate into a CSC sparse matrix, and store pixels above
+      threshold into (outpx, outP). Returns npx.
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'H'"
+      - "outP.format == 'I'"
+      - "out.format == 'd'"
+      - "data.format == 'f'"
+      - "indices.format == 'I'"
+      - "indptr.format == 'I'"
+      - "mask.n == outpx.n"
+      - "mask.n == outP.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'H' and outP.format == 'I' and out.format == 'd' and data.format == 'f' and indices.format == 'I' and indptr.format == 'I'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", data: "data.ptr", indices: "indices.ptr", indptr: "indptr.ptr"}
+        group: bslz4_csc_uint16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc_uint16_t_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc_uint16_t_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc_uint16_t_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc_uint16_t_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc_uint16_t_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc_uint16_t_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+
+  - py_sig: "bslz4_csc_uint32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer) -> int"
+    doc: >-
+      Decompress a bitshuffle-lz4 compressed buffer (uint32_t pixels),
+      accumulate into a CSC sparse matrix, and store pixels above
+      threshold into (outpx, outP). Returns npx.
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'I'"
+      - "outP.format == 'I'"
+      - "out.format == 'd'"
+      - "data.format == 'f'"
+      - "indices.format == 'I'"
+      - "indptr.format == 'I'"
+      - "mask.n == outpx.n"
+      - "mask.n == outP.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'I' and outP.format == 'I' and out.format == 'd' and data.format == 'f' and indices.format == 'I' and indptr.format == 'I'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", data: "data.ptr", indices: "indices.ptr", indptr: "indptr.ptr"}
+        group: bslz4_csc_uint32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc_uint32_t_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc_uint32_t_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc_uint32_t_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc_uint32_t_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc_uint32_t_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc_uint32_t_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr) -> int"

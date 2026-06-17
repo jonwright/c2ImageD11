@@ -5,12 +5,14 @@ Import chain:
   c2ImageD11/__init__.py (this file)
     -> c2ImageD11._cImageD11 (compiled .so via c2py23)
     -> c2ImageD11._constants (blob property enum values)
+    -> c2ImageD11.bslz4 (bitshuffle-lz4 sparse decoding)
 
 Provides:
   - All C functions re-exported from _cImageD11
   - Module-level blob property constants (s_1, s_I, NPROPERTY, etc.)
   - put_incr dispatch (32 vs 64 bit addressing)
   - OpenMP / multiprocessing safety
+  - bslz4 submodule: chunk2sparse, chunk2sparseCSC, bslz4_to_sparse
 
 c2py23 now handles optional parameter defaults and fixed-width
 integer types directly, so Python-level wrapper functions are no
