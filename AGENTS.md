@@ -22,6 +22,23 @@ importing from `c2ImageD11` first, falling back to `ImageD11._cImageD11`.
     fix is released on PyPI)
 - [x] Phase VIII: SIMD dispatch (SSE/AVX2/AVX-512) for hot-path functions
 - [x] Phase IX: bslz4_to_sparse import with multi-backend SIMD dispatch
+- [ ] Phase X: Project layout refactoring (repo is ~90MB; split into manageable sub-packages)
+
+## Remaining Tasks
+
+All tracked in this file (AGENTS.md).  PLAN.md and c2py23_requests.md
+contain historical context and deferred improvement requests.
+
+| ID | Task | Where | Priority |
+|----|------|-------|----------|
+| T1 | Refactor project layout for manageability (repo too large) | AGENTS.md Phase X | Medium |
+| T2 | ImageD11 cImageD11.py: try c2ImageD11 first, fallback to _cImageD11 | PLAN.md | High |
+| T3 | KCB ifunc dispatch: port up one level or keep as-is | AGENTS.md Phase IX | Low |
+| T4 | MSVC / Windows build support | AGENTS.md Phase IX | Low |
+| T5 | Vector sparse masking with hand-written SIMD intrinsics | AGENTS.md Phase IX | Low |
+| T6 | c2py23 publish to PyPI (eliminates --no-build-isolation) | c2py23_requests.md #9 | Medium |
+| T7 | c2py23 features: default_raise, outputs, expand templates | c2py23 review | Low |
+| T8 | Generate ZSTD test data and verify bit-perfect ZSTD decompress | tests/ | Medium |
 
 ## Phase VIII: amd64 SIMD Dispatch (SSE, AVX2, AVX-512)
 
@@ -141,11 +158,11 @@ Key design choices:
 Each kernel compiled 3 times by setup.py pre-build hook:
 
 ```bash
-gcc -c -O3 -fPIC -fopenmp -ffast-math -Wall \
+gcc -c -O3 -fPIC -fopenmp -Wall \
     -mavx512f -DKERNEL_FN=score_avx512 src_simd/score_kernel.c -o score_avx512.o
-gcc -c -O3 -fPIC -fopenmp -ffast-math -Wall \
+gcc -c -O3 -fPIC -fopenmp -Wall \
     -mavx2 -DKERNEL_FN=score_avx2    src_simd/score_kernel.c -o score_avx2.o
-gcc -c -O3 -fPIC -fopenmp -ffast-math -Wall \
+gcc -c -O3 -fPIC -fopenmp -Wall \
     -msse4.2 -DKERNEL_FN=score_sse42 src_simd/score_kernel.c -o score_sse42.o
 ```
 
@@ -326,7 +343,7 @@ double misori_cubic_wrapper(const double *u1_ptr, const double *u2_ptr) {
 
 All wrapper names end in `_wrapper` to distinguish them from original C
 functions. The .c2py file references these wrapper names in `c_overloads`.
-The ~15 remaining wrappers cover score, misori_*, compute_*, and splat.
+The 6 remaining wrappers cover misori_*, refine_assigned, and splat.
 
 ## Functions with Output Scalars
 
