@@ -21,6 +21,7 @@ importing from `c2ImageD11` first, falling back to `ImageD11._cImageD11`.
     git head has the fix but version string not yet bumped; skip remains until
     fix is released on PyPI)
 - [x] Phase VIII: SIMD dispatch (SSE/AVX2/AVX-512) for hot-path functions
+- [x] Phase IX: bslz4_to_sparse import with multi-backend SIMD dispatch
 
 ## Phase VIII: amd64 SIMD Dispatch (SSE, AVX2, AVX-512)
 
@@ -239,36 +240,69 @@ natively by c2py23.
 c2ImageD11/
   AGENTS.md                   # This file
   c2py23_requests.md          # c2py23 improvement requests (9 items)
-  PLAN.md                     # Migration & refactoring roadmap
-  _cImageD11.c2py             # c2py23 interface definition (~40 functions)
-  setup.py                    # Build with c2py23
-  pyproject.toml              # Minimal
-  run_ci.sh                   # Single-version local CI (mirrors GHA steps)
-  run_ci_all.sh               # Multi-version CI via snakepit Apptainer containers
-  src/                        # Copied C sources from ImageD11/src
+  PLAN.md                     # Migration & refactoring roadmap (some sections superseded)
+  _cImageD11.c2py             # c2py23 interface definition (64 functions)
+  setup.py                    # Build with c2py23 (SIMD + bslz4 multi-flag compilation)
+  pyproject.toml              # Build config (setuptools, numpy dependency)
+  MANIFEST.in                 # sdist file list
+  run_ci.sh                   # Single-version local CI
+  run_ci_all.sh               # Multi-version CI via Apptainer containers
+  src/                        # Original C sources from ImageD11/src + bslz4
     cImageD11.h               # Platform macros, DLL visibility
     blobs.h                   # Disjoint set, NPROPERTY enums
     blobs.c                   # Disjoint set, blob moments
     cdiffraction.h            # Vector/matrix macros
-    cdiffraction.c            # compute_geometry, compute_gv, etc.
+    cdiffraction.c            # compute_geometry, compute_gv, compute_xlylzl*, quickorient
     cimaged11utils.c          # omp_set_num_threads, my_get_time
-    closest.c                 # verify_rounding, closest, score, etc.
-    connectedpixels.c         # connectedpixels, blobproperties
-    darkflat.c                # uint16_to_float, frelon_lines, reorder, bgcalc
+    closest.c                 # verify_rounding, closest, score, score_and_refine,
+                              #   score_and_assign, refine_assigned, put_incr*, cluster1d,
+                              #   misori_*, count_shared
+    connectedpixels.c         # connectedpixels, blobproperties, bloboverlaps, blob_moments,
+                              #   clean_mask, make_clean_mask
+    darkflat.c                # uint16_to_float_darksub/darkflm, frelon_lines, array_stats,
+                              #   array_histogram, reorder*, bgcalc
     localmaxlabel.c           # localmaxlabel
-    sparse_image.c            # mask_to_coo, sparse_*, tosparse_*
+    sparse_image.c            # mask_to_coo, sparse_*, tosparse_*, coverlaps, compress_duplicates
     splat.c                   # splat
     ImageD11_cmath.h          # Alternative math macros
+    bslz4_to_sparse.c         # Master unit for bslz4: #includes bshuf.c/bshufdot.c 3x
+    bshuf.c                   # Basic sparse decompress template (uses BSLZ4_FN macro)
+    bshufdot.c                # CSC sparse decompress template
+    bslz4_functions.h         # Forward declarations for c2py23
   src_wrapper/
-    _wrappers.c               # 2D-array-to-flat-pointer wrappers (vec[3], double[][N])
+    _wrappers.c               # 2D-array-to-flat-pointer wrappers (6 functions)
+  src_simd/                   # SIMD kernel files (16 functions, 3x ISA compiled)
+    score_kernel.c
+    score_and_refine_kernel.c
+    score_and_assign_kernel.c
+    compute_gv_kernel.c
+    compute_geometry_kernel.c
+    compute_xlylzl_kernel.c
+    compute_xlylzl_xpos_kernel.c
+    put_incr32_kernel.c
+    put_incr64_kernel.c
+    blobproperties_kernel.c
+    darksub_kernel.c
+    darkflm_kernel.c
+    reorder_f32_a32_kernel.c
+    reorderlut_f32_a32_kernel.c
+    reorder_u16_a32_kernel.c
+    reorderlut_u16_a32_kernel.c
+  lz4/                        # Git submodule: LZ4 compression library
+  kcb/                        # Git submodule: KCB bitshuffle (priority backend)
+  bitshuffle/                 # Git submodule: original bitshuffle (fallback)
   c2ImageD11/
-    __init__.py               # Pure Python: imports .so, exports constants
+    __init__.py               # Pure Python: imports .so, exports constants, bslz4
     _constants.py             # Blob property enum values (hardcoded)
+    bslz4.py                  # bslz4 Python API: chunk2sparse, chunk2sparseCSC
   tests/
     test_buffer.py            # Lightweight numpy buffer-interface tests
-    test_equivalence.py       # Equivalence tests vs ImageD11._cImageD11
-    test_all.py               # Multi-version orchestrator (Apptainer)
+    test_equivalence.py       # Equivalence tests vs ImageD11._cImageD11 (53/54 pass)
+    test_bslz4.py             # bslz4 buffer tests + equivalence vs original f2py
     benchmark_timing.py       # c2py23 vs f2py timing comparison
+    benchmark_simd.py         # SIMD variant comparison (SSE/AVX2/AVX512)
+    bench_bslz4.py            # bslz4 throughput benchmark (KCB vs BS backends)
+    test_all.py               # Multi-version orchestrator (Apptainer)
     run_multiversion.sh       # Build + test script for inside containers
     conftest.py               # Pytest configuration (empty)
   .github/workflows/
@@ -338,9 +372,10 @@ across Python 2.7-3.14. `timeout-minutes: 10` prevents infinite-loop hangs.
 
 - The c2py23 runtime (c2py_runtime.h/.c) must be built alongside.
   The `c2py23 build` command handles this.
-- OpenMP: compile with `-fopenmp`. The GIL is held during calls
-  (c2py23 doesn't release it yet). OpenMP threading within a single
-  call still works.
+- OpenMP: compile with `-fopenmp`. `gil_release: true` is used for
+  hot-path SIMD functions (score, score_and_refine, put_incr*, bslz4_*,
+  compute_*, blobproperties, darksub/darkflm, reorder*). The GIL is
+  held for remaining functions.
 - malloc/free: The restriction in c2py23 docs is relaxed for this project.
   blobs.c, sparse_image.c, connectedpixels.c allocate/free internally.
 - CI uses `--no-build-isolation` because c2py23 is not on PyPI.

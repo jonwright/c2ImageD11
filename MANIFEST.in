@@ -1,0 +1,34 @@
+include _cImageD11.c2py
+include setup.py
+include pyproject.toml
+include run_ci.sh
+include run_ci_all.sh
+
+# C sources (non-submodule)
+include src/*.c
+include src/*.h
+include src_wrapper/*.c
+
+# SIMD kernel sources
+include src_simd/*.c
+
+# Python package
+include c2ImageD11/*.py
+
+# Tests
+include tests/*.py
+include tests/run_multiversion.sh
+
+# CI
+include .github/workflows/*.yml
+
+# Submodule files needed at build time
+include lz4/lib/lz4.h
+include lz4/lib/lz4.c
+include kcb/src/bitshuffle.h
+include kcb/src/bitshuffle.c
+include bitshuffle/src/bitshuffle_core.h
+include bitshuffle/src/bitshuffle_internals.h
+include bitshuffle/src/bitshuffle_core.c
+include bitshuffle/src/iochain.h
+include bitshuffle/src/iochain.c

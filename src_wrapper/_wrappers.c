@@ -24,9 +24,6 @@ typedef double vec[3];
 int verify_rounding(int n);
 void closest_vec(double x[], int dim, int nv, int closest[]);
 void closest(double x[], double v[], int *ribest, double *rbest, int nx, int nv);
-int score(vec ubi[3], vec gv[], double tol, int ng);
-void score_and_refine(vec ubi[3], vec gv[], double tol, int *n_arg, double *sumdrlv2_arg, int ng);
-int score_and_assign(vec ubi[3], vec gv[], double tol, double drlv2[], int labels[], int label, int ng);
 void refine_assigned(vec ubi[3], vec gv[], int labels[], int label, int *npk, double *sumdrlv2, int ng);
 void put_incr64(float data[], int64_t ind[], float vals[], int boundscheck, int m, int n);
 void put_incr32(float data[], int32_t ind[], float vals[], int boundscheck, int m, int n);
@@ -55,10 +52,6 @@ void reorder_u16_a32_a16(uint16_t *data, uint32_t *a0, int16_t *a1, uint16_t *ou
 void bgcalc(const float *img, float *bg, uint8_t *msk, int ns, int nf, float gain, float sigmap, float sigmat);
 
 /* cdiffraction.c */
-void compute_geometry(double xlylzl[][3], double omega[], double omegasign, double wvln, double wedge, double chi, double t[3], double out[][6], int n);
-void compute_gv(double xlylzl[][3], double omega[], double omegasign, double wvln, double wedge, double chi, double t[3], double gv[][3], int n);
-void compute_xlylzl(double s[], double f[], double p[4], double r[9], double dist[3], double xlylzl[][3], int n);
-void compute_xlylzl_xpos_variable(double s[], double f[], double p[4], double r[9], double dist[3], double xpos[], double xlylzl[][3], int n);
 void quickorient(double UBI[9], double BT[9]);
 
 /* connectedpixels.c */
@@ -105,31 +98,6 @@ double my_get_time(void);
  * double(*)[N] here to match the original function signatures.
  * ================================================================ */
 
-int
-score_wrapper(double *ubi_ptr, const double *gv_ptr, double tol, int ng)
-{
-    return score((vec *)ubi_ptr, (vec *)gv_ptr, tol, ng);
-}
-
-int
-score_and_refine_wrapper(double *ubi_ptr, const double *gv_ptr,
-                          double tol, double *sumdrlv2_buf, int ng)
-{
-    int n;
-    score_and_refine((vec *)ubi_ptr, (vec *)gv_ptr, tol, &n,
-                     sumdrlv2_buf, ng);
-    return n;
-}
-
-int
-score_and_assign_wrapper(double *ubi_ptr, const double *gv_ptr,
-                          double tol, double *drlv2, int *labels,
-                          int label_id, int ng)
-{
-    return score_and_assign((vec *)ubi_ptr, (vec *)gv_ptr, tol,
-                            drlv2, labels, label_id, ng);
-}
-
 void
 refine_assigned_wrapper(double *ubi_ptr, const double *gv_ptr,
                          int *labels, int label_id,
@@ -161,46 +129,6 @@ double
 misori_monoclinic_wrapper(const double *u1_ptr, const double *u2_ptr)
 {
     return misori_monoclinic((vec *)u1_ptr, (vec *)u2_ptr);
-}
-
-void
-compute_geometry_wrapper(const double *xlylzl_ptr, const double *omega,
-                          double omegasign, double wvln, double wedge,
-                          double chi, const double *t_ptr, double *out_ptr, int n)
-{
-    compute_geometry((double(*)[3])xlylzl_ptr, (double*)omega,
-                     omegasign, wvln, wedge, chi, (double*)t_ptr,
-                     (double(*)[6])out_ptr, n);
-}
-
-void
-compute_gv_wrapper(const double *xlylzl_ptr, const double *omega,
-                    double omegasign, double wvln, double wedge,
-                    double chi, const double *t_ptr, double *gv_ptr, int n)
-{
-    compute_gv((double(*)[3])xlylzl_ptr, (double*)omega,
-               omegasign, wvln, wedge, chi, (double*)t_ptr,
-               (double(*)[3])gv_ptr, n);
-}
-
-void
-compute_xlylzl_wrapper(const double *s, const double *f,
-                        const double *p, const double *r,
-                        const double *dist, double *xlylzl_ptr, int n)
-{
-    compute_xlylzl((double*)s, (double*)f, (double*)p, (double*)r,
-                   (double*)dist, (double(*)[3])xlylzl_ptr, n);
-}
-
-void
-compute_xlylzl_xpos_variable_wrapper(const double *s, const double *f,
-                                      const double *p, const double *r,
-                                      const double *dist, const double *xpos,
-                                      double *xlylzl_ptr, int n)
-{
-    compute_xlylzl_xpos_variable((double*)s, (double*)f, (double*)p, (double*)r,
-                                  (double*)dist, (double*)xpos,
-                                  (double(*)[3])xlylzl_ptr, n);
 }
 
 void

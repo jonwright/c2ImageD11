@@ -3,12 +3,14 @@
 ## Status
 
 - [x] Phase I-IV: Repo structure, C source copy, .c2py interface, Python wrapper, setup.py
-- [x] Phase 1: Bug fixes (clean diffs for upstream submission)
-- [ ] Phase 2: Type-generic refactoring (C preprocessor #include template pattern)
-- [ ] Phase 3: SIMD versioning (per-ISA impl files, runtime dispatch via c2py23)
-- [x] Phase 4: c2py23 integration and build
-- [x] Phase 5: Testing vs ImageD11._cImageD11
-- [x] Phase 6: CI
+- [x] Phase V-VII: Testing, bug fixes, CI
+- [x] Phase VIII: SIMD dispatch (SSE/AVX2/AVX-512) for hot-path functions
+  (implemented via multi-flag compilation in src_simd/, supersedes Phase 2-3 below)
+- [x] Phase IX: bslz4_to_sparse import with multi-backend SIMD dispatch
+
+Superseded proposals (not implemented in this form):
+- [x] Phase 2 (type-generic refactoring): superseded by SIMD kernel approach
+- [x] Phase 3 (SIMD versioning): superseded by multi-flag compilation in src_simd/
 
 ## Phase 1: Bug Fixes
 
@@ -27,129 +29,47 @@ submission to ImageD11.
 | F8 | sparse_image.c | 864-872 | Three `if` instead of `if/else if/else if` | Use else if |
 | F9 | connectedpixels.c | 9-18 | `boundscheck` calls `exit(0)` | Change to `return` |
 
-## Phase 2: Type-Generic Refactoring
+## Phase 2-3: Superseded by Phase VIII
 
-Use C preprocessor `#include` template pattern (inspired by ffmpeg/BLAS).
+The original Phase 2 (type-generic C preprocessor #include template) and
+Phase 3 (hand-written per-ISA SIMD files in src/algo/) were superseded by
+the AGENTS.md Phase VIII approach: multi-flag compilation of single kernel
+files in src_simd/ with auto-vectorization at the compiler level.
 
-Pattern: a `_tmpl.h` header is parameterized by `#define`d macros (PIXEL_TYPE,
-FUNC_SUFFIX, etc.) and `#include`d from per-type `.c` files.
+## Phase VIII (Actual): SIMD Dispatch
 
-```c
-// src/algo/connectedpixels_f32.c
-#define PIXEL_TYPE float
-#define FUNC_SUFFIX _f32
-#include "connectedpixels_tmpl.h"
-```
+Implemented via multi-flag compilation in src_simd/:
+- 16 kernel files, each compiled 3x with -msse4.2/-mavx2/-mavx512f
+- Grouped variant dispatch in _cImageD11.c2py with c2py_amd64_* flags
+- Rebind API: _rebind_score('avx2') to force a variant
+- See AGENTS.md Phase VIII section for full architecture details
 
-Type-generic targets:
+## Phase IX (Actual): bslz4_to_sparse Import
 
-| Function | Input types | Template | Per-type files |
-|----------|-------------|----------|----------------|
-| connectedpixels | f32, u8, u16, u32 | connectedpixels_tmpl.h | 4 |
-| localmaxlabel | f32, u8, u16, u32 | localmaxlabel_tmpl.h | 4 |
-| sparse_connectedpixels | f32, u8, u16, u32 | sparse_connectedpixels_tmpl.h | 4 |
-| sparse_localmaxlabel | f32, u8, u16, u32 | sparse_localmaxlabel_tmpl.h | 4 |
-| blobproperties | f32, u16 | blobproperties_tmpl.h | 2 |
-| sparse_blob2Dproperties | f32, u16 | sparse_blob2Dproperties_tmpl.h | 2 |
-| sparse_smooth | f32 | sparse_smooth_tmpl.h | 1 |
-| tosparse_* | u16, u32, f32 | tosparse_tmpl.h | 3 |
-| reorder_* | u16+f32 scatter/gather | reorder_tmpl.h | 4 |
-| array_stats | f32, f64 | array_stats_tmpl.h | 2 |
-| array_mean_var_* | f32, f64 | array_mean_var_tmpl.h | 2 |
-| uint16_to_float_* | u16→f32 | convert_tmpl.h | 1 |
-
-## Phase 3: SIMD Versioning
-
-Per-ISA implementation files dispatched at runtime via c2py23 `when:` conditions.
-
-```
-src/algo/
-  tosparse/
-    tosparse_u16_scalar.c
-    tosparse_u16_avx2.c
-    tosparse_u16_avx512.c
-  connectedpixels/
-    connectedpixels_f32_scalar.c
-    connectedpixels_f32_avx2.c
-  uint16_to_float/
-    darksub_scalar.c
-    darksub_avx2.c
-    darksub_avx512.c
-```
-
-Dispatch via c2py23:
-```yaml
-c_overloads:
-  - sig: "int tosparse_u16_avx512(...)"
-    when: "cpu_has_avx512"
-  - sig: "int tosparse_u16_avx2(...)"
-    when: "cpu_has_avx2"
-  - sig: "int tosparse_u16_scalar(...)"
-    when: "1"
-```
-
-## Target Directory Layout (end state)
-
-```
-src/
-  algo/
-    connectedpixels/
-      connectedpixels_tmpl.h
-      connectedpixels_f32_scalar.c
-      connectedpixels_f32_avx2.c
-      connectedpixels_u16_scalar.c
-      connectedpixels_u8_scalar.c
-    localmaxlabel/
-      localmaxlabel_tmpl.h
-      localmaxlabel_f32_scalar.c
-      localmaxlabel_u16_scalar.c
-    sparse/
-      sparse_connectedpixels_tmpl.h
-      sparse_connectedpixels_f32_scalar.c
-      sparse_localmaxlabel_tmpl.h
-      sparse_blob2Dproperties_tmpl.h
-      sparse_smooth_tmpl.h
-    convert/
-      tosparse_tmpl.h
-      tosparse_u16_scalar.c
-      tosparse_u16_avx2.c
-      tosparse_u16_avx512.c
-      tosparse_u32_scalar.c
-      tosparse_f32_scalar.c
-      convert_tmpl.h
-      darksub_scalar.c
-      darksub_avx2.c
-    reorder/
-      reorder_tmpl.h
-      reorder_u16_scalar.c
-      reorder_f32_scalar.c
-    stats/
-      array_stats_tmpl.h
-      array_stats_f32_scalar.c
-      array_mean_var_tmpl.h
-  core/
-    cImageD11.h
-    blobs.h / blobs.c
-    closest.c
-    cdiffraction.c / cdiffraction.h
-    ImageD11_cmath.h
-    splat.c
-    cimaged11utils.c
-```
-
-## Blockers
-
-- c2py23: Fixed-width types, optional params, docstrings, constants — COMMITTED
-- c2py23: CPU feature detection for SIMD dispatch — NOT YET
-- c2py23: Per-function timing — IMPLEMENTED (timing: true in .c2py)
+bslz4 C extension with KCB/bitshuffle backend dispatch:
+- 3 git submodules: lz4, kcb, bitshuffle
+- bslz4_to_sparse.c compiled 6x (2 backends x 3 ISAs)
+- 6 functions in _cImageD11.c2py with 36 variant signatures
+- Python API: chunk2sparse, chunk2sparseCSC, bslz4_to_sparse()
+- See AGENTS.md Phase IX section for full architecture details
 
 ## Recent Achievements
 
-- 58 functions ported from f2py to c2py23, all producing identical results
+- 64 Python-callable functions (58 original + 6 bslz4 groups)
+- SIMD dispatch for 16 hot-path functions (SSE4.2/AVX2/AVX-512)
+- bslz4 import with KCB/bitshuffle dual-backend dispatch
+- 53/54 equivalence tests pass vs ImageD11._cImageD11
+- 7 buffer-level + 1 equivalence bslz4 tests pass
 - 9 bugs fixed with clean diffs (submittable to ImageD11 upstream)
 - Optional parameter defaults for 6 functions
 - c2py23 CLI extended with CC/CFLAGS/LDFLAGS/LIBS env vars
 - setup.py with pip install -e . support
 - Timing instrumentation enabled (c2py23.perf)
-- Equivalence test suite covering 40+ functions
 - GitHub Actions CI across Python 2.7-3.14
+
+## Blockers
+
+- ~~c2py23: CPU feature detection for SIMD dispatch~~ — DONE (commit 645356d)
+- ~~c2py23: Fixed-width types, optional params, docstrings, constants~~ — DONE
+- c2py23: not on PyPI (requires --no-build-isolation, see c2py23_requests.md #9)
+- ImageD11 cImageD11.py: not yet updated to try c2ImageD11 first (planned post-testing)
