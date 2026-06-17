@@ -39,6 +39,7 @@ contain historical context and deferred improvement requests.
 | T6 | c2py23 publish to PyPI (eliminates --no-build-isolation) | c2py23_requests.md #9 | Medium |
 | T7 | c2py23 features: default_raise, outputs, expand templates | c2py23 review | Low |
 | T8 | Generate ZSTD test data and verify bit-perfect ZSTD decompress | tests/ | Medium |
+| T9 | Debug and fix bslz4 / hdf5 chunk reading on Python 2.7 | bslz4.py, tests/ | High |
 
 ## Phase VIII: amd64 SIMD Dispatch (SSE, AVX2, AVX-512)
 
@@ -411,6 +412,10 @@ as opaque dependencies. Only the listed API functions are called.
 
 ## Notes
 
+- **Do not invent root causes**: When you do not know what is wrong,
+  stop and ask. Never fabricate theories about bugs in third-party
+  libraries (h5py, numpy, etc.) or write invented commentary into code
+  or commit messages. State only what you know to be true.
 - **Virtualenv convention**: create venvs as `venv/py<major><minor>/<arch>/`
   (e.g. `venv/py312/x86_64/`). This directory is gitignore'd. Always reuse
   the same venv; re-create only if the Python version or arch changes.

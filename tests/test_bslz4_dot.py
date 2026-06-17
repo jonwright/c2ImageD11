@@ -8,8 +8,13 @@ Requires: pyFAI, h5py, hdf5plugin
 """
 
 import os
+import sys
 import numpy as np
 import pytest
+
+if sys.version_info[0] < 3:
+    pytest.skip("bslz4 tests not yet working on Python 2.7", allow_module_level=True)
+
 import c2ImageD11._cImageD11 as _m
 
 pyFAI = pytest.importorskip("pyFAI")

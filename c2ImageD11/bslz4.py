@@ -9,6 +9,8 @@ Provides:
     bslz4_to_sparse(ds, num)    -- convenience for HDF5 datasets
 """
 
+import os
+import sys
 import numpy as np
 
 from c2ImageD11._cImageD11 import (
@@ -100,6 +102,11 @@ def bslz4_to_sparse(ds, num, cut, mask=None, pixelbuffer=None):
     (values, indices) : tuple of ndarrays
         Pixel values and flat indices.
     """
+    if sys.version_info[0] < 3:
+        raise RuntimeError(
+            "bslz4_to_sparse is not supported on Python 2.7. "
+            "TODO: debug and fix"
+        )
     if mask is None:
         mask = np.ones((ds.shape[1], ds.shape[2]), np.uint8).ravel()
     if pixelbuffer is None:

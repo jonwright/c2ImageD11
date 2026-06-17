@@ -13,6 +13,10 @@ import pytest
 import numpy as np
 import c2ImageD11._cImageD11 as _m
 
+import sys
+if sys.version_info[0] < 3:
+    pytest.skip("bslz4 tests not yet working on Python 2.7", allow_module_level=True)
+
 h5py = pytest.importorskip("h5py")
 hdf5plugin = pytest.importorskip("hdf5plugin")  # noqa: registers filter 32008
 
