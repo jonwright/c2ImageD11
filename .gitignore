@@ -6,3 +6,4 @@ __pycache__/
 .ci_venv/
 *.egg-info/
 ci_all.log
+tests/*testdata.h5

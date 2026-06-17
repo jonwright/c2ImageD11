@@ -161,18 +161,15 @@ def main():
                                            chunks, mask_flat, out_dtype)
                     row += " | %7.1f" % fps
 
-                # CSC benchmark: lz4 only (skip zstd CSC since fake data)
-                if dtype_name == "u16":
-                    chunks = engine_chunks.get("lz4")
-                    if chunks is not None:
-                        fps_csc, _ = bench_csc("lz4", backend, isa, dtype_name,
-                                               chunks, mask_flat, out_dtype,
-                                               csc_data, csc_indices, csc_indptr, powder)
-                        row += " | %7.1f" % fps_csc
-                    else:
-                        row += " | %8s" % "--"
+                # CSC benchmark (all dtypes, lz4 only; zstd CSC omitted)
+                chunks = engine_chunks.get("lz4")
+                if chunks is not None:
+                    fps_csc, _ = bench_csc("lz4", backend, isa, dtype_name,
+                                           chunks, mask_flat, out_dtype,
+                                           csc_data, csc_indices, csc_indptr, powder)
+                    row += " | %7.1f" % fps_csc
                 else:
-                    row += " | %8s" % ""
+                    row += " | %8s" % "--"
 
                 print(row)
 
@@ -214,19 +211,20 @@ def main():
             print("  %s/%-3s  %15s  %15s  %15s" %
                   (eng, backend, row_data[0], row_data[1], row_data[2]))
 
-    # CSC summary (u16 only)
+    # CSC summary (all dtypes, lz4 only)
     print()
-    print("  CSC (u16, lz4 only):")
-    for backend in ["kcb", "bs"]:
-        chunks = sum_chunks["lz4"]["u16"]
-        best_csc, best_isa = 0, ""
-        for isa in ISAS:
-            fps_csc, _ = bench_csc("lz4", backend, isa, "u16",
-                                    chunks, mask.ravel(), np.uint16,
-                                    csc_data, csc_indices, csc_indptr, powder)
-            if fps_csc > best_csc:
-                best_csc, best_isa = fps_csc, isa
-        print("    %-3s: %6.1f fps (%s)" % (backend, best_csc, best_isa))
+    print("  CSC (lz4 only):")
+    for dtype_name, out_dtype, _ in DTYPE_INFO:
+        chunks = sum_chunks["lz4"][dtype_name]
+        for backend in ["kcb", "bs"]:
+            best_csc, best_isa = 0, ""
+            for isa in ISAS:
+                fps_csc, _ = bench_csc("lz4", backend, isa, dtype_name,
+                                        chunks, mask.ravel(), out_dtype,
+                                        csc_data, csc_indices, csc_indptr, powder)
+                if fps_csc > best_csc:
+                    best_csc, best_isa = fps_csc, isa
+            print("    %-3s %3s: %6.1f fps (%s)" % (backend, dtype_name, best_csc, best_isa))
 
 
 if __name__ == "__main__":

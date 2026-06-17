@@ -344,6 +344,12 @@ array_stats(img, minval, maxval, mean, var)
 
 ## Testing Strategy
 
+**Benchmark memory hygiene**: All benchmarks must use pre-allocated,
+pre-touched numpy buffers. The c2py23 wrapper maps Python buffers to C
+pointers without copy, but `np.zeros()` adds page-fault+zeroing overhead
+(20-33% on large arrays). Use `np.empty()` + touch (`[:] = 0`) or
+recycle arrays across frames to measure C throughput, not Python alloc.
+
 ### Local CI (pre-push)
 ```bash
 bash run_ci.sh          # Single Python version, ~30s
