@@ -1,8 +1,12 @@
 #!/bin/bash
-# Pre-commit hook: reject any file with non-7-bit-ASCII characters.
+# Pre-commit hook: reject non-ASCII chars and Python 2.7 syntax violations.
 # Install: ln -s ../../.githooks/pre-commit .git/hooks/pre-commit
 
-if git diff --cached --name-only -z | xargs -0 grep -Pn '[^\x00-\x7F]' 2>/dev/null; then
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+PYTHON_FILES=$(echo "$STAGED" | grep '\.py$' || true)
+
+# ---- Check 1: non-ASCII characters ----
+if echo "$STAGED" | xargs -r -I{} grep -PHn '[^\x00-\x7F]' {} 2>/dev/null; then
     echo
     echo "ERROR: non-ASCII characters found. Replace with ASCII equivalents:"
     echo "  U+2192 ->  (arrow)       ->  ->"
@@ -12,4 +16,43 @@ if git diff --cached --name-only -z | xargs -0 grep -Pn '[^\x00-\x7F]' 2>/dev/nu
     echo "  U+2265 >= (greater-equal) ->  >="
     exit 1
 fi
+
+# ---- Check 2: Python 2.7 syntax compatibility ----
+if [ -z "$PYTHON_FILES" ]; then
+    exit 0
+fi
+
+check_python() {
+    local python_bin="$1"
+    local ver_label="$2"
+    local errors=0
+
+    if ! command -v "$python_bin" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    for f in $PYTHON_FILES; do
+        if ! "$python_bin" -m py_compile "$f" 2>/dev/null; then
+            echo
+            echo "ERROR: $f fails to compile on $ver_label:"
+            "$python_bin" -m py_compile "$f" 2>&1 || true
+            errors=1
+        fi
+    done
+    return $errors
+}
+
+HAD_ERROR=0
+check_python python2 "Python 2.7" || HAD_ERROR=1
+check_python python3 "Python 3.x" || HAD_ERROR=1
+
+if [ "$HAD_ERROR" -eq 1 ]; then
+    echo
+    echo "Python 2.7 syntax subset rules (from AGENTS.md):"
+    echo "  Do NOT use: f-strings, type annotations, async/await, nonlocal,"
+    echo "  yield from, {**d}, [*l], @ matrix multiply, keyword-only args."
+    echo "  Use %% or .format() for string formatting."
+    exit 1
+fi
+
 exit 0

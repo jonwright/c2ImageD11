@@ -165,11 +165,11 @@ class TestBitPerfectLZ4:
                 chunk_info, chunk = ds.id.read_direct_chunk((frame, 0, 0))
                 npx = func(chunk, mask.ravel(), vals, inds, cut)
                 assert npx == len(ref_vals), \
-                    f"npx mismatch: {npx} vs {len(ref_vals)} at frame={frame} cut={cut}"
+                    "npx mismatch: %d vs %d at frame=%d cut=%d" % (npx, len(ref_vals), frame, cut)
                 np.testing.assert_array_equal(vals[:npx], ref_vals,
-                    err_msg=f"values mismatch at frame={frame} cut={cut}")
+                    err_msg="values mismatch at frame=%d cut=%d" % (frame, cut))
                 np.testing.assert_array_equal(inds[:npx], ref_inds,
-                    err_msg=f"indices mismatch at frame={frame} cut={cut}")
+                    err_msg="indices mismatch at frame=%d cut=%d" % (frame, cut))
 
     def _test_dataset_csc(self, ds_info, engine, cut=0):
         name, shape, dtype = ds_info
@@ -196,13 +196,13 @@ class TestBitPerfectLZ4:
                 chunk_info, chunk = ds.id.read_direct_chunk((frame, 0, 0))
                 npx = func(chunk, flat, outpx, outP, cut,
                           powder, data, indices, indptr)
-                assert npx == len(ref_vals), f"CSC npx mismatch frame={frame}"
+                assert npx == len(ref_vals), "CSC npx mismatch frame=%d" % frame
                 np.testing.assert_array_equal(outpx[:npx], ref_vals,
-                    err_msg=f"CSC values mismatch frame={frame}")
+                    err_msg="CSC values mismatch frame=%d" % frame)
                 np.testing.assert_array_equal(outP[:npx], ref_inds,
-                    err_msg=f"CSC indices mismatch frame={frame}")
+                    err_msg="CSC indices mismatch frame=%d" % frame)
                 np.testing.assert_allclose(powder, powder_ref, rtol=1e-10,
-                    err_msg=f"CSC powder mismatch frame={frame}")
+                    err_msg="CSC powder mismatch frame=%d" % frame)
 
     def test_lz4_basic_all_datasets(self):
         for ds_info in self._datasets():
@@ -303,11 +303,11 @@ class TestF2pyEquivalence:
                 npx1 = f2py_fn(np.frombuffer(chunk, np.uint8), mask.ravel(), vals1, inds1, 0)
                 npx2 = _m.bslz4_u16(chunk, mask.ravel(), vals2, inds2, 0)
 
-                assert npx1 == npx2, f"frame {i}: npx mismatch"
+                assert npx1 == npx2, "frame %d: npx mismatch" % i
                 np.testing.assert_array_equal(vals1[:npx1], vals2[:npx2],
-                    err_msg=f"frame {i}: values mismatch")
+                    err_msg="frame %d: values mismatch" % i)
                 np.testing.assert_array_equal(inds1[:npx1], inds2[:npx2],
-                    err_msg=f"frame {i}: indices mismatch")
+                    err_msg="frame %d: indices mismatch" % i)
 
     def test_lz4_csc_u16_c_layer(self):
         """Compare bslz4_csc_u16 with original f2py version."""
@@ -349,7 +349,7 @@ class TestF2pyEquivalence:
                 npx2 = _m.bslz4_csc_u16(chunk, flat, outpx2, outP2, 0,
                                         powder2, data, indices, indptr)
 
-                assert npx1 == npx2, f"frame {i}: npx mismatch"
+                assert npx1 == npx2, "frame %d: npx mismatch" % i
                 np.testing.assert_array_equal(outpx1[:npx1], outpx2[:npx2])
                 np.testing.assert_array_equal(outP1[:npx1], outP2[:npx2])
                 np.testing.assert_allclose(powder1, powder2, rtol=1e-10)

@@ -438,6 +438,12 @@ as opaque dependencies. Only the listed API functions are called.
 - Python compatibility: targets 2.7-3.14. The c2py_runtime uses dlopen
   to resolve CPython API, so one .so binary works across versions.
   Build on the oldest target OS for maximum portability.
+  **Python 2.7 syntax subset**: all .py files must parse on Python 2.7.
+  Do NOT use: f-strings, type annotations, async/await, nonlocal,
+  yield from, `{**d}`, `[*l]`, `@` matrix multiply, keyword-only args
+  (def f(*, kw)), `utf-8` source encoding needed by non-ASCII.
+  Use `from __future__ import print_function` in every .py file.
+  Use `%` or `.format()` for string formatting.
 - numpy is used for testing; its buffer protocol (PEP 3118) is supported
   on Python 2.7-3.14 via `PyObject_GetBuffer` / c2py_acquire_buffer.
 - ImageD11 is installed from git head with `--no-deps` to avoid pulling

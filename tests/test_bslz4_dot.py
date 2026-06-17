@@ -105,9 +105,12 @@ def test_csc_vs_pyfai(sparsetest, integrator):
 
         # Verify powder matches pyFAI reference within numerical tolerance
         assert max_err < 1e-4, (
-            f"frame {i}: max abs error={max_err} at bin {max_idx}, "
-            f"powder={powder_out[max_idx]:.6g} ref={reference[i].sum_signal[max_idx]:.6g}"
+            "frame %d: max abs error=%s at bin %d, "
+            "powder=%.6g ref=%.6g" % (
+                i, str(max_err), int(max_idx),
+                powder_out[max_idx], reference[i].sum_signal[max_idx])
         )
         assert max_rel < 1e-4, (
-            f"frame {i}: max rel error={max_rel} at bin {max_idx}"
+            "frame %d: max rel error=%s at bin %d" % (
+                i, str(max_rel), int(max_idx))
         )

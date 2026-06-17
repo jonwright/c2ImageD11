@@ -76,11 +76,11 @@ def _check(func, chunks, raw, mask):
     for i in range(NFRAMES):
         npx = func(chunks[i], mask.ravel(), vals, inds, 0)
         ref_vals, ref_inds = _pysparse(raw[i], mask, 0)
-        assert npx == len(ref_vals), f"frame {i}: npx {npx} != {len(ref_vals)}"
+        assert npx == len(ref_vals), "frame %d: npx %d != %d" % (i, npx, len(ref_vals))
         np.testing.assert_array_equal(vals[:npx], ref_vals,
-            err_msg=f"frame {i}: values mismatch")
+            err_msg="frame %d: values mismatch" % i)
         np.testing.assert_array_equal(inds[:npx], ref_inds,
-            err_msg=f"frame {i}: indices mismatch")
+            err_msg="frame %d: indices mismatch" % i)
 
 
 def _check_csc(func, chunks, raw, mask):
@@ -98,7 +98,7 @@ def _check_csc(func, chunks, raw, mask):
         npx = func(chunks[i], mask.ravel(), outpx, outP, 0,
                    powder, data, indices, indptr)
         ref_vals, ref_inds = _pysparse(raw[i], mask, 0)
-        assert npx == len(ref_vals), f"frame {i}: npx {npx} != {len(ref_vals)}"
+        assert npx == len(ref_vals), "frame %d: npx %d != %d" % (i, npx, len(ref_vals))
         np.testing.assert_array_equal(outpx[:npx], ref_vals)
         np.testing.assert_array_equal(outP[:npx], ref_inds)
         powder_ref[:] = 0
