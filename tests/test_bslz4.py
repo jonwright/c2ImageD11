@@ -6,7 +6,7 @@ Equivalence tests compare against the original bslz4_to_sparse package.
 
 import numpy as np
 import pytest
-import c2ImageD11._cImageD11 as m
+import c2ImageD11._cImageD11 as _m
 
 
 # ---------------------------------------------------------------------------
@@ -15,6 +15,23 @@ import c2ImageD11._cImageD11 as m
 
 class TestBslz4Buffer:
     """Test that bslz4 C functions accept buffers and return int."""
+
+    BASIC_FUNCS = {
+        np.uint8:  _m.bslz4_u8,
+        np.uint16: _m.bslz4_u16,
+        np.uint32: _m.bslz4_u32,
+    }
+    CSC_FUNCS = {
+        np.uint8:  _m.bslz4_csc_u8,
+        np.uint16: _m.bslz4_csc_u16,
+        np.uint32: _m.bslz4_csc_u32,
+    }
+    ZSTD_BASIC = {
+        np.uint16: _m.bszstd_u16,
+    }
+    ZSTD_CSC = {
+        np.uint16: _m.bszstd_csc_u16,
+    }
 
     def _check_basic(self, func, dtype):
         """Call a basic bslz4 function with zeroed data. Should return 0 npx."""
@@ -40,23 +57,29 @@ class TestBslz4Buffer:
         assert isinstance(npx, int)
         return npx
 
-    def test_bslz4_uint8(self):
-        self._check_basic(m.bslz4_uint8, np.uint8)
+    def test_bslz4_u8(self):
+        self._check_basic(self.BASIC_FUNCS[np.uint8], np.uint8)
 
-    def test_bslz4_uint16(self):
-        self._check_basic(m.bslz4_uint16, np.uint16)
+    def test_bslz4_u16(self):
+        self._check_basic(self.BASIC_FUNCS[np.uint16], np.uint16)
 
-    def test_bslz4_uint32(self):
-        self._check_basic(m.bslz4_uint32, np.uint32)
+    def test_bslz4_u32(self):
+        self._check_basic(self.BASIC_FUNCS[np.uint32], np.uint32)
 
-    def test_bslz4_csc_uint8(self):
-        self._check_csc(m.bslz4_csc_uint8, np.uint8)
+    def test_bslz4_csc_u8(self):
+        self._check_csc(self.CSC_FUNCS[np.uint8], np.uint8)
 
-    def test_bslz4_csc_uint16(self):
-        self._check_csc(m.bslz4_csc_uint16, np.uint16)
+    def test_bslz4_csc_u16(self):
+        self._check_csc(self.CSC_FUNCS[np.uint16], np.uint16)
 
-    def test_bslz4_csc_uint32(self):
-        self._check_csc(m.bslz4_csc_uint32, np.uint32)
+    def test_bslz4_csc_u32(self):
+        self._check_csc(self.CSC_FUNCS[np.uint32], np.uint32)
+
+    def test_bszstd_u16(self):
+        self._check_basic(self.ZSTD_BASIC[np.uint16], np.uint16)
+
+    def test_bszstd_csc_u16(self):
+        self._check_csc(self.ZSTD_CSC[np.uint16], np.uint16)
 
 
 # ---------------------------------------------------------------------------
@@ -110,7 +133,7 @@ class TestEquivalence:
             # Ours: c2py23 bslz4_uint16(compressed, mask, out, outP, thresh)
             vals_new = np.zeros(N, dtype=np.uint16)
             inds_new = np.zeros(N, dtype=np.uint32)
-            npx_new = m.bslz4_uint16(
+            npx_new = _m.bslz4_u16(
                 chunk_buf, mask.ravel(), vals_new, inds_new, 0)
 
         assert npx_orig == npx_new

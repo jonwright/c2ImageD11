@@ -32,3 +32,11 @@ include bitshuffle/src/bitshuffle_internals.h
 include bitshuffle/src/bitshuffle_core.c
 include bitshuffle/src/iochain.h
 include bitshuffle/src/iochain.c
+include zstd/lib/zstd.h
+include zstd/lib/common/*.c
+include zstd/lib/common/*.h
+include zstd/lib/compress/*.c
+include zstd/lib/compress/*.h
+include zstd/lib/decompress/*.c
+include zstd/lib/decompress/*.h
+include zstd/lib/decompress/*.S

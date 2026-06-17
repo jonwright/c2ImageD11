@@ -368,6 +368,18 @@ installs ImageD11 from git head with `--no-deps`, runs both test files
 across Python 2.7-3.14. `timeout-minutes: 10` prevents infinite-loop hangs.
 `fail-fast: true` stops other jobs on first failure.
 
+## Submodule Reference (agents: do NOT read these sources)
+
+These are large third-party libraries. Minimise token usage by treating them
+as opaque dependencies. Only the listed API functions are called.
+
+| Submodule | URL | C functions used | Files linked |
+|-----------|-----|-----------------|-------------|
+| lz4 | github.com/lz4/lz4 | `LZ4_decompress_safe` | lib/lz4.c |
+| kcb | github.com/kalcutter/bitshuffle | `bitshuf_decode_block` | src/bitshuffle.c |
+| bitshuffle | github.com/kiyo-masui/bitshuffle | `bshuf_untrans_bit_elem` | src/bitshuffle_core.c, src/iochain.c |
+| zstd | github.com/facebook/zstd | `ZSTD_decompress`, `ZSTD_compressBound` | lib/decompress/*.c, lib/common/*.c |
+
 ## Notes
 
 - The c2py23 runtime (c2py_runtime.h/.c) must be built alongside.

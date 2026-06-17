@@ -12,12 +12,18 @@ Provides:
 import numpy as np
 
 from c2ImageD11._cImageD11 import (
-    bslz4_uint8,
-    bslz4_uint16,
-    bslz4_uint32,
-    bslz4_csc_uint8,
-    bslz4_csc_uint16,
-    bslz4_csc_uint32,
+    bslz4_u8,
+    bslz4_u16,
+    bslz4_u32,
+    bslz4_csc_u8,
+    bslz4_csc_u16,
+    bslz4_csc_u32,
+    bszstd_u8,
+    bszstd_u16,
+    bszstd_u32,
+    bszstd_csc_u8,
+    bszstd_csc_u16,
+    bszstd_csc_u32,
 )
 
 version = "0.1.0"
@@ -61,10 +67,10 @@ class chunk2sparse:
         itemsize = np.dtype(dtype).itemsize
         self.fun = (
             None,
-            bslz4_uint8,
-            bslz4_uint16,
+            bslz4_u8,
+            bslz4_u16,
             None,
-            bslz4_uint32,
+            bslz4_u32,
         )[itemsize]
 
     def __call__(self, buffer, cut):
@@ -113,11 +119,11 @@ def bslz4_to_sparse(ds, num, cut, mask=None, pixelbuffer=None):
         values, indices = pixelbuffer
     filtinfo, buffer = ds.id.read_direct_chunk((num, 0, 0))
     if ds.dtype == np.uint16:
-        npixels = bslz4_uint16(npbuf(buffer), mask, values, indices, cut)
+        npixels = bslz4_u16(npbuf(buffer), mask, values, indices, cut)
     elif ds.dtype == np.uint32:
-        npixels = bslz4_uint32(npbuf(buffer), mask, values, indices, cut)
+        npixels = bslz4_u32(npbuf(buffer), mask, values, indices, cut)
     elif ds.dtype == np.uint8:
-        npixels = bslz4_uint8(npbuf(buffer), mask, values, indices, cut)
+        npixels = bslz4_u8(npbuf(buffer), mask, values, indices, cut)
     else:
         raise Exception("no decoder for your type")
     if npixels < 0:
@@ -158,10 +164,10 @@ class chunk2sparseCSC:
         itemsize = np.dtype(dtype).itemsize
         self.fun = (
             None,
-            bslz4_csc_uint8,
-            bslz4_csc_uint16,
+            bslz4_csc_u8,
+            bslz4_csc_u16,
             None,
-            bslz4_csc_uint32,
+            bslz4_csc_u32,
         )[itemsize]
 
     def __call__(self, buffer, cut):

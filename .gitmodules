@@ -7,3 +7,6 @@
 [submodule "bitshuffle"]
 	path = bitshuffle
 	url = https://github.com/kiyo-masui/bitshuffle.git
+[submodule "zstd"]
+	path = zstd
+	url = https://github.com/facebook/zstd.git

@@ -33,6 +33,7 @@ SIMD_DIR = os.path.join(REPO_ROOT, "src_simd")
 LZ4_DIR = os.path.join(REPO_ROOT, "lz4")
 KCB_DIR = os.path.join(REPO_ROOT, "kcb")
 BITSHUFFLE_DIR = os.path.join(REPO_ROOT, "bitshuffle")
+ZSTD_DIR = os.path.join(REPO_ROOT, "zstd")
 C2PY_FILE = os.path.join(REPO_ROOT, "_cImageD11.c2py")
 MODULE_NAME = "_cImageD11"
 PACKAGE_NAME = "c2ImageD11"
@@ -93,9 +94,9 @@ _SIMD_KERNELS = [
     ("reorderlut_u16_a32", "reorderlut_u16_a32_kernel.c"),
 ]
 
-# bslz4_to_sparse kernel compilation: one source → 6 ISA×backend variants
+# bslz4/bszstd kernel compilation: one source → 12 ISA×backend×engine variants
 _BSLZ4_KERNELS = [
-    ("bslz4_to_sparse", "src/bslz4_to_sparse.c"),
+    ("bs_master", "src/bs_master.c"),
 ]
 
 # ISA variants: (variant_suffix, compiler_flag)
@@ -112,7 +113,8 @@ else:
         ("sse42", None),  # generic -O3, no x86 flag
     ]
 
-_CFLAGS_BASE = ["-O3", "-fPIC", "-fopenmp", "-Wall"]
+_CFLAGS_BASE = ["-O3", "-fPIC", "-Wall"]
+_CFLAGS_OMP = ["-O3", "-fPIC", "-fopenmp", "-Wall"]
 
 
 def _compile_simd_variants(build_dir):
@@ -133,7 +135,7 @@ def _compile_simd_variants(build_dir):
             obj_path = os.path.join(build_dir, obj_name)
 
             fn_name = "{}_{}".format(kernel_name, variant_name)
-            cflags = _CFLAGS_BASE[:]
+            cflags = _CFLAGS_OMP[:]
             if simd_flag:
                 cflags.append(simd_flag)
 
@@ -151,11 +153,15 @@ def _compile_simd_variants(build_dir):
 
 
 def _compile_bslz4_variants(build_dir):
-    """Compile bslz4_to_sparse.c with backend×ISA combinations.
+    """Compile bs_master.c with engine×backend×ISA combinations.
 
     Each compilation produces all 6 type-variant functions
-    (uint8/uint16/uint32 × basic/CSC) with names like
-    bslz4_uint16_t_kcb_avx512(), bslz4_uint16_t_bs_sse42(), etc.
+    (u8/u16/u32 × basic/CSC) with names like
+    bslz4_u16_kcb_avx512(), bszstd_u16_bs_sse42(), etc.
+
+    Engines:
+       - lz4:  uses LZ4 decompress
+       - zstd: uses ZSTD decompress  (-DUSE_ZSTD)
 
     Backends:
        - kcb:  uses KCB bitshuffle  (-DUSE_KCB)
@@ -172,9 +178,13 @@ def _compile_bslz4_variants(build_dir):
         "-I" + LZ4_DIR + "/lib",
         "-I" + KCB_DIR + "/src",
         "-I" + BITSHUFFLE_DIR + "/src",
+        "-I" + ZSTD_DIR + "/lib",
+        "-I" + ZSTD_DIR + "/lib/common",
+        "-I" + ZSTD_DIR + "/lib/compress",
+        "-I" + ZSTD_DIR + "/lib/decompress",
     ]
 
-    src_path = os.path.join(REPO_ROOT, "src", "bslz4_to_sparse.c")
+    src_path = os.path.join(REPO_ROOT, "src", "bs_master.c")
     if not os.path.isfile(src_path):
         print("c2ImageD11: WARNING - bslz4 kernel not found: {}".format(src_path))
         return objects
@@ -182,31 +192,36 @@ def _compile_bslz4_variants(build_dir):
     for kernel_name, src_file in _BSLZ4_KERNELS:
         src_path_full = os.path.join(REPO_ROOT, src_file)
 
-        # Backend suffix + extra flags
-        for backend_suffix, backend_cflags in [
-            ("kcb", ["-DUSE_KCB"]),
-            ("bs", []),
+        # Engine: lz4 (default) or zstd (-DUSE_ZSTD)
+        for engine_suffix, engine_cflags in [
+            ("lz4", []),
+            ("zstd", ["-DUSE_ZSTD"]),
         ]:
-            for variant_name, simd_flag in _SIMD_VARIANTS:
-                full_suffix = "_{}_{}".format(backend_suffix, variant_name)
-                obj_name = "{}{}.o".format(kernel_name, full_suffix)
-                obj_path = os.path.join(build_dir, obj_name)
+            for backend_suffix, backend_cflags in [
+                ("kcb", ["-DUSE_KCB"]),
+                ("bs", []),
+            ]:
+                for variant_name, simd_flag in _SIMD_VARIANTS:
+                    full_suffix = "_{}_{}_{}".format(engine_suffix, backend_suffix, variant_name)
+                    obj_name = "{}{}.o".format(kernel_name, full_suffix)
+                    obj_path = os.path.join(build_dir, obj_name)
 
-                cflags = _CFLAGS_BASE[:]
-                if simd_flag:
-                    cflags.append(simd_flag)
-                cflags.extend(backend_cflags)
+                    cflags = _CFLAGS_BASE[:]
+                    if simd_flag:
+                        cflags.append(simd_flag)
+                    cflags.extend(backend_cflags)
+                    cflags.extend(engine_cflags)
 
-                fn_suffix = "_{}_{}".format(backend_suffix, variant_name)
-                cmd = [cc, "-c"] + include_dirs + cflags + [
-                    "-DKERNEL_SUFFIX=" + fn_suffix,
-                    src_path_full, "-o", obj_path,
-                ]
-                print("c2ImageD11: BSLZ4 compile {}".format(obj_name))
-                rc = subprocess.call(cmd)
-                if rc != 0:
-                    sys.exit(rc)
-                objects.append(obj_path)
+                    fn_suffix = "_{}_{}".format(backend_suffix, variant_name)
+                    cmd = [cc, "-c"] + include_dirs + cflags + [
+                        "-DKERNEL_SUFFIX=" + fn_suffix,
+                        src_path_full, "-o", obj_path,
+                    ]
+                    print("c2ImageD11: BSLZ4 compile {}".format(obj_name))
+                    rc = subprocess.call(cmd)
+                    if rc != 0:
+                        sys.exit(rc)
+                    objects.append(obj_path)
 
     return objects
 
@@ -232,6 +247,23 @@ class c2py23_build_ext(build_ext):
         # Step 0b: Compile bslz4 kernel variants (backend × ISA)
         print("c2ImageD11: compiling BSLZ4 kernel variants...")
         bslz4_objects = _compile_bslz4_variants(build_dir)
+
+        # Step 0c: Compile zstd assembly file (setuptools doesn't handle .S)
+        zstd_asm = os.path.join(ZSTD_DIR, "lib", "decompress",
+                                "huf_decompress_amd64.S")
+        zstd_asm_o = os.path.join(build_dir, "huf_decompress_amd64.o")
+        if os.path.isfile(zstd_asm):
+            cc = os.environ.get("CC", "gcc")
+            cmd = [cc, "-c", "-O3", "-fPIC", "-Wall",
+                   "-I", os.path.join(ZSTD_DIR, "lib"),
+                   "-I", os.path.join(ZSTD_DIR, "lib", "common"),
+                   "-I", os.path.join(ZSTD_DIR, "lib", "decompress"),
+                   zstd_asm, "-o", zstd_asm_o]
+            print("c2ImageD11: compiling zstd asm")
+            rc = subprocess.call(cmd)
+            if rc != 0:
+                sys.exit(rc)
+            bslz4_objects.append(zstd_asm_o)
 
         # Step 1: Generate wrapper C code
         from c2py23.parser import load_c2py
@@ -260,6 +292,10 @@ class c2py23_build_ext(build_ext):
             ext.include_dirs.append(os.path.join(LZ4_DIR, "lib"))
             ext.include_dirs.append(os.path.join(KCB_DIR, "src"))
             ext.include_dirs.append(os.path.join(BITSHUFFLE_DIR, "src"))
+            ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib"))
+            ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "common"))
+            ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "compress"))
+            ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "decompress"))
             for flag in _EXTRA_COMPILE_ARGS:
                 if flag not in ext.extra_compile_args:
                     ext.extra_compile_args.append(flag)
@@ -303,6 +339,19 @@ SOURCES = [
     os.path.join("kcb", "src", "bitshuffle.c"),
     os.path.join("bitshuffle", "src", "bitshuffle_core.c"),
     os.path.join("bitshuffle", "src", "iochain.c"),
+    # zstd decompress engine
+    os.path.join("zstd", "lib", "common", "debug.c"),
+    os.path.join("zstd", "lib", "common", "entropy_common.c"),
+    os.path.join("zstd", "lib", "common", "error_private.c"),
+    os.path.join("zstd", "lib", "common", "fse_decompress.c"),
+    os.path.join("zstd", "lib", "common", "pool.c"),
+    os.path.join("zstd", "lib", "common", "threading.c"),
+    os.path.join("zstd", "lib", "common", "xxhash.c"),
+    os.path.join("zstd", "lib", "common", "zstd_common.c"),
+    os.path.join("zstd", "lib", "decompress", "huf_decompress.c"),
+    os.path.join("zstd", "lib", "decompress", "zstd_ddict.c"),
+    os.path.join("zstd", "lib", "decompress", "zstd_decompress.c"),
+    os.path.join("zstd", "lib", "decompress", "zstd_decompress_block.c"),
 ]
 
 ext = Extension(
