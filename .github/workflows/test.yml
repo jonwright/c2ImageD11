@@ -20,6 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: c2ImageD11
+          submodules: true
 
       - uses: actions/checkout@v4
         with:

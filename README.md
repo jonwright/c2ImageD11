@@ -5,8 +5,9 @@ f2py to c2py23.  Provides 64 C functions (closest-vec, score, compute_gv,
 connectedpixels, sparse operations, bslz4 decompress, etc.) with SIMD
 dispatch (SSE4.2/AVX2/AVX-512) for hot-path functions.
 
-**Status:** All 53 equivalence tests pass (1 expected skip). 7 bslz4 tests
-pass. CI green on Python 2.7–3.14.
+**Status:** All 53 equivalence tests pass (1 expected skip). 25 bslz4/bszstd
+tests pass (buffer + bit-perfect + CSC + f2py equivalence). CI green on
+Python 2.7–3.14.
 
 ## Quick start
 
@@ -32,10 +33,11 @@ Requires GCC with `-fopenmp` and a c2py23 installation.
   blobproperties, etc.) auto-select AVX-512 / AVX2 / SSE4.2 at runtime.
   Use `_rebind_score('avx2')` to force a specific variant.
 
-- **bslz4_to_sparse**: Bitshuffle-lz4 compressed frame decoding directly
-  to sparse (indices, values) arrays, with dual backend support:
-  - KCB (kalcutter/bitshuffle) — priority, better SIMD
-  - bitshuffle (kiyo-masui) — fallback, original community standard
+- **bslz4_to_sparse**: Bitshuffle-lz4+zstd compressed frame decoding directly
+  to sparse (indices, values) arrays, with dual compression engine +
+  dual unshuffle backend support:
+  - Engines: LZ4 (default), ZSTD (better compression ratio)
+  - Backends: KCB (kalcutter, priority), bitshuffle-core (kiyo-masui, fallback)
   - Python API: `chunk2sparse`, `chunk2sparseCSC`, `bslz4_to_sparse()`
 
 - **Per-function timing**: `c2py23.perf.read_perf()` for C-level

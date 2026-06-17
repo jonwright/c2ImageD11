@@ -377,6 +377,12 @@ Both scripts must pass before pushing. `run_ci.sh` creates a clean venv,
 installs c2py23 from a sibling directory, builds c2ImageD11, installs
 ImageD11 from git head with `--no-deps`, and runs the full test suite.
 
+**Pre-push checklist**: Before pushing, also verify:
+  - `.github/workflows/test.yml` includes `submodules: true` for all
+    checkout steps (otherwise CI fails on missing lz4/kcb/etc.)
+  - `README.md` status line and test counts are up to date
+  - `MANIFEST.in` includes any new source files added to submodules
+
 ### Test Files
 1. `test_buffer.py`: Lightweight numpy buffer-interface tests. No ImageD11
    dependency. Verifies the build succeeded and buffer protocol calls work.
