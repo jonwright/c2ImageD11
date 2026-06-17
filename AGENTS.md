@@ -405,6 +405,11 @@ as opaque dependencies. Only the listed API functions are called.
 
 ## Notes
 
+- **Virtualenv convention**: create venvs as `venv/py<major><minor>/<arch>/`
+  (e.g. `venv/py312/x86_64/`). This directory is gitignore'd. Always reuse
+  the same venv; re-create only if the Python version or arch changes.
+  Never put venvs in /tmp or tests/.
+
 - The c2py23 runtime (c2py_runtime.h/.c) must be built alongside.
   The `c2py23 build` command handles this.
 - OpenMP: compile with `-fopenmp`. `gil_release: true` is used for
