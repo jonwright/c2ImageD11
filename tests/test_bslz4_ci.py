@@ -1,6 +1,6 @@
 """CI-friendly bslz4/bszstd regression tests.
 
-Generates synthetic Poisson test data (prime×prime image, 5 frames,
+Generates synthetic Poisson test data (primexprime image, 5 frames,
 >5 bslz4 blocks of 8kB) in u8/u16/u32, compressed with LZ4 and ZSTD.
 Decompresses all 12 Python-facing functions and verifies output
 matches the original uncompressed data.
@@ -17,7 +17,7 @@ h5py = pytest.importorskip("h5py")
 hdf5plugin = pytest.importorskip("hdf5plugin")  # noqa: registers filter 32008
 
 # Two primes, >5 blocks of 8192 bytes for all dtypes
-# 251 × 331 = 83,081 pixels
+# 251 x 331 = 83,081 pixels
 #   u8:  83,081 bytes = 10.1 blocks
 #   u16: 166,162 bytes = 20.3 blocks
 #   u32: 332,324 bytes = 40.6 blocks

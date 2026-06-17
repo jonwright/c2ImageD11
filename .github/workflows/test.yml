@@ -17,12 +17,14 @@ jobs:
         python-version: ["2.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           path: c2ImageD11
           submodules: true
 
-      - uses: actions/checkout@v4
+      - name: Checkout c2py23
+        uses: actions/checkout@v4
         with:
           repository: jonwright/c2py23
           path: c2py23

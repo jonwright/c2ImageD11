@@ -7,7 +7,7 @@ dispatch (SSE4.2/AVX2/AVX-512) for hot-path functions.
 
 **Status:** All 53 equivalence tests pass (1 expected skip). 38 bslz4/bszstd
 tests pass (CI micro + bit-perfect + CSC + f2py equivalence). CI green
-on Python 2.7–3.14.
+on Python 2.7-3.14.
 
 ## Quick start
 
@@ -49,7 +49,7 @@ Requires GCC with `-fopenmp` and a c2py23 installation.
 
 ## See also
 
-- `AGENTS.md` — full project plan, architecture, conventions
-- `PLAN.md` — migration roadmap and bug fix details
-- `tests/bench_bslz4.py` — throughput benchmark for bslz4 variants
-- `tests/benchmark_simd.py` — ISA-level SIMD variant comparison
+- `AGENTS.md` -- full project plan, architecture, conventions
+- `PLAN.md` -- migration roadmap and bug fix details
+- `tests/bench_bslz4.py` -- throughput benchmark for bslz4 variants
+- `tests/benchmark_simd.py` -- ISA-level SIMD variant comparison

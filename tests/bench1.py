@@ -1,6 +1,6 @@
 """bench1.py -- comprehensive bslz4/bszstd benchmark.
 
-Tests all engine×backend×ISA variants across u8/u16/u32 dtypes,
+Tests all enginexbackendxISA variants across u8/u16/u32 dtypes,
 basic and CSC modes, with saturated-pixel mask.
 
 Data files expected in /home/worker/test_data/:
@@ -104,7 +104,7 @@ def fmt(n):
 def main():
     mask = np.load(os.path.join(DATADIR, "eiger_mask.npy"))
     print("=" * 80)
-    print("  bench1.py: bslz4/bszstd variants — %d frames x %d repeats" %
+    print("  bench1.py: bslz4/bszstd variants -- %d frames x %d repeats" %
           (NFRAMES, NREPEATS))
     print("  mask: %d saturated pixels of %d (%.1f%%)" %
           (mask.sum(), mask.size, 100.*mask.sum()/mask.size))
@@ -173,7 +173,7 @@ def main():
 
     # Summary
     print("\n" + "=" * 80)
-    print("  Best fps per backend×dtype (KCB backend, basic sparse)")
+    print("  Best fps per backendxdtype (KCB backend, basic sparse)")
     print("=" * 80)
     print("  %-4s  %6s  %6s  %6s  %s" % ("", "u8", "u16", "u32", "(best ISA)"))
     print("  " + "-" * 55)

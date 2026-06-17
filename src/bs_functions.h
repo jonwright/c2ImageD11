@@ -1,8 +1,8 @@
 /* Forward declarations for all bitshuffle sparse decompress functions.
  *
- * 72 functions = 3 types (u8/u16/u32) × 2 variants (basic/csc)
- *              × 2 engines (lz4/zstd) × 2 backends (kcb/bs)
- *              × 3 ISAs (sse42/avx2/avx512)
+ * 72 functions = 3 types (u8/u16/u32) x 2 variants (basic/csc)
+ *              x 2 engines (lz4/zstd) x 2 backends (kcb/bs)
+ *              x 3 ISAs (sse42/avx2/avx512)
  *
  * Generated from bs_master.c templates. Used by c2py23 for wrapper codegen.
  */
@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 /* =========================================================================
- * LZ4 engine × KCB backend
+ * LZ4 engine x KCB backend
  * ========================================================================= */
 
 /* u16 basic */
@@ -101,7 +101,7 @@ int bslz4_csc_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_l
     float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
 
 /* =========================================================================
- * LZ4 engine × bitshuffle-core backend
+ * LZ4 engine x bitshuffle-core backend
  * ========================================================================= */
 
 /* u16 */
@@ -183,7 +183,7 @@ int bslz4_csc_u8_bs_avx512(const uint8_t *restrict compressed, int compressed_le
     float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
 
 /* =========================================================================
- * ZSTD engine × KCB backend
+ * ZSTD engine x KCB backend
  * ========================================================================= */
 
 /* u16 */
@@ -265,7 +265,7 @@ int bszstd_csc_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_
     float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
 
 /* =========================================================================
- * ZSTD engine × bitshuffle-core backend
+ * ZSTD engine x bitshuffle-core backend
  * ========================================================================= */
 
 /* u16 */

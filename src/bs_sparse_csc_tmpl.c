@@ -76,7 +76,7 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
                                (size_t)(BLK/NB), (size_t)NB);
 #endif
 
-        /* --- step 3: mask → sparse + CSC accumulate --- */
+        /* --- step 3: mask -> sparse + CSC accumulate --- */
         for (j = 0; j < BLK/NB; j++) {
             val = tmp2[j] * mask[j + i0];
             if (unlikely(val > 0)) {

@@ -69,7 +69,7 @@ int KERNEL_FN(const uint8_t *restrict compressed, int compressed_length,
                                (size_t)(BLK/NB), (size_t)NB);
 #endif
 
-        /* --- step 3: mask → sparse --- */
+        /* --- step 3: mask -> sparse --- */
         for (j = 0; j < BLK/NB; j++) {
             val = mask[j + i0] * tmp2[j];
             if (unlikely(val > cut)) {

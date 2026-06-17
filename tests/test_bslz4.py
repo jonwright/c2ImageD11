@@ -1,6 +1,6 @@
 """Bit-perfect regression tests for bslz4/bszstd C functions.
 
-Tests all engine×dtype×shape×distribution combinations against
+Tests all enginexdtypexshapexdistribution combinations against
 pure-numpy reference. Also compares against original bslz4_to_sparse
 f2py output when available.
 

@@ -1,0 +1,15 @@
+#!/bin/bash
+# Pre-commit hook: reject any file with non-7-bit-ASCII characters.
+# Install: ln -s ../../.githooks/pre-commit .git/hooks/pre-commit
+
+if git diff --cached --name-only -z | xargs -0 grep -Pn '[^\x00-\x7F]' 2>/dev/null; then
+    echo
+    echo "ERROR: non-ASCII characters found. Replace with ASCII equivalents:"
+    echo "  U+2192 ->  (arrow)       ->  ->"
+    echo "  U+2014 -- (em dash)      ->  --"
+    echo "  U+2013 -  (en dash)      ->  -"
+    echo "  U+00D7 x  (multi sign)   ->  x"
+    echo "  U+2265 >= (greater-equal) ->  >="
+    exit 1
+fi
+exit 0

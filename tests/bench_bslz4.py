@@ -1,6 +1,6 @@
 """Benchmark all bslz4/bszstd_u16 variants on real Eiger data.
 
-Forces each of 12 variants (2 engines × 2 backends × 3 ISAs) via
+Forces each of 12 variants (2 engines x 2 backends x 3 ISAs) via
 _rebind API and measures wall-clock throughput. 3 repeats each.
 
 Usage: python3 tests/bench_bslz4.py

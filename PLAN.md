@@ -19,13 +19,13 @@ submission to ImageD11.
 
 | ID | File | Line | Bug | Fix |
 |----|------|------|-----|-----|
-| F1 | closest.c | 425 | Inner loop increments `i` not `j`; R,H,UB partially uninitialized | `i++` → `j++` |
+| F1 | closest.c | 425 | Inner loop increments `i` not `j`; R,H,UB partially uninitialized | `i++` -> `j++` |
 | F2 | sparse_image.c | 1015-1016 | AVX-512 row/col uses chunk start `p` instead of `(p+bit)` | Use `(p+bit)` |
-| F3 | closest.c | 195 | `best = 99.` magic number; no match if all distances ≥ 99 | `best = DBL_MAX` |
-| F4 | connectedpixels.c | 364 | `assert("I am not here!")` — string literal always truthy | `assert(0 && "unreachable")` |
+| F3 | closest.c | 195 | `best = 99.` magic number; no match if all distances >= 99 | `best = DBL_MAX` |
+| F4 | connectedpixels.c | 364 | `assert("I am not here!")` -- string literal always truthy | `assert(0 && "unreachable")` |
 | F5 | blobs.c | 239 | `S = realloc(S, ...)` clobbers S on failure | Use temp variable |
-| F6 | darkflat.c | 416 | `ostep = nhist / (high - low)` — div by zero if high==low | Add guard |
-| F7 | closest.c | 647,652,656 | `1.0/sqrt(0)` when g-vector is zero → NaN | Add zero-guard |
+| F6 | darkflat.c | 416 | `ostep = nhist / (high - low)` -- div by zero if high==low | Add guard |
+| F7 | closest.c | 647,652,656 | `1.0/sqrt(0)` when g-vector is zero -> NaN | Add zero-guard |
 | F8 | sparse_image.c | 864-872 | Three `if` instead of `if/else if/else if` | Use else if |
 | F9 | connectedpixels.c | 9-18 | `boundscheck` calls `exit(0)` | Change to `return` |
 
@@ -69,7 +69,7 @@ bslz4 C extension with KCB/bitshuffle backend dispatch:
 
 ## Blockers
 
-- ~~c2py23: CPU feature detection for SIMD dispatch~~ — DONE (commit 645356d)
-- ~~c2py23: Fixed-width types, optional params, docstrings, constants~~ — DONE
+- ~~c2py23: CPU feature detection for SIMD dispatch~~ -- DONE (commit 645356d)
+- ~~c2py23: Fixed-width types, optional params, docstrings, constants~~ -- DONE
 - c2py23: not on PyPI (requires --no-build-isolation, see c2py23_requests.md #9)
 - ImageD11 cImageD11.py: not yet updated to try c2ImageD11 first (planned post-testing)

@@ -94,7 +94,7 @@ _SIMD_KERNELS = [
     ("reorderlut_u16_a32", "reorderlut_u16_a32_kernel.c"),
 ]
 
-# bslz4/bszstd kernel compilation: one source → 12 ISA×backend×engine variants
+# bslz4/bszstd kernel compilation: one source -> 12 ISAxbackendxengine variants
 _BSLZ4_KERNELS = [
     ("bs_master", "src/bs_master.c"),
 ]
@@ -153,10 +153,10 @@ def _compile_simd_variants(build_dir):
 
 
 def _compile_bslz4_variants(build_dir):
-    """Compile bs_master.c with engine×backend×ISA combinations.
+    """Compile bs_master.c with enginexbackendxISA combinations.
 
     Each compilation produces all 6 type-variant functions
-    (u8/u16/u32 × basic/CSC) with names like
+    (u8/u16/u32 x basic/CSC) with names like
     bslz4_u16_kcb_avx512(), bszstd_u16_bs_sse42(), etc.
 
     Engines:
@@ -244,7 +244,7 @@ class c2py23_build_ext(build_ext):
             os.makedirs(build_dir)
         simd_objects = _compile_simd_variants(build_dir)
 
-        # Step 0b: Compile bslz4 kernel variants (backend × ISA)
+        # Step 0b: Compile bslz4 kernel variants (backend x ISA)
         print("c2ImageD11: compiling BSLZ4 kernel variants...")
         bslz4_objects = _compile_bslz4_variants(build_dir)
 

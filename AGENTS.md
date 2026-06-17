@@ -99,17 +99,17 @@ flat overloads unchanged.
 
 ```
 Python caller
-  → _cImageD11.score(ubi, gv, tol)
-    → _wrapper: buffer acquire + checks
-    → _impl: outer when: (format check, per-call)
-      → inner switch: _score_group_variant (pre-resolved at init)
-        → score_avx512 / score_avx2 / score_sse42
+  -> _cImageD11.score(ubi, gv, tol)
+    -> _wrapper: buffer acquire + checks
+    -> _impl: outer when: (format check, per-call)
+      -> inner switch: _score_group_variant (pre-resolved at init)
+        -> score_avx512 / score_avx2 / score_sse42
 
 Module init:
   c2py_runtime_init()
-    → cpuid probing → sets c2py_amd64_avx2, c2py_amd64_avx512f
+    -> cpuid probing -> sets c2py_amd64_avx2, c2py_amd64_avx512f
   _score_group_resolve()
-    → if (c2py_amd64_avx512f) _score_group_variant = 0
+    -> if (c2py_amd64_avx512f) _score_group_variant = 0
       else if (c2py_amd64_avx2) _score_group_variant = 1
       else _score_group_variant = 2
 ```
@@ -228,7 +228,7 @@ _cImageD11._rebind_score(None)     # back to auto-resolve
 | `src_simd/reorderlut_f32_a32_kernel.c` | NEW |
 | `src_simd/reorder_u16_a32_kernel.c` | NEW |
 | `src_simd/reorderlut_u16_a32_kernel.c` | NEW |
-| `_cImageD11.c2py` | ~15 functions: flat→grouped variants; add `gil_release`; add `c2py_amd64.h` |
+| `_cImageD11.c2py` | ~15 functions: flat->grouped variants; add `gil_release`; add `c2py_amd64.h` |
 | `setup.py` | Add `_compile_simd_variants()` pre-build; link .o files |
 | `c2py23_requests.md` | Mark #7 DONE |
 | `AGENTS.md` | This Phase VIII section |
@@ -415,6 +415,10 @@ as opaque dependencies. Only the listed API functions are called.
   (e.g. `venv/py312/x86_64/`). This directory is gitignore'd. Always reuse
   the same venv; re-create only if the Python version or arch changes.
   Never put venvs in /tmp or tests/.
+- **ASCII only**: This repo must contain only 7-bit ASCII characters.
+  Non-ASCII (Unicode arrows, em dashes, multiplication signs, etc.)
+  break Python 2.7 CI. A pre-commit hook in `.githooks/pre-commit`
+  enforces this. Install it: `ln -sf ../../.githooks/pre-commit .git/hooks/pre-commit`
 
 - The c2py23 runtime (c2py_runtime.h/.c) must be built alongside.
   The `c2py23 build` command handles this.
@@ -442,7 +446,7 @@ as opaque dependencies. Only the listed API functions are called.
 
 ## Phase IX: bslz4_to_sparse Import (bslz4_import)
 
-Import the bslz4_to_sparse C extension (bitshuffle-lz4 decompress→sparse)
+Import the bslz4_to_sparse C extension (bitshuffle-lz4 decompress->sparse)
 into c2ImageD11.  ImageD11/sinograms/ uses `chunk2sparse` and `chunk2sparseCSC`
 for fast frame decoding from Dectris HDF5 files (bitshuffle-lz4 filter 32008).
 
@@ -452,14 +456,14 @@ From `ImageD11/sinograms/lima_segmenter.py`:
 ```python
 from bslz4_to_sparse import chunk2sparse       # optional, falls back to numpy
 fun = chunk2sparse(mask, dtype=frms.dtype)
-npx, row, col, val = fun.coo(chunk, cut)         # → (npx, row, col, val)
+npx, row, col, val = fun.coo(chunk, cut)         # -> (npx, row, col, val)
 ```
 
 From `ImageD11/sinograms/sinogram2crysalis.py`:
 ```python
 import bslz4_to_sparse
 dc = bslz4_to_sparse.chunk2sparse(image_mask, dt)
-npx, (vals, inds) = dc(b, 0)                     # → (npx, (vals, inds))
+npx, (vals, inds) = dc(b, 0)                     # -> (npx, (vals, inds))
 ```
 
 Also: `chunk2sparseCSC` (CSC powder integration) and `bslz4_to_sparse()` (HDF5
@@ -487,9 +491,9 @@ dataset convenience function).
 `bslz4_to_sparse.c` compiled 3x with `-DKERNEL_SUFFIX=_<isa>`:
 
 ```
-gcc -DKERNEL_SUFFIX=_avx512 -mavx512f   → bslz4_uint16_t_avx512()
-gcc -DKERNEL_SUFFIX=_avx2   -mavx2      → bslz4_uint16_t_avx2()
-gcc -DKERNEL_SUFFIX=_sse42  -msse4.2    → bslz4_uint16_t_sse42()
+gcc -DKERNEL_SUFFIX=_avx512 -mavx512f   -> bslz4_uint16_t_avx512()
+gcc -DKERNEL_SUFFIX=_avx2   -mavx2      -> bslz4_uint16_t_avx2()
+gcc -DKERNEL_SUFFIX=_sse42  -msse4.2    -> bslz4_uint16_t_sse42()
 ```
 
 The mask/loop in bshuf.c auto-vectorizes at the given ISA level.
@@ -498,10 +502,10 @@ KCB has internal `ifunc` dispatch for its own SIMD selection.
 
 ### c2py23 Variant Dispatch
 
-Two-level dispatch per function (6 functions × 2 backends):
+Two-level dispatch per function (6 functions x 2 backends):
 
-Level 1: bit-width (uint8, uint16, uint32) — per-call buffer check
-Level 2: ISA + backend — resolved at init time
+Level 1: bit-width (uint8, uint16, uint32) -- per-call buffer check
+Level 2: ISA + backend -- resolved at init time
 
 ```yaml
 - py_sig: "bslz4_uint16(compressed: buffer, mask: buffer,
