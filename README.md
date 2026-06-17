@@ -5,9 +5,9 @@ f2py to c2py23.  Provides 64 C functions (closest-vec, score, compute_gv,
 connectedpixels, sparse operations, bslz4 decompress, etc.) with SIMD
 dispatch (SSE4.2/AVX2/AVX-512) for hot-path functions.
 
-**Status:** All 53 equivalence tests pass (1 expected skip). 25 bslz4/bszstd
-tests pass (buffer + bit-perfect + CSC + f2py equivalence). CI green on
-Python 2.7–3.14.
+**Status:** All 53 equivalence tests pass (1 expected skip). 38 bslz4/bszstd
+tests pass (CI micro + bit-perfect + CSC + f2py equivalence). CI green
+on Python 2.7–3.14.
 
 ## Quick start
 

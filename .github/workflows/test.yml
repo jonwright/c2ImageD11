@@ -51,6 +51,8 @@ jobs:
           pip install wheel || pip install "wheel<0.35"
           pip install numpy || pip install "numpy==1.16.6"
           pip install pytest || pip install "pytest>=4.6,<5"
+          # h5py+hdf5plugin needed for bslz4/bszstd tests (Python >= 3.8 only)
+          pip install h5py hdf5plugin 2>/dev/null || true
 
       - name: Install c2py23
         run: |
@@ -70,4 +72,5 @@ jobs:
         run: |
           cd ${{ github.workspace }}/c2ImageD11
           python -m pytest tests/test_buffer.py tests/test_equivalence.py \
+            tests/test_bslz4_ci.py \
             -v --tb=short -W ignore::DeprecationWarning
