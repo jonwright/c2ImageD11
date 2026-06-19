@@ -2,7 +2,7 @@
 # # Multi-Chunk BSLZ4 CSC Powder Integration Benchmark
 # #
 # # Processes frames from a bitshuffle-lz4 HDF5 file using pyFAI CSC matrix.
-# # Compares batch sizes 1-7 with loop-interchanged C code.
+# # Compares batch sizes 1-16 with loop-interchanged C code.
 # # Single core, no parallelism.  C time measured via time.perf_counter.
 # #
 # # NOTE: c2py23's built-in timer uses rdtsc on x86_64, which measures CPU
@@ -29,7 +29,7 @@ MASKFILE  = os.path.join(_HOME, "test_data", "eiger_mask.npy")
 PONIFILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "example.poni")
 NFRAMES   = 1000
 NOUT      = 1500           # powder histogram bins
-BATCH_SIZES = list(range(1, 8))
+BATCH_SIZES = list(range(1, 17))
 # ==============================
 
 
@@ -196,6 +196,7 @@ print("  outadr : %.0f MB  (uint32, %d x %d)" % (
     outadr_buf.nbytes / 1e6, max_bs, NIJ))
 print("  powder : %.1f KB  (f64, %d x %d) -- in all_powder, written in-place" % (
     all_powder.nbytes / 1e3, NFRAMES, nout))
+print("  (max batch %d: %.0f MB, 1 GB limit for all reused buffers)" % (max_bs, total_mb))
 assert total_mb < 1024, "Buffer exceeds 1 GB limit (%.0f MB)" % total_mb
 
 
@@ -207,7 +208,25 @@ dc = chunk2sparseCSC(mask_2d, csc_obj, dtype=np.uint16)
 
 
 # %% [markdown]
-# ## 8. Benchmark: process N frames with different batch sizes
+# ## 8. Warmup (fault in mmap pages, fill caches)
+
+# %%
+print("\nWarming up...")
+sys.stdout.flush()
+# Process one batch (bs=4, 4 frames) to bring pages into RAM
+warm_offs = chunk_offsets[:4]
+warm_lens = chunk_lengths[:4]
+warm_npc  = np.zeros(4, dtype=np.int32)
+warm_pow  = all_powder[:4].ravel()
+dc.fun(mmap, flat_mask, outpx_buf, outadr_buf, 0,
+       warm_pow, csc_data, csc_indices, csc_indptr,
+       warm_offs, warm_lens, warm_npc)
+print("Warmup done.\n")
+sys.stdout.flush()
+
+
+# %% [markdown]
+# ## 9. Benchmark: process N frames with different batch sizes
 
 # %%
 # c2py23's built-in timer uses rdtsc on x86_64, which returns CPU cycles
@@ -271,7 +290,7 @@ for bs in BATCH_SIZES:
 
 
 # %% [markdown]
-# ## 9. Plots
+# ## 10. Plots
 
 # %%
 fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12, 5))
@@ -318,7 +337,7 @@ print("\nSaved plot: %s" % plot_path)
 
 
 # %% [markdown]
-# ## 10. Summary
+# ## 11. Summary
 
 # %%
 print()
