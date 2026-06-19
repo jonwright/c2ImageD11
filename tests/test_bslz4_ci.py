@@ -73,8 +73,12 @@ def _check(func, chunks, raw, mask):
     N = mask.size
     vals = np.empty(N, dtype=raw.dtype)
     inds = np.empty(N, dtype=np.uint32)
+    offs = np.array([0], dtype=np.int64)
+    npc  = np.zeros(1, dtype=np.int32)
     for i in range(NFRAMES):
-        npx = func(chunks[i], mask.ravel(), vals, inds, 0)
+        lens = np.array([len(chunks[i])], dtype=np.int32)
+        npx = func(chunks[i], mask.ravel(), vals, inds, 0,
+                   offs, lens, npc)
         ref_vals, ref_inds = _pysparse(raw[i], mask, 0)
         assert npx == len(ref_vals), "frame %d: npx %d != %d" % (i, npx, len(ref_vals))
         np.testing.assert_array_equal(vals[:npx], ref_vals,
@@ -93,10 +97,14 @@ def _check_csc(func, chunks, raw, mask):
     data = np.ones(N, dtype=np.float32)
     indices = np.zeros(N, dtype=np.uint32)
     indptr = np.arange(N + 1, dtype=np.uint32)
+    offs = np.array([0], dtype=np.int64)
+    npc  = np.zeros(1, dtype=np.int32)
 
     for i in range(NFRAMES):
+        lens = np.array([len(chunks[i])], dtype=np.int32)
         npx = func(chunks[i], mask.ravel(), outpx, outP, 0,
-                   powder, data, indices, indptr)
+                   powder, data, indices, indptr,
+                   offs, lens, npc)
         ref_vals, ref_inds = _pysparse(raw[i], mask, 0)
         assert npx == len(ref_vals), "frame %d: npx %d != %d" % (i, npx, len(ref_vals))
         np.testing.assert_array_equal(outpx[:npx], ref_vals)
@@ -163,8 +171,12 @@ def test_bslz4_u16_with_mask(test_data):
     N = mask.size
     vals = np.empty(N, dtype=np.uint16)
     inds = np.empty(N, dtype=np.uint32)
+    offs = np.array([0], dtype=np.int64)
+    npc  = np.zeros(1, dtype=np.int32)
     for i in range(NFRAMES):
-        npx = func(chunks[i], mask.ravel(), vals, inds, 0)
+        lens = np.array([len(chunks[i])], dtype=np.int32)
+        npx = func(chunks[i], mask.ravel(), vals, inds, 0,
+                   offs, lens, npc)
         ref_vals, ref_inds = _pysparse(raw[i], mask, 0)
         assert npx == len(ref_vals)
         np.testing.assert_array_equal(vals[:npx], ref_vals)

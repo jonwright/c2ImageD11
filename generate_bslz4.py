@@ -326,7 +326,11 @@ def generate_bs_functions_h():
                         "int compressed_length, "
                         "const uint8_t *restrict mask, int NIJ, "
                         "{dt} *restrict output, uint32_t *restrict output_adr, "
-                        "int threshold);".format(fn=fn_basic, dt=datatype)
+                        "int threshold, "
+                        "const int64_t *restrict chunk_offsets, "
+                        "const int32_t *restrict chunk_lengths, "
+                        "int nchunks, "
+                        "int32_t *restrict npx_per_chunk);".format(fn=fn_basic, dt=datatype)
                     )
 
                     for csc in CSC_TYPES:
@@ -347,7 +351,11 @@ def generate_bs_functions_h():
                             "int threshold, "
                             "{sum} *restrict output, int NOUT, "
                             "{cscdt} *restrict data, uint32_t *restrict indices, "
-                            "uint32_t *restrict indptr);".format(
+                            "uint32_t *restrict indptr, "
+                            "const int64_t *restrict chunk_offsets, "
+                            "const int32_t *restrict chunk_lengths, "
+                            "int nchunks, "
+                            "int32_t *restrict npx_per_chunk);".format(
                                 fn=fn_csc, dt=datatype, sum=sumtype,
                                 cscdt=cscdatatype)
                         )
@@ -379,31 +387,43 @@ def _py_sig_entry_basic(prefix, dtshort, py_format):
     lines.append("")
     lines.append('  - py_sig: "{}'.format(fn_name) +
                  '(compressed: buffer, mask: buffer, '
-                 'out: buffer, outP: buffer, thresh: int) -> int"')
+                 'out: buffer, outP: buffer, thresh: int, '
+                 'chunk_offsets: buffer, chunk_lengths: buffer, '
+                 'npx_per_chunk: buffer) -> int"')
     if prefix == "bslz4":
         eng_label = "LZ4"
     else:
         eng_label = "ZSTD"
     lines.append('    doc: "{} decompress + unshuffle to sparse '
-                 '({} pixels). Returns npx."'.format(eng_label, dtshort))
+                 '({} pixels). Returns total npx."'.format(eng_label, dtshort))
     lines.append('    checks:')
     lines.append('      - "compressed.format == \'B\'"')
     lines.append('      - "mask.format == \'B\'"')
     lines.append('      - "out.format == \'{}\'"'.format(py_format))
     lines.append('      - "outP.format == \'I\'"')
-    lines.append('      - "mask.n == out.n"')
-    lines.append('      - "mask.n == outP.n"')
+    lines.append('      - "chunk_offsets.format == \'q\' or chunk_offsets.format == \'l\'"')
+    lines.append('      - "chunk_lengths.format == \'i\'"')
+    lines.append('      - "npx_per_chunk.format == \'i\'"')
+    lines.append('      - "chunk_offsets.n == chunk_lengths.n"')
+    lines.append('      - "chunk_offsets.n == npx_per_chunk.n"')
     lines.append('    gil_release: true')
     lines.append('    c_overloads:')
     when = ('      - when: "compressed.format == \'B\' and '
             'mask.format == \'B\' and out.format == \'{pf}\' '
-            'and outP.format == \'I\'"'.format(pf=py_format))
+            'and outP.format == \'I\' '
+            'and (chunk_offsets.format == \'q\' or chunk_offsets.format == \'l\') '
+            'and chunk_lengths.format == \'i\' '
+            'and npx_per_chunk.format == \'i\'"'.format(pf=py_format))
     lines.append(when)
     lines.append('        map: {compressed: "compressed.ptr", '
                  'compressed_length: "compressed.shape[0]", '
                  'mask: "mask.ptr", NIJ: "mask.shape[0]", '
                  'output: "out.ptr", output_adr: "outP.ptr", '
-                 'threshold: thresh}')
+                 'threshold: thresh, '
+                 'chunk_offsets: "chunk_offsets.ptr", '
+                 'chunk_lengths: "chunk_lengths.ptr", '
+                 'nchunks: "chunk_offsets.shape[0]", '
+                 'npx_per_chunk: "npx_per_chunk.ptr"}')
     lines.append('        group: {}'.format(fn_name))
 
     return lines
@@ -425,7 +445,11 @@ def _py_sig_variants_basic(prefix, dtshort):
             sig = ("int {fn}(const uint8_t *compressed, int compressed_length, "
                    "const uint8_t *mask, int NIJ, "
                    "{dt} *output, uint32_t *output_adr, "
-                   "int threshold) -> int".format(fn=fn_name, dt=datatype))
+                   "int threshold, "
+                   "const int64_t *chunk_offsets, "
+                   "const int32_t *chunk_lengths, "
+                   "int nchunks, "
+                   "int32_t *npx_per_chunk) -> int".format(fn=fn_name, dt=datatype))
             lines.append('          - name: "{}"'.format(name))
             lines.append('            sig: "{}"'.format(sig))
             if isa["when_cond"]:
@@ -460,9 +484,11 @@ def _py_sig_entry_csc(prefix, dtshort, csc, py_format):
                  '(compressed: buffer, mask: buffer, '
                  'outpx: buffer, outP: buffer, thresh: int, '
                  'out: buffer, data: buffer, '
-                 'indices: buffer, indptr: buffer) -> int"')
+                 'indices: buffer, indptr: buffer, '
+                 'chunk_offsets: buffer, chunk_lengths: buffer, '
+                 'npx_per_chunk: buffer) -> int"')
     lines.append('    doc: "{} decompress + unshuffle + CSC accumulate '
-                 '({} CSC data, {} pixels). Returns npx."'.format(
+                 '({} CSC data, {} pixels). Returns total npx."'.format(
                      eng_label, type_desc, dtshort))
     lines.append('    checks:')
     lines.append('      - "compressed.format == \'B\'"')
@@ -482,8 +508,11 @@ def _py_sig_entry_csc(prefix, dtshort, csc, py_format):
         data_check = "data.format == '{}'".format(cformat)
     lines.append('      - "indices.format == \'I\'"')
     lines.append('      - "indptr.format == \'I\'"')
-    lines.append('      - "mask.n == outpx.n"')
-    lines.append('      - "mask.n == outP.n"')
+    lines.append('      - "chunk_offsets.format == \'q\' or chunk_offsets.format == \'l\'"')
+    lines.append('      - "chunk_lengths.format == \'i\'"')
+    lines.append('      - "npx_per_chunk.format == \'i\'"')
+    lines.append('      - "chunk_offsets.n == chunk_lengths.n"')
+    lines.append('      - "chunk_offsets.n == npx_per_chunk.n"')
     lines.append('    gil_release: true')
     lines.append('    c_overloads:')
 
@@ -491,7 +520,10 @@ def _py_sig_entry_csc(prefix, dtshort, csc, py_format):
             'mask.format == \'B\' and outpx.format == \'{pf}\' '
             'and outP.format == \'I\' '
             'and {oc} and {dc} '
-            'and indices.format == \'I\' and indptr.format == \'I\'"'.format(
+            'and indices.format == \'I\' and indptr.format == \'I\' '
+            'and (chunk_offsets.format == \'q\' or chunk_offsets.format == \'l\') '
+            'and chunk_lengths.format == \'i\' '
+            'and npx_per_chunk.format == \'i\'"'.format(
                 pf=py_format, oc=out_check, dc=data_check))
     lines.append(when)
     lines.append('        map: {compressed: "compressed.ptr", '
@@ -499,9 +531,13 @@ def _py_sig_entry_csc(prefix, dtshort, csc, py_format):
                  'mask: "mask.ptr", NIJ: "mask.shape[0]", '
                  'outpx: "outpx.ptr", output_adr: "outP.ptr", '
                  'threshold: thresh, '
-                 'output: "out.ptr", NOUT: "out.shape[0]", '
-                 'data: "data.ptr", indices: "indices.ptr", '
-                 'indptr: "indptr.ptr"}')
+                'output: "out.ptr", NOUT: "out.shape[0] / chunk_offsets.shape[0]", '
+                'data: "data.ptr", indices: "indices.ptr", '
+                'indptr: "indptr.ptr", '
+                 'chunk_offsets: "chunk_offsets.ptr", '
+                 'chunk_lengths: "chunk_lengths.ptr", '
+                 'nchunks: "chunk_offsets.shape[0]", '
+                 'npx_per_chunk: "npx_per_chunk.ptr"}')
     lines.append('        group: {}'.format(fn_name))
 
     return lines
@@ -529,7 +565,11 @@ def _py_sig_variants_csc(prefix, dtshort, csc):
                    "{dt} *outpx, uint32_t *output_adr, int threshold, "
                    "{sum} *output, int NOUT, "
                    "{cscdt} *data, uint32_t *indices, "
-                   "uint32_t *indptr) -> int".format(
+                   "uint32_t *indptr, "
+                   "const int64_t *chunk_offsets, "
+                   "const int32_t *chunk_lengths, "
+                   "int nchunks, "
+                   "int32_t *npx_per_chunk) -> int".format(
                        fn=fn_name, dt=datatype, sum=sumtype, cscdt=cscdatatype))
             lines.append('          - name: "{}"'.format(name))
             lines.append('            sig: "{}"'.format(sig))

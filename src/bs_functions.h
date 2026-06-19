@@ -24,555 +24,555 @@
  * =============================================================================
 
 /* u8 basic */
-int bslz4_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bslz4_csc_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bslz4_csc_u8_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bslz4_csc_u8_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bslz4_csc_u8_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bslz4_u16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bslz4_csc_u16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bslz4_csc_u16_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bslz4_csc_u16_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bslz4_csc_u16_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bslz4_u32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bslz4_csc_u32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bslz4_csc_u32_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bslz4_csc_u32_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bslz4_csc_u32_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 basic */
-int bslz4_u8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bslz4_csc_u8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bslz4_csc_u8_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bslz4_csc_u8_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bslz4_csc_u8_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bslz4_u16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bslz4_csc_u16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bslz4_csc_u16_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bslz4_csc_u16_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bslz4_csc_u16_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bslz4_u32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bslz4_csc_u32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bslz4_csc_u32_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bslz4_csc_u32_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bslz4_csc_u32_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 basic */
-int bslz4_u8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bslz4_csc_u8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bslz4_csc_u8_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bslz4_csc_u8_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bslz4_csc_u8_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bslz4_u16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bslz4_csc_u16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bslz4_csc_u16_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bslz4_csc_u16_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bslz4_csc_u16_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bslz4_u32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bslz4_csc_u32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bslz4_csc_u32_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bslz4_csc_u32_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bslz4_csc_u32_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* =============================================================================
  * LZ4 engine x BS backend
  * =============================================================================
 
 /* u8 basic */
-int bslz4_u8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bslz4_csc_u8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bslz4_csc_u8_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bslz4_csc_u8_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bslz4_csc_u8_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bslz4_u16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bslz4_csc_u16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bslz4_csc_u16_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bslz4_csc_u16_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bslz4_csc_u16_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bslz4_u32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bslz4_csc_u32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bslz4_csc_u32_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bslz4_csc_u32_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bslz4_csc_u32_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 basic */
-int bslz4_u8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bslz4_csc_u8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bslz4_csc_u8_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bslz4_csc_u8_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bslz4_csc_u8_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bslz4_u16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bslz4_csc_u16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bslz4_csc_u16_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bslz4_csc_u16_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bslz4_csc_u16_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bslz4_u32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bslz4_csc_u32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bslz4_csc_u32_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bslz4_csc_u32_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bslz4_csc_u32_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 basic */
-int bslz4_u8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bslz4_csc_u8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bslz4_csc_u8_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bslz4_csc_u8_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bslz4_csc_u8_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u8_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bslz4_u16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bslz4_csc_u16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bslz4_csc_u16_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bslz4_csc_u16_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bslz4_csc_u16_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u16_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bslz4_u32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bslz4_u32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bslz4_csc_u32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bslz4_csc_u32_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bslz4_csc_u32_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bslz4_csc_u32_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bslz4_csc_u32_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* =============================================================================
  * ZSTD engine x KCB backend
  * =============================================================================
 
 /* u8 basic */
-int bszstd_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bszstd_csc_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bszstd_csc_u8_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bszstd_csc_u8_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bszstd_csc_u8_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bszstd_u16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bszstd_csc_u16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bszstd_csc_u16_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bszstd_csc_u16_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bszstd_csc_u16_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bszstd_u32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bszstd_csc_u32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bszstd_csc_u32_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu8_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bszstd_csc_u32_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu16_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bszstd_csc_u32_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu32_kcb_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 basic */
-int bszstd_u8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bszstd_csc_u8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bszstd_csc_u8_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bszstd_csc_u8_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bszstd_csc_u8_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bszstd_u16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bszstd_csc_u16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bszstd_csc_u16_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bszstd_csc_u16_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bszstd_csc_u16_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bszstd_u32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bszstd_csc_u32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bszstd_csc_u32_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu8_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bszstd_csc_u32_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu16_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bszstd_csc_u32_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu32_kcb_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 basic */
-int bszstd_u8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bszstd_csc_u8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bszstd_csc_u8_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bszstd_csc_u8_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bszstd_csc_u8_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bszstd_u16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bszstd_csc_u16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bszstd_csc_u16_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bszstd_csc_u16_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bszstd_csc_u16_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bszstd_u32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bszstd_csc_u32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bszstd_csc_u32_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu8_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bszstd_csc_u32_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu16_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bszstd_csc_u32_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu32_kcb_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* =============================================================================
  * ZSTD engine x BS backend
  * =============================================================================
 
 /* u8 basic */
-int bszstd_u8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bszstd_csc_u8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bszstd_csc_u8_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bszstd_csc_u8_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bszstd_csc_u8_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bszstd_u16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bszstd_csc_u16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bszstd_csc_u16_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bszstd_csc_u16_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bszstd_csc_u16_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bszstd_u32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bszstd_csc_u32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bszstd_csc_u32_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu8_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bszstd_csc_u32_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu16_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bszstd_csc_u32_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu32_bs_avx512(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 basic */
-int bszstd_u8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bszstd_csc_u8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bszstd_csc_u8_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bszstd_csc_u8_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bszstd_csc_u8_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bszstd_u16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bszstd_csc_u16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bszstd_csc_u16_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bszstd_csc_u16_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bszstd_csc_u16_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bszstd_u32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bszstd_csc_u32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bszstd_csc_u32_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu8_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bszstd_csc_u32_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu16_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bszstd_csc_u32_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu32_bs_avx2(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 basic */
-int bszstd_u8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC f32 */
-int bszstd_csc_u8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu8 */
-int bszstd_csc_u8_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu16 */
-int bszstd_csc_u8_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u8 CSC cu32 */
-int bszstd_csc_u8_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u8_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint8_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 basic */
-int bszstd_u16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC f32 */
-int bszstd_csc_u16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu8 */
-int bszstd_csc_u16_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu16 */
-int bszstd_csc_u16_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u16 CSC cu32 */
-int bszstd_csc_u16_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u16_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint16_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 basic */
-int bszstd_u32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold);
+int bszstd_u32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict output, uint32_t *restrict output_adr, int threshold, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC f32 */
-int bszstd_csc_u32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, double *restrict output, int NOUT, float *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu8 */
-int bszstd_csc_u32_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu8_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint8_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu16 */
-int bszstd_csc_u32_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu16_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint16_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 /* u32 CSC cu32 */
-int bszstd_csc_u32_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr);
+int bszstd_csc_u32_cu32_bs_sse42(const uint8_t *restrict compressed, int compressed_length, const uint8_t *restrict mask, int NIJ, uint32_t *restrict outpx, uint32_t *restrict output_adr, int threshold, uint64_t *restrict output, int NOUT, uint32_t *restrict data, uint32_t *restrict indices, uint32_t *restrict indptr, const int64_t *restrict chunk_offsets, const int32_t *restrict chunk_lengths, int nchunks, int32_t *restrict npx_per_chunk);
 
 #endif /* BS_FUNCTIONS_H */

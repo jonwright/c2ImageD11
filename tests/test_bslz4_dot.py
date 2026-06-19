@@ -88,11 +88,15 @@ def test_csc_vs_pyfai(sparsetest, integrator):
     outpx = np.empty(N, dtype=np.uint16)
     outP = np.empty(N, dtype=np.uint32)
 
+    offs_d = np.array([0], dtype=np.int64)
+    npc_d  = np.zeros(1, dtype=np.int32)
     for i, (filt_info, chunk) in enumerate(chunks):
+        lens_d = np.array([len(chunk)], dtype=np.int32)
         npx = _m.bslz4_csc_u16(chunk, mask.ravel(),
                                 outpx, outP, 1,
                                 powder_out,
-                                data, indices, indptr)
+                                data, indices, indptr,
+                                offs_d, lens_d, npc_d)
 
         err_abs = np.abs(powder_out - reference[i].sum_signal)
         max_err = err_abs.max()

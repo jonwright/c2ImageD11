@@ -115,10 +115,15 @@ class chunk2sparse:
             None,
             bslz4_u32,
         )[itemsize]
+        self._offsets  = np.array([0], dtype=np.int64)
+        self._lengths  = np.zeros(1, dtype=np.int32)
+        self._npx_pc   = np.zeros(1, dtype=np.int32)
 
     def __call__(self, buffer, cut):
+        self._lengths[0] = len(buffer)
         npixels = self.fun(buffer, self.mask,
-                           self.values, self.indices, cut)
+                           self.values, self.indices, cut,
+                           self._offsets, self._lengths, self._npx_pc)
         return npixels, (self.values, self.indices)
 
     def coo(self, buffer, cut):
@@ -166,12 +171,18 @@ def bslz4_to_sparse(ds, num, cut, mask=None, pixelbuffer=None):
     else:
         values, indices = pixelbuffer
     filtinfo, buffer = ds.id.read_direct_chunk((num, 0, 0))
+    offs  = np.array([0], dtype=np.int64)
+    lens  = np.array([len(buffer)], dtype=np.int32)
+    npc   = np.zeros(1, dtype=np.int32)
     if ds.dtype == np.uint16:
-        npixels = bslz4_u16(buffer, mask, values, indices, cut)
+        npixels = bslz4_u16(buffer, mask, values, indices, cut,
+                            offs, lens, npc)
     elif ds.dtype == np.uint32:
-        npixels = bslz4_u32(buffer, mask, values, indices, cut)
+        npixels = bslz4_u32(buffer, mask, values, indices, cut,
+                            offs, lens, npc)
     elif ds.dtype == np.uint8:
-        npixels = bslz4_u8(buffer, mask, values, indices, cut)
+        npixels = bslz4_u8(buffer, mask, values, indices, cut,
+                           offs, lens, npc)
     else:
         raise Exception("no decoder for your type")
     if npixels < 0:
@@ -220,6 +231,9 @@ class chunk2sparseCSC:
 
         self.indices = np.empty(mask.size, np.uint32)
         self.values = np.empty(mask.size, dtype)
+        self._offsets  = np.array([0], dtype=np.int64)
+        self._lengths  = np.zeros(1, dtype=np.int32)
+        self._npx_pc   = np.zeros(1, dtype=np.int32)
 
     def __call__(self, buffer, cut):
         """Decompress buffer. All pixels go into powder integration,
@@ -227,6 +241,7 @@ class chunk2sparseCSC:
 
         Returns npixels, (values, indices), powder_sum
         """
+        self._lengths[0] = len(buffer)
         npixels = self.fun(
             buffer,
             self.mask,
@@ -237,8 +252,57 @@ class chunk2sparseCSC:
             self.cscdata,
             self.cscindices,
             self.cscindptr,
+            self._offsets,
+            self._lengths,
+            self._npx_pc,
         )
         return npixels, (self.values, self.indices), self.powder
+
+    def multi(self, file_buffer, offsets, lengths, cut=0, nframes=None):
+        """Process N frames with loop interchange.
+
+        Parameters
+        ----------
+        file_buffer : ndarray
+            Memory-mapped HDF5 file as uint8 flat buffer (from numpy.memmap).
+        offsets : ndarray
+            Byte offsets of each chunk (int64, shape [N]).
+        lengths : ndarray
+            Compressed lengths of each chunk (int32, shape [N]).
+        cut : int
+            Threshold. Default 0.
+        nframes : int, optional
+            Number of frames to process. Default: len(offsets).
+
+        Returns
+        -------
+        powder : ndarray (nframes, nbins)
+            Per-frame powder histograms.
+        """
+        if nframes is None:
+            nframes = len(offsets)
+        if nframes > len(offsets):
+            raise ValueError(
+                "nframes=%d > len(offsets)=%d" % (nframes, len(offsets)))
+        nout = len(self.powder)
+        nij  = len(self.mask)
+        powder = np.zeros(nframes * nout, dtype=self.powder.dtype)
+
+        outpx   = np.zeros(nframes * nij, dtype=self.values.dtype)
+        outadr  = np.zeros(nframes * nij, dtype=np.uint32)
+        npx_pc  = np.zeros(nframes, dtype=np.int32)
+
+        off = offsets[:nframes]
+        le  = lengths[:nframes]
+
+        self.fun(
+            file_buffer, self.mask,
+            outpx, outadr, cut,
+            powder, self.cscdata, self.cscindices, self.cscindptr,
+            off, le, npx_pc,
+        )
+
+        return powder.reshape((nframes, nout))
 
     def coo(self, buffer, cut):
         """Computes i,j indices and MAKES COPIES"""

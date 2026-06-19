@@ -69,7 +69,10 @@ class TestBslz4Smoke:
         mask = np.ones(4, dtype=np.uint8)
         out = np.zeros(4, dtype=dtype)
         outP = np.zeros(4, dtype=np.uint32)
-        npx = func(compressed, mask, out, outP, 0)
+        offs = np.array([0], dtype=np.int64)
+        lens = np.array([len(compressed)], dtype=np.int32)
+        npc  = np.zeros(1, dtype=np.int32)
+        npx = func(compressed, mask, out, outP, 0, offs, lens, npc)
         assert isinstance(npx, int)
 
     @pytest.mark.parametrize("func,dtype", [
@@ -86,7 +89,11 @@ class TestBslz4Smoke:
         data = np.ones(4, dtype=np.float32)
         indices = np.zeros(4, dtype=np.uint32)
         indptr = np.arange(5, dtype=np.uint32)
-        npx = func(compressed, mask, outpx, outP, 0, out, data, indices, indptr)
+        offs = np.array([0], dtype=np.int64)
+        lens = np.array([len(compressed)], dtype=np.int32)
+        npc  = np.zeros(1, dtype=np.int32)
+        npx = func(compressed, mask, outpx, outP, 0, out, data, indices, indptr,
+                   offs, lens, npc)
         assert isinstance(npx, int)
 
     @pytest.mark.parametrize("func,dtype", [
@@ -99,7 +106,10 @@ class TestBslz4Smoke:
         mask = np.ones(4, dtype=np.uint8)
         out = np.zeros(4, dtype=dtype)
         outP = np.zeros(4, dtype=np.uint32)
-        npx = func(compressed, mask, out, outP, 0)
+        offs = np.array([0], dtype=np.int64)
+        lens = np.array([len(compressed)], dtype=np.int32)
+        npc  = np.zeros(1, dtype=np.int32)
+        npx = func(compressed, mask, out, outP, 0, offs, lens, npc)
         assert isinstance(npx, int)
 
     @pytest.mark.parametrize("func,dtype", [
@@ -116,7 +126,11 @@ class TestBslz4Smoke:
         data = np.ones(4, dtype=np.float32)
         indices = np.zeros(4, dtype=np.uint32)
         indptr = np.arange(5, dtype=np.uint32)
-        npx = func(compressed, mask, outpx, outP, 0, out, data, indices, indptr)
+        offs = np.array([0], dtype=np.int64)
+        lens = np.array([len(compressed)], dtype=np.int32)
+        npc  = np.zeros(1, dtype=np.int32)
+        npx = func(compressed, mask, outpx, outP, 0, out, data, indices, indptr,
+                   offs, lens, npc)
         assert isinstance(npx, int)
 
 
@@ -163,14 +177,18 @@ class TestBitPerfectLZ4:
             for frame in range(nframes):
                 ref_vals, ref_inds = _pysparse(ds[frame], mask, cut)
                 chunk_info, chunk = ds.id.read_direct_chunk((frame, 0, 0))
-                npx = func(chunk, mask.ravel(), vals, inds, cut)
+                offs = np.array([0], dtype=np.int64)
+                lens = np.array([len(chunk)], dtype=np.int32)
+                npc  = np.zeros(1, dtype=np.int32)
+                npx = func(chunk, mask.ravel(), vals, inds, cut,
+                           offs, lens, npc)
                 assert npx == len(ref_vals), \
                     "npx mismatch: %d vs %d at frame=%d cut=%d" % (npx, len(ref_vals), frame, cut)
                 np.testing.assert_array_equal(vals[:npx], ref_vals,
                     err_msg="values mismatch at frame=%d cut=%d" % (frame, cut))
                 np.testing.assert_array_equal(inds[:npx], ref_inds,
                     err_msg="indices mismatch at frame=%d cut=%d" % (frame, cut))
-
+        
     def _test_dataset_csc(self, ds_info, engine, cut=0):
         name, shape, dtype = ds_info
         dtype = np.dtype(dtype).type
@@ -194,8 +212,12 @@ class TestBitPerfectLZ4:
                 ref_vals, ref_inds = _pysparse_csc(ds[frame], mask, cut,
                                                    data, indices, indptr, powder_ref)
                 chunk_info, chunk = ds.id.read_direct_chunk((frame, 0, 0))
+                offs = np.array([0], dtype=np.int64)
+                lens = np.array([len(chunk)], dtype=np.int32)
+                npc  = np.zeros(1, dtype=np.int32)
                 npx = func(chunk, flat, outpx, outP, cut,
-                          powder, data, indices, indptr)
+                          powder, data, indices, indptr,
+                          offs, lens, npc)
                 assert npx == len(ref_vals), "CSC npx mismatch frame=%d" % frame
                 np.testing.assert_array_equal(outpx[:npx], ref_vals,
                     err_msg="CSC values mismatch frame=%d" % frame)
@@ -253,7 +275,11 @@ class TestBitPerfectZSTD:
                     ref_vals, ref_inds = _pysparse(ds[frame], mask, 0)
                     chunk_info, chunk = ds.id.read_direct_chunk((frame, 0, 0))
                     chunk_buf = chunk
-                    npx = func(chunk, mask.ravel(), vals, inds, 0)
+                    offs_l = np.array([0], dtype=np.int64)
+                    lens_l = np.array([len(chunk)], dtype=np.int32)
+                    npc_l  = np.zeros(1, dtype=np.int32)
+                    npx = func(chunk, mask.ravel(), vals, inds, 0,
+                               offs_l, lens_l, npc_l)
                     assert npx == len(ref_vals)
                     np.testing.assert_array_equal(vals[:npx], ref_vals)
                     np.testing.assert_array_equal(inds[:npx], ref_inds)
@@ -301,7 +327,11 @@ class TestF2pyEquivalence:
                 _, chunk = ds.id.read_direct_chunk((i, 0, 0))
 
                 npx1 = f2py_fn(np.frombuffer(chunk, np.uint8), mask.ravel(), vals1, inds1, 0)
-                npx2 = _m.bslz4_u16(chunk, mask.ravel(), vals2, inds2, 0)
+                offs2 = np.array([0], dtype=np.int64)
+                lens2 = np.array([len(chunk)], dtype=np.int32)
+                npc2  = np.zeros(1, dtype=np.int32)
+                npx2 = _m.bslz4_u16(chunk, mask.ravel(), vals2, inds2, 0,
+                                    offs2, lens2, npc2)
 
                 assert npx1 == npx2, "frame %d: npx mismatch" % i
                 np.testing.assert_array_equal(vals1[:npx1], vals2[:npx2],
@@ -346,8 +376,12 @@ class TestF2pyEquivalence:
 
                 npx1 = f2py_fn(np.frombuffer(chunk, np.uint8), flat, outpx1, outP1, 0,
                                powder1, data, indices, indptr)
+                offs2 = np.array([0], dtype=np.int64)
+                lens2 = np.array([len(chunk)], dtype=np.int32)
+                npc2  = np.zeros(1, dtype=np.int32)
                 npx2 = _m.bslz4_csc_u16(chunk, flat, outpx2, outP2, 0,
-                                        powder2, data, indices, indptr)
+                                        powder2, data, indices, indptr,
+                                        offs2, lens2, npc2)
 
                 assert npx1 == npx2, "frame %d: npx mismatch" % i
                 np.testing.assert_array_equal(outpx1[:npx1], outpx2[:npx2])
@@ -418,7 +452,11 @@ class TestIntegerCSCSmoke:
         data = np.ones(4, dtype=csc_dtype)
         indices = np.zeros(4, dtype=np.uint32)
         indptr = np.arange(5, dtype=np.uint32)
-        npx = func(compressed, mask, outpx, outP, 0, out, data, indices, indptr)
+        offs = np.array([0], dtype=np.int64)
+        lens = np.array([len(compressed)], dtype=np.int32)
+        npc  = np.zeros(1, dtype=np.int32)
+        npx = func(compressed, mask, outpx, outP, 0, out, data, indices, indptr,
+                   offs, lens, npc)
         assert isinstance(npx, int)
 
     @pytest.mark.parametrize("func,dtype,csc_dtype", [
@@ -442,8 +480,12 @@ class TestIntegerCSCSmoke:
         data = np.ones(4, dtype=csc_dtype)
         indices = np.zeros(4, dtype=np.uint32)
         indptr = np.arange(5, dtype=np.uint32)
+        offs = np.array([0], dtype=np.int64)
+        lens = np.array([len(compressed)], dtype=np.int32)
+        npc  = np.zeros(1, dtype=np.int32)
         with pytest.raises((TypeError, RuntimeError, ValueError)):
-            func(compressed, mask, outpx, outP, 0, out, data, indices, indptr)
+            func(compressed, mask, outpx, outP, 0, out, data, indices, indptr,
+                 offs, lens, npc)
 
     @pytest.mark.parametrize("func,dtype,csc_dtype", [
         (_m.bslz4_csc_u8_cu8,   np.uint8,  np.uint8),
@@ -466,8 +508,12 @@ class TestIntegerCSCSmoke:
         data = np.ones(4, dtype=np.float32)
         indices = np.zeros(4, dtype=np.uint32)
         indptr = np.arange(5, dtype=np.uint32)
+        offs = np.array([0], dtype=np.int64)
+        lens = np.array([len(compressed)], dtype=np.int32)
+        npc  = np.zeros(1, dtype=np.int32)
         with pytest.raises((TypeError, RuntimeError, ValueError)):
-            func(compressed, mask, outpx, outP, 0, out, data, indices, indptr)
+            func(compressed, mask, outpx, outP, 0, out, data, indices, indptr,
+                 offs, lens, npc)
 
 
 class TestIntegerCSCExact:
@@ -513,8 +559,12 @@ class TestIntegerCSCExact:
             chunk_info, chunk = ds.id.read_direct_chunk((0, 0, 0))
             func = _INT_CSC_FUNCS[np.uint16][np.dtype(csc_dtype).itemsize]
 
+            offs_c = np.array([0], dtype=np.int64)
+            lens_c = np.array([len(chunk)], dtype=np.int32)
+            npc_c  = np.zeros(1, dtype=np.int32)
             npx = func(chunk, flat, outpx, outP, 0,
-                       powder, data, indices, indptr)
+                       powder, data, indices, indptr,
+                       offs_c, lens_c, npc_c)
             _pysparse_csc_int(ds[0], mask, 0, data, indices,
                              indptr, powder_ref)
 
@@ -567,3 +617,172 @@ class TestChunk2sparseCSCInt:
         dc = chunk2sparseCSC(mask, csc, dtype=np.uint16)
         assert dc.powder.dtype == np.float64, \
             "powder dtype should be float64, got %s" % dc.powder.dtype
+
+
+# =============================================================================
+# Multi-chunk loop interchange tests
+# =============================================================================
+
+@pytest.mark.skipif(
+    _BSLZ4_PY2_SKIP,
+    reason="bslz4 tests not yet working on Python 2.7"
+)
+@pytest.mark.skipif(
+    not os.path.exists(TESTDATA_LZ4),
+    reason="run 'python3 tests/make_bs_testdata.py --zstd' first"
+)
+class TestMultiChunk:
+    """Verify multi-chunk (loop-interchanged) output matches per-frame calls."""
+
+    def test_sparse_multi_chunk(self):
+        """Basic decompress: N chunks concatenated produces correct output."""
+        h5py = pytest.importorskip("h5py")
+        hdf5plugin = pytest.importorskip("hdf5plugin")
+
+        with h5py.File(TESTDATA_LZ4, "r") as f:
+            ds_keys = [k for k in f.keys() if "u16" in k.lower() or "uint16" in k.lower()]
+            if not ds_keys:
+                ds_keys = sorted(f.keys())
+            ds_name = ds_keys[0]
+            ds = f[ds_name]
+            shape = ds.shape
+            mask = np.ones(shape[1:], dtype=np.uint8)
+            flat = mask.ravel()
+            N = flat.size
+
+            nchunks = min(3, shape[0])
+            dtype = np.dtype(ds.dtype).type
+
+            # Read multiple chunks (compressed sizes may vary)
+            chunks = []
+            offsets_list = []
+            offset = 0
+            for i in range(nchunks):
+                _, chunk = ds.id.read_direct_chunk((i, 0, 0))
+                buf = np.frombuffer(chunk, dtype=np.uint8)
+                offsets_list.append(offset)
+                offset += len(buf)
+                chunks.append(buf)
+
+            bigbuf = np.concatenate(chunks)
+            offsets = np.array(offsets_list, dtype=np.int64)
+            lengths = np.array([len(c) for c in chunks], dtype=np.int32)
+            npx_pc  = np.zeros(nchunks, dtype=np.int32)
+
+            out   = np.zeros(nchunks * N, dtype=dtype)
+            outP  = np.zeros(nchunks * N, dtype=np.uint32)
+
+            func = {
+                np.dtype(np.uint8): _m.bslz4_u8,
+                np.dtype(np.uint16): _m.bslz4_u16,
+                np.dtype(np.uint32): _m.bslz4_u32,
+            }[np.dtype(dtype)]
+
+            total_npx = func(bigbuf, flat, out, outP, 0,
+                             offsets, lengths, npx_pc)
+
+            assert total_npx > 0
+            for f_idx in range(nchunks):
+                assert npx_pc[f_idx] > 0
+                vals_f = out[f_idx * N : f_idx * N + npx_pc[f_idx]]
+                # Verify values match single-chunk call
+                s_offs = np.array([0], dtype=np.int64)
+                s_lens = np.array([len(chunks[f_idx])], dtype=np.int32)
+                s_npc  = np.zeros(1, dtype=np.int32)
+                s_out  = np.zeros(N, dtype=dtype)
+                s_outP = np.zeros(N, dtype=np.uint32)
+                s_npx = func(chunks[f_idx], flat, s_out, s_outP, 0,
+                             s_offs, s_lens, s_npc)
+                assert s_npx == npx_pc[f_idx], \
+                    "frame %d: npx %d vs single %d" % (f_idx, npx_pc[f_idx], s_npx)
+                np.testing.assert_array_equal(vals_f, s_out[:s_npx],
+                    err_msg="frame %d: values mismatch" % f_idx)
+                np.testing.assert_array_equal(
+                    outP[f_idx * N : f_idx * N + npx_pc[f_idx]],
+                    s_outP[:s_npx],
+                    err_msg="frame %d: indices mismatch" % f_idx)
+
+    def test_csc_multi_chunk(self):
+        """CSC: N chunks concatenated produces per-frame powder matching single calls."""
+        h5py = pytest.importorskip("h5py")
+        hdf5plugin = pytest.importorskip("hdf5plugin")
+
+        with h5py.File(TESTDATA_LZ4, "r") as f:
+            ds_keys = [k for k in f.keys() if "u16" in k.lower() or "uint16" in k.lower()]
+            if not ds_keys:
+                ds_keys = sorted(f.keys())
+            ds_name = ds_keys[0]
+            ds = f[ds_name]
+            shape = ds.shape
+            mask = np.ones(shape[1:], dtype=np.uint8)
+            flat = mask.ravel()
+            N = flat.size
+
+            nchunks = min(3, shape[0])
+            dtype = np.dtype(ds.dtype).type
+            nout = 16
+
+            # Read multiple chunks (compressed sizes may vary)
+            chunks = []
+            offsets_list = []
+            offset = 0
+            for i in range(nchunks):
+                _, chunk = ds.id.read_direct_chunk((i, 0, 0))
+                buf = np.frombuffer(chunk, dtype=np.uint8)
+                offsets_list.append(offset)
+                offset += len(buf)
+                chunks.append(buf)
+
+            bigbuf = np.concatenate(chunks)
+            offsets = np.array(offsets_list, dtype=np.int64)
+            lengths = np.array([len(c) for c in chunks], dtype=np.int32)
+            npx_pc  = np.zeros(nchunks, dtype=np.int32)
+
+            # CSC setup (simple identity-like matrix)
+            csc_data = np.ones(N, dtype=np.float32)
+            csc_indices = np.arange(N, dtype=np.uint32) % nout
+            csc_indptr = np.arange(N + 1, dtype=np.uint32)
+
+            func = {
+                np.dtype(np.uint8): _m.bslz4_csc_u8,
+                np.dtype(np.uint16): _m.bslz4_csc_u16,
+                np.dtype(np.uint32): _m.bslz4_csc_u32,
+            }[np.dtype(dtype)]
+
+            powder = np.zeros(nchunks * nout, dtype=np.float64)
+            outpx  = np.zeros(nchunks * N, dtype=dtype)
+            outP   = np.zeros(nchunks * N, dtype=np.uint32)
+
+            total_npx = func(bigbuf, flat, outpx, outP, 0,
+                             powder, csc_data, csc_indices, csc_indptr,
+                             offsets, lengths, npx_pc)
+
+            assert total_npx > 0
+            for f_idx in range(nchunks):
+                assert npx_pc[f_idx] > 0
+
+            powder_2d = powder.reshape((nchunks, nout))
+
+            # Verify per-frame powder matches single-chunk calls
+            for f_idx in range(nchunks):
+                s_offs = np.array([0], dtype=np.int64)
+                s_lens = np.array([len(chunks[f_idx])], dtype=np.int32)
+                s_npc  = np.zeros(1, dtype=np.int32)
+                s_powder = np.zeros(nout, dtype=np.float64)
+                s_outpx  = np.zeros(N, dtype=dtype)
+                s_outP   = np.zeros(N, dtype=np.uint32)
+                s_npx = func(chunks[f_idx], flat, s_outpx, s_outP, 0,
+                             s_powder, csc_data, csc_indices, csc_indptr,
+                             s_offs, s_lens, s_npc)
+
+                np.testing.assert_allclose(powder_2d[f_idx], s_powder,
+                    rtol=1e-10,
+                    err_msg="CSC powder mismatch frame %d" % f_idx)
+                np.testing.assert_array_equal(
+                    outpx[f_idx * N : f_idx * N + npx_pc[f_idx]],
+                    s_outpx[:s_npx],
+                    err_msg="CSC outpx mismatch frame %d" % f_idx)
+                np.testing.assert_array_equal(
+                    outP[f_idx * N : f_idx * N + npx_pc[f_idx]],
+                    s_outP[:s_npx],
+                    err_msg="CSC outP mismatch frame %d" % f_idx)
