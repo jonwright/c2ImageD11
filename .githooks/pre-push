@@ -11,7 +11,7 @@ set -euo pipefail
 # Only check if pushing to master
 ZERO_COMMIT="0000000000000000000000000000000000000000"
 while read LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
-    if [ "$LOCAL_REF" = "refs/heads/master" ]; then
+    if [ "$REMOTE_REF" = "refs/heads/master" ]; then
         MASTER_PUSH=1
     fi
 done
@@ -29,12 +29,6 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
-
-# Build the extension if needed
-if [ ! -f "$REPO_ROOT/c2ImageD11/_cImageD11.cpython-312-x86_64-linux-gnu.so" ]; then
-    echo "Building extension..."
-    python3 setup.py build_ext --inplace 2>/dev/null
-fi
 
 # Run memory test under valgrind
 MEMTEST_ITERS=3 \
