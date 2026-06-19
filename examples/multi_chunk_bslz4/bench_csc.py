@@ -29,7 +29,7 @@ MASKFILE  = os.path.join(_HOME, "test_data", "eiger_mask.npy")
 PONIFILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "example.poni")
 NFRAMES   = 1000
 NOUT      = 1500           # powder histogram bins
-BATCH_SIZES = list(range(1, 17))
+BATCH_SIZES = sorted(range(1, 17), reverse=True)
 # ==============================
 
 
