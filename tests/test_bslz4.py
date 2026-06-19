@@ -353,3 +353,217 @@ class TestF2pyEquivalence:
                 np.testing.assert_array_equal(outpx1[:npx1], outpx2[:npx2])
                 np.testing.assert_array_equal(outP1[:npx1], outP2[:npx2])
                 np.testing.assert_allclose(powder1, powder2, rtol=1e-10)
+
+
+# =============================================================================
+# Integer CSC exact arithmetic tests
+# =============================================================================
+
+# Map pixel dtype -> CSC function dict (csc_itemsize -> function)
+_INT_CSC_FUNCS = {
+    np.uint8:  {1: _m.bslz4_csc_u8_cu8,  2: _m.bslz4_csc_u8_cu16,  4: _m.bslz4_csc_u8_cu32},
+    np.uint16: {1: _m.bslz4_csc_u16_cu8, 2: _m.bslz4_csc_u16_cu16, 4: _m.bslz4_csc_u16_cu32},
+    np.uint32: {1: _m.bslz4_csc_u32_cu8, 2: _m.bslz4_csc_u32_cu16, 4: _m.bslz4_csc_u32_cu32},
+}
+
+_ZSTD_INT_CSC_FUNCS = {
+    np.uint8:  {1: _m.bszstd_csc_u8_cu8,  2: _m.bszstd_csc_u8_cu16,  4: _m.bszstd_csc_u8_cu32},
+    np.uint16: {1: _m.bszstd_csc_u16_cu8, 2: _m.bszstd_csc_u16_cu16, 4: _m.bszstd_csc_u16_cu32},
+    np.uint32: {1: _m.bszstd_csc_u32_cu8, 2: _m.bszstd_csc_u32_cu16, 4: _m.bszstd_csc_u32_cu32},
+}
+
+
+def _pysparse_csc_int(frame, mask, cut, data, indices, indptr, out):
+    """Pure-numpy reference for integer CSC: uses uint64 for output."""
+    vals, idxs = _pysparse(frame, mask, cut)
+    out[:] = 0
+    for j in range(len(frame.ravel())):
+        v = frame.ravel()[j] * mask.ravel()[j]
+        if v > 0:
+            for k in range(indptr[j], indptr[j + 1]):
+                out[indices[k]] += np.uint64(data[k]) * np.uint64(v)
+    return vals, idxs
+
+
+class TestIntegerCSCSmoke:
+    """Smoke tests for integer CSC functions (all pixel x CSC type combos)."""
+
+    @pytest.mark.parametrize("func,dtype,csc_dtype", [
+        (_m.bslz4_csc_u8_cu8,   np.uint8,  np.uint8),
+        (_m.bslz4_csc_u8_cu16,  np.uint8,  np.uint16),
+        (_m.bslz4_csc_u8_cu32,  np.uint8,  np.uint32),
+        (_m.bslz4_csc_u16_cu8,  np.uint16, np.uint8),
+        (_m.bslz4_csc_u16_cu16, np.uint16, np.uint16),
+        (_m.bslz4_csc_u16_cu32, np.uint16, np.uint32),
+        (_m.bslz4_csc_u32_cu8,  np.uint32, np.uint8),
+        (_m.bslz4_csc_u32_cu16, np.uint32, np.uint16),
+        (_m.bslz4_csc_u32_cu32, np.uint32, np.uint32),
+        (_m.bszstd_csc_u8_cu8,   np.uint8,  np.uint8),
+        (_m.bszstd_csc_u8_cu16,  np.uint8,  np.uint16),
+        (_m.bszstd_csc_u8_cu32,  np.uint8,  np.uint32),
+        (_m.bszstd_csc_u16_cu8,  np.uint16, np.uint8),
+        (_m.bszstd_csc_u16_cu16, np.uint16, np.uint16),
+        (_m.bszstd_csc_u16_cu32, np.uint16, np.uint32),
+        (_m.bszstd_csc_u32_cu8,  np.uint32, np.uint8),
+        (_m.bszstd_csc_u32_cu16, np.uint32, np.uint16),
+        (_m.bszstd_csc_u32_cu32, np.uint32, np.uint32),
+    ])
+    def test_smoke(self, func, dtype, csc_dtype):
+        """Each integer CSC function accepts correct buffer types."""
+        compressed = np.zeros(100, dtype=np.uint8)
+        mask = np.ones(4, dtype=np.uint8)
+        outpx = np.zeros(4, dtype=dtype)
+        outP = np.zeros(4, dtype=np.uint32)
+        out = np.zeros(8, dtype=np.uint64)
+        data = np.ones(4, dtype=csc_dtype)
+        indices = np.zeros(4, dtype=np.uint32)
+        indptr = np.arange(5, dtype=np.uint32)
+        npx = func(compressed, mask, outpx, outP, 0, out, data, indices, indptr)
+        assert isinstance(npx, int)
+
+    @pytest.mark.parametrize("func,dtype,csc_dtype", [
+        (_m.bslz4_csc_u8_cu8,   np.uint8,  np.uint8),
+        (_m.bslz4_csc_u8_cu16,  np.uint8,  np.uint16),
+        (_m.bslz4_csc_u8_cu32,  np.uint8,  np.uint32),
+        (_m.bslz4_csc_u16_cu8,  np.uint16, np.uint8),
+        (_m.bslz4_csc_u16_cu16, np.uint16, np.uint16),
+        (_m.bslz4_csc_u16_cu32, np.uint16, np.uint32),
+        (_m.bslz4_csc_u32_cu8,  np.uint32, np.uint8),
+        (_m.bslz4_csc_u32_cu16, np.uint32, np.uint16),
+        (_m.bslz4_csc_u32_cu32, np.uint32, np.uint32),
+    ])
+    def test_wrong_output_dtype_fails(self, func, dtype, csc_dtype):
+        """Passing float64 output to integer CSC function should fail."""
+        compressed = np.zeros(100, dtype=np.uint8)
+        mask = np.ones(4, dtype=np.uint8)
+        outpx = np.zeros(4, dtype=dtype)
+        outP = np.zeros(4, dtype=np.uint32)
+        out = np.zeros(8, dtype=np.float64)
+        data = np.ones(4, dtype=csc_dtype)
+        indices = np.zeros(4, dtype=np.uint32)
+        indptr = np.arange(5, dtype=np.uint32)
+        with pytest.raises((TypeError, RuntimeError, ValueError)):
+            func(compressed, mask, outpx, outP, 0, out, data, indices, indptr)
+
+    @pytest.mark.parametrize("func,dtype,csc_dtype", [
+        (_m.bslz4_csc_u8_cu8,   np.uint8,  np.uint8),
+        (_m.bslz4_csc_u8_cu16,  np.uint8,  np.uint16),
+        (_m.bslz4_csc_u8_cu32,  np.uint8,  np.uint32),
+        (_m.bslz4_csc_u16_cu8,  np.uint16, np.uint8),
+        (_m.bslz4_csc_u16_cu16, np.uint16, np.uint16),
+        (_m.bslz4_csc_u16_cu32, np.uint16, np.uint32),
+        (_m.bslz4_csc_u32_cu8,  np.uint32, np.uint8),
+        (_m.bslz4_csc_u32_cu16, np.uint32, np.uint16),
+        (_m.bslz4_csc_u32_cu32, np.uint32, np.uint32),
+    ])
+    def test_wrong_data_dtype_fails(self, func, dtype, csc_dtype):
+        """Passing float CSC data to integer CSC function should fail."""
+        compressed = np.zeros(100, dtype=np.uint8)
+        mask = np.ones(4, dtype=np.uint8)
+        outpx = np.zeros(4, dtype=dtype)
+        outP = np.zeros(4, dtype=np.uint32)
+        out = np.zeros(8, dtype=np.uint64)
+        data = np.ones(4, dtype=np.float32)
+        indices = np.zeros(4, dtype=np.uint32)
+        indptr = np.arange(5, dtype=np.uint32)
+        with pytest.raises((TypeError, RuntimeError, ValueError)):
+            func(compressed, mask, outpx, outP, 0, out, data, indices, indptr)
+
+
+class TestIntegerCSCExact:
+    """Verify integer CSC produces exact uint64 output (requires test data)."""
+
+    @pytest.mark.skipif(
+        not os.path.exists(TESTDATA_LZ4),
+        reason="run 'python3 tests/make_bs_testdata.py --zstd' first"
+    )
+    @pytest.mark.parametrize("pixel_dtype,csc_dtype", [
+        (np.uint16, np.uint8),
+        (np.uint16, np.uint16),
+        (np.uint16, np.uint32),
+    ])
+    def test_exact_vs_python(self, pixel_dtype, csc_dtype):
+        """Integer CSC output matches pure-Python uint64 reference
+        (uses u16 test dataset)."""
+        h5py = pytest.importorskip("h5py")
+        hdf5plugin = pytest.importorskip("hdf5plugin")  # noqa
+
+        with h5py.File(TESTDATA_LZ4, "r") as f:
+            # Find a u16 dataset
+            ds_names = [k for k in f.keys() if "u16" in k]
+            if not ds_names:
+                # fall back to first dataset
+                ds_info = sorted(f.keys())[0]
+            else:
+                ds_info = ds_names[0]
+            shape = f[ds_info].shape
+            ds = f[ds_info]
+            mask = np.ones(shape[1:], dtype=np.uint8)
+            flat = mask.ravel()
+            N = flat.size
+
+            data = np.ones(N, dtype=csc_dtype)
+            indices = np.zeros(N, dtype=np.uint32)
+            indptr = np.arange(N + 1, dtype=np.uint32)
+            outpx = np.empty(N, dtype=np.uint16)
+            outP = np.empty(N, dtype=np.uint32)
+            powder = np.zeros(1, dtype=np.uint64)
+            powder_ref = np.zeros(1, dtype=np.uint64)
+
+            chunk_info, chunk = ds.id.read_direct_chunk((0, 0, 0))
+            func = _INT_CSC_FUNCS[np.uint16][np.dtype(csc_dtype).itemsize]
+
+            npx = func(chunk, flat, outpx, outP, 0,
+                       powder, data, indices, indptr)
+            _pysparse_csc_int(ds[0], mask, 0, data, indices,
+                             indptr, powder_ref)
+
+            assert npx > 0, "no pixels found"
+            assert powder[0] == powder_ref[0], \
+                "int CSC mismatch: %d vs %d (u16 pix, %s csc)" % (
+                    powder[0], powder_ref[0], csc_dtype.__name__)
+
+
+class TestChunk2sparseCSCInt:
+    """Test chunk2sparseCSC auto-dispatch with integer CSC data."""
+
+    def test_auto_dispatch_integer_csc(self):
+        """chunk2sparseCSC with integer CSC data uses uint64 output."""
+        from c2ImageD11.bslz4 import chunk2sparseCSC
+        import numpy as np
+
+        # Minimal mock CSC object
+        class MockCSC(object):
+            pass
+
+        csc = MockCSC()
+        mask = np.ones((2, 2), dtype=np.uint8)
+        n = mask.size
+        csc.data = np.ones(n, dtype=np.uint16)
+        csc.indices = np.zeros(n, dtype=np.uint32)
+        csc.indptr = np.arange(n + 1, dtype=np.uint32)
+        csc.shape = (4,)
+
+        dc = chunk2sparseCSC(mask, csc, dtype=np.uint16)
+        assert dc.powder.dtype == np.uint64, \
+            "powder dtype should be uint64, got %s" % dc.powder.dtype
+
+    def test_auto_dispatch_float_csc(self):
+        """chunk2sparseCSC with float CSC data uses float64 output (legacy)."""
+        from c2ImageD11.bslz4 import chunk2sparseCSC
+        import numpy as np
+
+        class MockCSC(object):
+            pass
+
+        csc = MockCSC()
+        mask = np.ones((2, 2), dtype=np.uint8)
+        n = mask.size
+        csc.data = np.ones(n, dtype=np.float32)
+        csc.indices = np.zeros(n, dtype=np.uint32)
+        csc.indptr = np.arange(n + 1, dtype=np.uint32)
+        csc.shape = (4,)
+
+        dc = chunk2sparseCSC(mask, csc, dtype=np.uint16)
+        assert dc.powder.dtype == np.float64, \
+            "powder dtype should be float64, got %s" % dc.powder.dtype

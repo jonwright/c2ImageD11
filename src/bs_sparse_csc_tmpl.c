@@ -1,26 +1,30 @@
 /* bs_sparse_csc_tmpl.c - CSC sparse decompress template.
  *
  * Included from bs_master.c with DATATYPE, NB, KERNEL_CSC_FN,
- * BS_DECOMPRESS already defined. Generates one function: KERNEL_CSC_FN().
+ * CSC_DATA_T, CSC_SUM_T, BS_DECOMPRESS already defined.
+ * Generates one function: KERNEL_CSC_FN().
  *
  * Same pipeline as bs_sparse_tmpl.c but additionally accumulates
  * every non-zero pixel into a CSC sparse matrix (powder integration).
+ *
+ * CSC_DATA_T: type of CSC matrix data (float, uint8_t, uint16_t, uint32_t)
+ * CSC_SUM_T:  type of histogram output (double for float data, uint64_t for int)
  */
 
 int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
                   const uint8_t *restrict mask, int NIJ,
                   DATATYPE *restrict outpx, uint32_t *restrict output_adr,
                   int threshold,
-                  double *restrict output, int NOUT,
-                  float *restrict data, uint32_t *restrict indices,
+                  CSC_SUM_T *restrict output, int NOUT,
+                  CSC_DATA_T *restrict data, uint32_t *restrict indices,
                   uint32_t *restrict indptr);
 
 int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
                   const uint8_t *restrict mask, int NIJ,
                   DATATYPE *restrict outpx, uint32_t *restrict output_adr,
                   int threshold,
-                  double *restrict output, int NOUT,
-                  float *restrict data, uint32_t *restrict indices,
+                  CSC_SUM_T *restrict output, int NOUT,
+                  CSC_DATA_T *restrict data, uint32_t *restrict indices,
                   uint32_t *restrict indptr)
 {
     size_t total_output_length;
@@ -52,7 +56,7 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
         return -101;
     }
 
-    for (j = 0; j < NOUT; j++) output[j] = 0.0;
+    for (j = 0; j < NOUT; j++) output[j] = (CSC_SUM_T)0;
 
     p = 12;
     for (remaining = (int)total_output_length; remaining >= BLK;
@@ -81,7 +85,7 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
             val = tmp2[j] * mask[j + i0];
             if (unlikely(val > 0)) {
                 for (k = indptr[j + i0]; k < indptr[j + i0 + 1]; k++) {
-                    output[indices[k]] += (((double)data[k]) * tmp2[j]);
+                    output[indices[k]] += ((CSC_SUM_T)data[k]) * (CSC_SUM_T)tmp2[j];
                 }
                 if (unlikely(tmp2[j] > cut)) {
                     *(outpx++) = tmp2[j];
@@ -120,7 +124,7 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
         val = tmp2[j] * mask[j + i0];
         if (unlikely(val > 0)) {
             for (k = indptr[j + i0]; k < indptr[j + i0 + 1]; k++) {
-                output[indices[k]] += (((double)data[k]) * tmp2[j]);
+                output[indices[k]] += ((CSC_SUM_T)data[k]) * (CSC_SUM_T)tmp2[j];
             }
             if (unlikely(tmp2[j] > cut)) {
                 *(outpx++) = tmp2[j];

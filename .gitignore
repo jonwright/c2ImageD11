@@ -12,3 +12,4 @@ venv/
 venv-*
 build/
 .pytest_cache/
+_cImageD11.c2py

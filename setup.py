@@ -34,6 +34,9 @@ LZ4_DIR = os.path.join(REPO_ROOT, "lz4")
 KCB_DIR = os.path.join(REPO_ROOT, "kcb")
 BITSHUFFLE_DIR = os.path.join(REPO_ROOT, "bitshuffle")
 ZSTD_DIR = os.path.join(REPO_ROOT, "zstd")
+# _cImageD11.c2py is assembled from these two files at build time:
+C2PY_BASE_FILE = os.path.join(REPO_ROOT, "_cImageD11_base.c2py")
+C2PY_BSLZ4_FILE = os.path.join(REPO_ROOT, "_cImageD11_bslz4.c2py")
 C2PY_FILE = os.path.join(REPO_ROOT, "_cImageD11.c2py")
 MODULE_NAME = "_cImageD11"
 PACKAGE_NAME = "c2ImageD11"
@@ -265,7 +268,20 @@ class c2py23_build_ext(build_ext):
                 sys.exit(rc)
             bslz4_objects.append(zstd_asm_o)
 
-        # Step 1: Generate wrapper C code
+        # Step 1: Assemble .c2py from base + generated bslz4 fragment
+        print("c2ImageD11: assembling {} from {} + {}".format(
+            os.path.basename(C2PY_FILE),
+            os.path.basename(C2PY_BASE_FILE),
+            os.path.basename(C2PY_BSLZ4_FILE)))
+        with open(C2PY_BASE_FILE, "r") as fb:
+            base_content = fb.read()
+        with open(C2PY_BSLZ4_FILE, "r") as fb:
+            bslz4_content = fb.read()
+        with open(C2PY_FILE, "w") as fout:
+            fout.write(base_content)
+            fout.write(bslz4_content)
+
+        # Step 2: Generate wrapper C code
         from c2py23.parser import load_c2py
         from c2py23.generator import generate
 

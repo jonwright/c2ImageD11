@@ -1,4 +1,6 @@
-include _cImageD11.c2py
+include _cImageD11_base.c2py
+include _cImageD11_bslz4.c2py
+include generate_bslz4.py
 include setup.py
 include pyproject.toml
 include run_ci.sh

@@ -7,28 +7,79 @@ Provides:
     chunk2sparse(mask, dtype)   -- callable class for frame-by-frame decoding
     chunk2sparseCSC(mask, csc)  -- same with CSC powder integration
     bslz4_to_sparse(ds, num)    -- convenience for HDF5 datasets
+
+CSC powder integration supports both float and integer CSC matrix data:
+    float CSC data  -> f64 histogram (existing behaviour)
+    integer CSC data -> u64 histogram (exact arithmetic, no roundoff)
 """
+
+from __future__ import print_function
 
 import os
 import sys
 import numpy as np
 
+# Basic decompress functions (used by chunk2sparse and bslz4_to_sparse)
 from c2ImageD11._cImageD11 import (
     bslz4_u8,
     bslz4_u16,
     bslz4_u32,
-    bslz4_csc_u8,
-    bslz4_csc_u16,
-    bslz4_csc_u32,
     bszstd_u8,
     bszstd_u16,
     bszstd_u32,
-    bszstd_csc_u8,
-    bszstd_csc_u16,
-    bszstd_csc_u32,
 )
 
 version = "0.2.0"
+
+# Pixel itemsize -> type suffix lookup
+_PIXEL_SUFFIX = {1: "u8", 2: "u16", 4: "u32"}
+
+# Integer CSC itemsize -> type suffix lookup (c prefix = csc data type)
+_CSC_INT_SUFFIX = {1: "cu8", 2: "cu16", 4: "cu32"}
+
+
+def _get_csc_function(pixel_dtype, csc_data_dtype):
+    """Return the right bslz4_csc_* function for given pixel and CSC data types.
+
+    For float CSC data: uses legacy naming (bslz4_csc_u16)
+    For integer CSC data: uses new naming (bslz4_csc_u16_cu16)
+
+    Returns (function, powder_dtype) tuple.
+    """
+    import c2ImageD11._cImageD11 as _m
+
+    pixel_dt = np.dtype(pixel_dtype)
+    pixel_itemsize = pixel_dt.itemsize
+    if pixel_itemsize not in _PIXEL_SUFFIX:
+        raise ValueError(
+            "Unsupported pixel dtype: %s (need uint8/uint16/uint32)" %
+            str(pixel_dt))
+
+    pixel_suffix = _PIXEL_SUFFIX[pixel_itemsize]
+
+    csc_dt = np.dtype(csc_data_dtype)
+    if np.issubdtype(csc_dt, np.integer):
+        csc_itemsize = csc_dt.itemsize
+        if csc_itemsize not in _CSC_INT_SUFFIX:
+            raise ValueError(
+                "Unsupported integer CSC dtype: %s "
+                "(need uint8/uint16/uint32)" % str(csc_dt))
+        csc_suffix = _CSC_INT_SUFFIX[csc_itemsize]
+        fn_name = "bslz4_csc_%s_%s" % (pixel_suffix, csc_suffix)
+        powder_dtype = np.uint64
+    else:
+        fn_name = "bslz4_csc_%s" % pixel_suffix
+        powder_dtype = np.float64
+
+    try:
+        fun = getattr(_m, fn_name)
+    except AttributeError:
+        raise ValueError(
+            "CSC function %s not found in _cImageD11. "
+            "Supported: u8/u16/u32 pixel types x "
+            "f32/u8/u16/u32 CSC data types." % fn_name)
+
+    return fun, powder_dtype
 
 
 class chunk2sparse:
@@ -137,8 +188,13 @@ class chunk2sparseCSC:
         Detector mask.
     csc : scipy.sparse.csc_matrix or pyFAI CSCIntegrator
         Sparse matrix in CSC format (data, indices, indptr, shape/bins).
+        CSC data dtype may be float32 (legacy, f64 output) or
+        uint8/uint16/uint32 (integer, u64 exact output).
     dtype : numpy dtype, optional
         Pixel data type. Default uint16.
+
+    Float CSC data yields float64 powder (existing behaviour).
+    Integer CSC data yields uint64 powder (exact arithmetic, no roundoff).
     """
 
     def __init__(self, mask, csc, dtype=np.uint16):
@@ -147,25 +203,23 @@ class chunk2sparseCSC:
         self.cscdata = csc.data
         self.cscindices = csc.indices
         self.cscindptr = csc.indptr
-        assert len(csc.indptr) == len(self.mask) + 1, "csc shape must match mask"
+        assert len(csc.indptr) == len(self.mask) + 1, \
+            "csc shape must match mask"
+
+        # Determine number of output bins
         if hasattr(csc, "shape"):
-            self.powder = np.empty(csc.shape[0], dtype=float)
+            nbins = csc.shape[0]
         elif hasattr(csc, "bins"):
-            self.powder = np.empty(csc.bins, dtype=float)
+            nbins = csc.bins
         else:
             raise Exception("csc argument has no shape or bins attribute")
 
+        # Look up CSC function and allocate powder with correct dtype
+        self.fun, powder_dtype = _get_csc_function(dtype, csc.data.dtype)
+        self.powder = np.empty(nbins, dtype=powder_dtype)
+
         self.indices = np.empty(mask.size, np.uint32)
         self.values = np.empty(mask.size, dtype)
-
-        itemsize = np.dtype(dtype).itemsize
-        self.fun = (
-            None,
-            bslz4_csc_u8,
-            bslz4_csc_u16,
-            None,
-            bslz4_csc_u32,
-        )[itemsize]
 
     def __call__(self, buffer, cut):
         """Decompress buffer. All pixels go into powder integration,
