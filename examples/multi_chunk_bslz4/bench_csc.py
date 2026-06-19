@@ -184,9 +184,11 @@ outadr_buf  = np.zeros(max_bs * NIJ, dtype=np.uint32)
 # Pre-allocated per-frame powder storage (C function writes directly in-place)
 all_powder = np.zeros((NFRAMES, nout), dtype=np.float64)
 
-# Per-frame sparse output (variable length per frame)
-all_sparse_vals = np.empty(NFRAMES, dtype=object)
-all_sparse_inds = np.empty(NFRAMES, dtype=object)
+# Pre-allocated per-frame compact sparse storage (no per-call malloc)
+MAX_SPARSE = 270000  # mask has 269126 active pixels
+all_sparse_vals = np.zeros((NFRAMES, MAX_SPARSE), dtype=np.uint16)
+all_sparse_inds = np.zeros((NFRAMES, MAX_SPARSE), dtype=np.uint32)
+all_nnz = np.zeros(NFRAMES, dtype=np.int32)
 
 total_mb = (outpx_buf.nbytes + outadr_buf.nbytes) / 1e6
 print("Reusable buffer total: %.0f MB" % total_mb)
@@ -213,14 +215,16 @@ dc = chunk2sparseCSC(mask_2d, csc_obj, dtype=np.uint16)
 # %%
 print("\nWarming up...")
 sys.stdout.flush()
-# Process one batch (bs=4, 4 frames) to bring pages into RAM
-warm_offs = chunk_offsets[:4]
-warm_lens = chunk_lengths[:4]
-warm_npc  = np.zeros(4, dtype=np.int32)
-warm_pow  = all_powder[:4].ravel()
-dc.fun(mmap, flat_mask, outpx_buf, outadr_buf, 0,
-       warm_pow, csc_data, csc_indices, csc_indptr,
-       warm_offs, warm_lens, warm_npc)
+# Process all frames to fault in mmap + output buffer pages
+for b in range(0, NFRAMES, 4):
+    bn = min(4, NFRAMES - b)
+    npc = np.zeros(bn, dtype=np.int32)
+    dc.fun(mmap, flat_mask, outpx_buf, outadr_buf, 0,
+           all_powder[b:b+bn].ravel(), csc_data, csc_indices, csc_indptr,
+           chunk_offsets[b:b+bn], chunk_lengths[b:b+bn], npc)
+# Fault in pre-allocated sparse storage pages (touch every page)
+all_sparse_vals[:] = 0
+all_sparse_inds[:] = 0
 print("Warmup done.\n")
 sys.stdout.flush()
 
@@ -263,9 +267,10 @@ for bs in BATCH_SIZES:
 
         for f in range(batch_n):
             frame = batch_start + f
-            npx = npx_pc[f]
-            all_sparse_vals[frame] = outpx_buf[f * NIJ : f * NIJ + npx].copy()
-            all_sparse_inds[frame] = outadr_buf[f * NIJ : f * NIJ + npx].copy()
+            npx = int(npx_pc[f])
+            all_nnz[frame] = npx
+            all_sparse_vals[frame, :npx] = outpx_buf[f * NIJ : f * NIJ + npx]
+            all_sparse_inds[frame, :npx] = outadr_buf[f * NIJ : f * NIJ + npx]
         t2 = time.perf_counter()
         copy_total += t2 - t1
 
