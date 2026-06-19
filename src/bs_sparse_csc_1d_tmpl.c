@@ -125,96 +125,116 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
 #endif
 
             /* ---- pixel loop with switch on csc_entries_per_pixel ---- */
-            /* Unrolled cases: 4, 6, 8.  All others use variable loop.  */
+            /* Process pixels in 128-stride sub-blocks to spread write
+             * destinations across cache lines, reducing write-after-write
+             * serialisation on the output histogram array.              */
+            #define CSC1D_STRIDE 128
+            int npix = BLK / NB;
             switch (csc_entries_per_pixel) {
-            case 4:
-                for (j = 0; j < BLK/NB; j++) {
-                    int jj = j + i0;
-                    val = tmp2[j] * mask[jj];
-                    if (unlikely(val > 0)) {
-                        int bin = (int)csc_first_bin[jj];
-                        if (unlikely(bin + 4 > NOUT)) return -102;
-                        int off = jj * 4;
-                        CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                        output[c * (size_t)NOUT + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
-                        output[c * (size_t)NOUT + bin + 1] += (CSC_SUM_T)csc_flat[off+1] * v;
-                        output[c * (size_t)NOUT + bin + 2] += (CSC_SUM_T)csc_flat[off+2] * v;
-                        output[c * (size_t)NOUT + bin + 3] += (CSC_SUM_T)csc_flat[off+3] * v;
-                        if (unlikely(tmp2[j] > cut)) {
-                            *(chunk_wr_outpx[c]++)  = tmp2[j];
-                            *(chunk_wr_outadr[c]++) = jj;
-                            chunk_npx[c]++;
+            case 4: {
+                int ii;
+                for (ii = 0; ii < CSC1D_STRIDE; ii++) {
+                    for (j = ii; j < npix; j += CSC1D_STRIDE) {
+                        int jj = j + i0;
+                        val = tmp2[j] * mask[jj];
+                        if (unlikely(val > 0)) {
+                            int bin = (int)csc_first_bin[jj];
+                            if (unlikely(bin + 4 > NOUT)) return -102;
+                            int off = jj * 4;
+                            CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
+                            size_t base = c * (size_t)NOUT;
+                            output[base + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
+                            output[base + bin + 1] += (CSC_SUM_T)csc_flat[off+1] * v;
+                            output[base + bin + 2] += (CSC_SUM_T)csc_flat[off+2] * v;
+                            output[base + bin + 3] += (CSC_SUM_T)csc_flat[off+3] * v;
+                            if (unlikely(tmp2[j] > cut)) {
+                                *(chunk_wr_outpx[c]++)  = tmp2[j];
+                                *(chunk_wr_outadr[c]++) = jj;
+                                chunk_npx[c]++;
+                            }
                         }
                     }
                 }
-                break;
-            case 6:
-                for (j = 0; j < BLK/NB; j++) {
-                    int jj = j + i0;
-                    val = tmp2[j] * mask[jj];
-                    if (unlikely(val > 0)) {
-                        int bin = (int)csc_first_bin[jj];
-                        if (unlikely(bin + 6 > NOUT)) return -102;
-                        int off = jj * 6;
-                        CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                        output[c * (size_t)NOUT + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
-                        output[c * (size_t)NOUT + bin + 1] += (CSC_SUM_T)csc_flat[off+1] * v;
-                        output[c * (size_t)NOUT + bin + 2] += (CSC_SUM_T)csc_flat[off+2] * v;
-                        output[c * (size_t)NOUT + bin + 3] += (CSC_SUM_T)csc_flat[off+3] * v;
-                        output[c * (size_t)NOUT + bin + 4] += (CSC_SUM_T)csc_flat[off+4] * v;
-                        output[c * (size_t)NOUT + bin + 5] += (CSC_SUM_T)csc_flat[off+5] * v;
-                        if (unlikely(tmp2[j] > cut)) {
-                            *(chunk_wr_outpx[c]++)  = tmp2[j];
-                            *(chunk_wr_outadr[c]++) = jj;
-                            chunk_npx[c]++;
+                } break;
+            case 6: {
+                int ii;
+                for (ii = 0; ii < CSC1D_STRIDE; ii++) {
+                    for (j = ii; j < npix; j += CSC1D_STRIDE) {
+                        int jj = j + i0;
+                        val = tmp2[j] * mask[jj];
+                        if (unlikely(val > 0)) {
+                            int bin = (int)csc_first_bin[jj];
+                            if (unlikely(bin + 6 > NOUT)) return -102;
+                            int off = jj * 6;
+                            CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
+                            size_t base = c * (size_t)NOUT;
+                            output[base + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
+                            output[base + bin + 1] += (CSC_SUM_T)csc_flat[off+1] * v;
+                            output[base + bin + 2] += (CSC_SUM_T)csc_flat[off+2] * v;
+                            output[base + bin + 3] += (CSC_SUM_T)csc_flat[off+3] * v;
+                            output[base + bin + 4] += (CSC_SUM_T)csc_flat[off+4] * v;
+                            output[base + bin + 5] += (CSC_SUM_T)csc_flat[off+5] * v;
+                            if (unlikely(tmp2[j] > cut)) {
+                                *(chunk_wr_outpx[c]++)  = tmp2[j];
+                                *(chunk_wr_outadr[c]++) = jj;
+                                chunk_npx[c]++;
+                            }
                         }
                     }
                 }
-                break;
-            case 8:
-                for (j = 0; j < BLK/NB; j++) {
-                    int jj = j + i0;
-                    val = tmp2[j] * mask[jj];
-                    if (unlikely(val > 0)) {
-                        int bin = (int)csc_first_bin[jj];
-                        if (unlikely(bin + 8 > NOUT)) return -102;
-                        int off = jj * 8;
-                        CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                        output[c * (size_t)NOUT + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
-                        output[c * (size_t)NOUT + bin + 1] += (CSC_SUM_T)csc_flat[off+1] * v;
-                        output[c * (size_t)NOUT + bin + 2] += (CSC_SUM_T)csc_flat[off+2] * v;
-                        output[c * (size_t)NOUT + bin + 3] += (CSC_SUM_T)csc_flat[off+3] * v;
-                        output[c * (size_t)NOUT + bin + 4] += (CSC_SUM_T)csc_flat[off+4] * v;
-                        output[c * (size_t)NOUT + bin + 5] += (CSC_SUM_T)csc_flat[off+5] * v;
-                        output[c * (size_t)NOUT + bin + 6] += (CSC_SUM_T)csc_flat[off+6] * v;
-                        output[c * (size_t)NOUT + bin + 7] += (CSC_SUM_T)csc_flat[off+7] * v;
-                        if (unlikely(tmp2[j] > cut)) {
-                            *(chunk_wr_outpx[c]++)  = tmp2[j];
-                            *(chunk_wr_outadr[c]++) = jj;
-                            chunk_npx[c]++;
+                } break;
+            case 8: {
+                int ii;
+                for (ii = 0; ii < CSC1D_STRIDE; ii++) {
+                    for (j = ii; j < npix; j += CSC1D_STRIDE) {
+                        int jj = j + i0;
+                        val = tmp2[j] * mask[jj];
+                        if (unlikely(val > 0)) {
+                            int bin = (int)csc_first_bin[jj];
+                            if (unlikely(bin + 8 > NOUT)) return -102;
+                            int off = jj * 8;
+                            CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
+                            size_t base = c * (size_t)NOUT;
+                            output[base + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
+                            output[base + bin + 1] += (CSC_SUM_T)csc_flat[off+1] * v;
+                            output[base + bin + 2] += (CSC_SUM_T)csc_flat[off+2] * v;
+                            output[base + bin + 3] += (CSC_SUM_T)csc_flat[off+3] * v;
+                            output[base + bin + 4] += (CSC_SUM_T)csc_flat[off+4] * v;
+                            output[base + bin + 5] += (CSC_SUM_T)csc_flat[off+5] * v;
+                            output[base + bin + 6] += (CSC_SUM_T)csc_flat[off+6] * v;
+                            output[base + bin + 7] += (CSC_SUM_T)csc_flat[off+7] * v;
+                            if (unlikely(tmp2[j] > cut)) {
+                                *(chunk_wr_outpx[c]++)  = tmp2[j];
+                                *(chunk_wr_outadr[c]++) = jj;
+                                chunk_npx[c]++;
+                            }
                         }
                     }
                 }
-                break;
-            default:
-                for (j = 0; j < BLK/NB; j++) {
-                    int jj = j + i0;
-                    val = tmp2[j] * mask[jj];
-                    if (unlikely(val > 0)) {
-                        int bin = (int)csc_first_bin[jj];
-                        int off = jj * csc_entries_per_pixel;
-                        CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                        int remain = NOUT - bin;
-                        for (k = 0; k < (unsigned int)csc_entries_per_pixel && (int)k < remain; k++)
-                            output[c * (size_t)NOUT + bin + k] += (CSC_SUM_T)csc_flat[off + k] * v;
-                        if (unlikely(tmp2[j] > cut)) {
-                            *(chunk_wr_outpx[c]++)  = tmp2[j];
-                            *(chunk_wr_outadr[c]++) = jj;
-                            chunk_npx[c]++;
+                } break;
+            default: {
+                int ii;
+                for (ii = 0; ii < CSC1D_STRIDE; ii++) {
+                    for (j = ii; j < npix; j += CSC1D_STRIDE) {
+                        int jj = j + i0;
+                        val = tmp2[j] * mask[jj];
+                        if (unlikely(val > 0)) {
+                            int bin = (int)csc_first_bin[jj];
+                            int off = jj * csc_entries_per_pixel;
+                            size_t base = c * (size_t)NOUT;
+                            CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
+                            int remain = NOUT - bin;
+                            for (k = 0; k < (unsigned int)csc_entries_per_pixel && (int)k < remain; k++)
+                                output[base + bin + k] += (CSC_SUM_T)csc_flat[off + k] * v;
+                            if (unlikely(tmp2[j] > cut)) {
+                                *(chunk_wr_outpx[c]++)  = tmp2[j];
+                                *(chunk_wr_outadr[c]++) = jj;
+                                chunk_npx[c]++;
+                            }
                         }
                     }
                 }
-                break;
+                } break;
             }
         }
         i0 += BLK / NB;
@@ -249,20 +269,26 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                    &compressed[chunk_offsets[c] + chunk_lengths[c] - rem],
                    (size_t)rem);
         }
-        for (j = 0; j < (rem + blocksize) / NB; j++) {
-            int jj = j + i0;
-            val = tmp2[j] * mask[jj];
-            if (unlikely(val > 0)) {
-                int bin = (int)csc_first_bin[jj];
-                int off = jj * csc_entries_per_pixel;
-                CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                int remain = NOUT - bin;
-                for (k = 0; k < (unsigned int)csc_entries_per_pixel && (int)k < remain; k++)
-                    output[c * (size_t)NOUT + bin + k] += (CSC_SUM_T)csc_flat[off + k] * v;
-                if (unlikely(tmp2[j] > cut)) {
-                    *(chunk_wr_outpx[c]++)  = tmp2[j];
-                    *(chunk_wr_outadr[c]++) = jj;
-                    chunk_npx[c]++;
+        {
+            int ii, npix2 = (rem + blocksize) / NB;
+            for (ii = 0; ii < CSC1D_STRIDE; ii++) {
+                for (j = ii; j < npix2; j += CSC1D_STRIDE) {
+                    int jj = j + i0;
+                    val = tmp2[j] * mask[jj];
+                    if (unlikely(val > 0)) {
+                        int bin = (int)csc_first_bin[jj];
+                        int off = jj * csc_entries_per_pixel;
+                        size_t base = c * (size_t)NOUT;
+                        CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
+                        int remain = NOUT - bin;
+                        for (k = 0; k < (unsigned int)csc_entries_per_pixel && (int)k < remain; k++)
+                            output[base + bin + k] += (CSC_SUM_T)csc_flat[off + k] * v;
+                        if (unlikely(tmp2[j] > cut)) {
+                            *(chunk_wr_outpx[c]++)  = tmp2[j];
+                            *(chunk_wr_outadr[c]++) = jj;
+                            chunk_npx[c]++;
+                        }
+                    }
                 }
             }
         }
