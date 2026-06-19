@@ -178,26 +178,24 @@ print("mmap: %.3f ms (file size: %.1f MB)" % (t_mmap * 1000, fsize_mb))
 max_bs = max(BATCH_SIZES)
 nout = csc_obj.bins
 
-powder_buf = np.zeros(max_bs * nout, dtype=np.float64)
 outpx_buf   = np.zeros(max_bs * NIJ, dtype=np.uint16)
 outadr_buf  = np.zeros(max_bs * NIJ, dtype=np.uint32)
 
-# Pre-allocated per-frame powder storage
+# Pre-allocated per-frame powder storage (C function writes directly in-place)
 all_powder = np.zeros((NFRAMES, nout), dtype=np.float64)
 
 # Per-frame sparse output (variable length per frame)
 all_sparse_vals = np.empty(NFRAMES, dtype=object)
 all_sparse_inds = np.empty(NFRAMES, dtype=object)
 
-total_mb = (outpx_buf.nbytes + outadr_buf.nbytes
-            + powder_buf.nbytes) / 1e6
+total_mb = (outpx_buf.nbytes + outadr_buf.nbytes) / 1e6
 print("Reusable buffer total: %.0f MB" % total_mb)
 print("  outpx  : %.0f MB  (uint16, %d x %d)" % (
     outpx_buf.nbytes / 1e6, max_bs, NIJ))
 print("  outadr : %.0f MB  (uint32, %d x %d)" % (
     outadr_buf.nbytes / 1e6, max_bs, NIJ))
-print("  powder : %.1f KB  (f64, %d x %d)" % (
-    powder_buf.nbytes / 1e3, max_bs, nout))
+print("  powder : %.1f KB  (f64, %d x %d) -- in all_powder, written in-place" % (
+    all_powder.nbytes / 1e3, NFRAMES, nout))
 assert total_mb < 1024, "Buffer exceeds 1 GB limit (%.0f MB)" % total_mb
 
 
@@ -231,20 +229,19 @@ for bs in BATCH_SIZES:
         batch_lens = chunk_lengths[batch_start:batch_start + batch_n]
         npx_pc = np.zeros(batch_n, dtype=np.int32)
 
-        # C code zeros output histograms internally
+        # Pass a direct slice of all_powder so the C function writes in-place
+        batch_powder_flat = all_powder[batch_start:batch_start + batch_n].ravel()
+
         t0 = time.perf_counter()
         dc.fun(
             mmap, flat_mask,
             outpx_buf, outadr_buf, 0,
-            powder_buf, csc_data, csc_indices, csc_indptr,
+            batch_powder_flat, csc_data, csc_indices, csc_indptr,
             batch_offs, batch_lens, npx_pc,
         )
         t1 = time.perf_counter()
         c_total += t1 - t0
 
-        # Copy results out
-        all_powder[batch_start:batch_start + batch_n] = (
-            powder_buf[:batch_n * nout].reshape(-1, nout))
         for f in range(batch_n):
             frame = batch_start + f
             npx = npx_pc[f]
