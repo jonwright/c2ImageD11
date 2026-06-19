@@ -129,7 +129,7 @@ class TestCSC1DMemory:
 
             npc = np.zeros(nframes, dtype=np.int32)
             fn(compressed, mask, ox, oa, 0,
-               pw, csc_arr, self.first_bin, epp,
+               pw, csc_arr, self.first_bin, epp, 0,  # stride=0 (auto)
                offs_batch, lens_batch, npc)
 
     def test_f32_1frame(self):
