@@ -7,9 +7,10 @@
  *   -DUSE_KCB  (or leave undefined for bitshuffle-core)
  *   -DUSE_ZSTD (or leave undefined for LZ4)
  *
- * Each compilation includes bs_sparse_tmpl.c 3 times (once per pixel type)
- * and bs_sparse_csc_tmpl.c 12 times (3 pixel types x 4 CSC data types).
- * Generates  3 basic + 12 CSC = 15 functions per compilation unit.
+ * Each compilation includes bs_sparse_tmpl.c 3 times (once per pixel type),
+ * bs_sparse_csc_tmpl.c 12 times (3x4 CSC data types), and
+ * bs_sparse_csc_1d_tmpl.c 12 times (1D padded CSC).
+ * Generates 3 basic + 12 CSC + 12 CSC1D = 27 functions per compilation unit.
  */
 
 #include <stdlib.h>
@@ -102,18 +103,26 @@ int64_t bshuf_untrans_bit_elem(const void* in, void* out, const size_t size,
 #define CSC_SUM_T double
 #define KERNEL_CSC_FN CAT3(FN_PREFIX, _csc_, CAT(DT_SHORT, FULL_SUFFIX))
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT3(FN_PREFIX, _csc1d_, CAT(DT_SHORT, FULL_SUFFIX))
+#include "bs_sparse_csc_1d_tmpl.c"
 #define CSC_DATA_T uint8_t
 #define CSC_SUM_T uint64_t
 #define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, CAT3(DT_SHORT, _, cu8), FULL_SUFFIX)
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, CAT3(DT_SHORT, _, cu8), FULL_SUFFIX)
+#include "bs_sparse_csc_1d_tmpl.c"
 #define CSC_DATA_T uint16_t
 #define CSC_SUM_T uint64_t
 #define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, CAT3(DT_SHORT, _, cu16), FULL_SUFFIX)
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, CAT3(DT_SHORT, _, cu16), FULL_SUFFIX)
+#include "bs_sparse_csc_1d_tmpl.c"
 #define CSC_DATA_T uint32_t
 #define CSC_SUM_T uint64_t
 #define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, CAT3(DT_SHORT, _, cu32), FULL_SUFFIX)
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, CAT3(DT_SHORT, _, cu32), FULL_SUFFIX)
+#include "bs_sparse_csc_1d_tmpl.c"
 
 #undef DATATYPE
 #undef DT_SHORT
@@ -122,6 +131,7 @@ int64_t bshuf_untrans_bit_elem(const void* in, void* out, const size_t size,
 #undef CSC_DATA_T
 #undef CSC_SUM_T
 #undef KERNEL_CSC_FN
+#undef KERNEL_CSC1D_FN
 
 /* ================================================================
  * Pixel type: uint16_t (NB=2)
@@ -138,18 +148,26 @@ int64_t bshuf_untrans_bit_elem(const void* in, void* out, const size_t size,
 #define CSC_SUM_T double
 #define KERNEL_CSC_FN CAT3(FN_PREFIX, _csc_, CAT(DT_SHORT, FULL_SUFFIX))
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT3(FN_PREFIX, _csc1d_, CAT(DT_SHORT, FULL_SUFFIX))
+#include "bs_sparse_csc_1d_tmpl.c"
 #define CSC_DATA_T uint8_t
 #define CSC_SUM_T uint64_t
 #define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, CAT3(DT_SHORT, _, cu8), FULL_SUFFIX)
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, CAT3(DT_SHORT, _, cu8), FULL_SUFFIX)
+#include "bs_sparse_csc_1d_tmpl.c"
 #define CSC_DATA_T uint16_t
 #define CSC_SUM_T uint64_t
 #define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, CAT3(DT_SHORT, _, cu16), FULL_SUFFIX)
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, CAT3(DT_SHORT, _, cu16), FULL_SUFFIX)
+#include "bs_sparse_csc_1d_tmpl.c"
 #define CSC_DATA_T uint32_t
 #define CSC_SUM_T uint64_t
 #define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, CAT3(DT_SHORT, _, cu32), FULL_SUFFIX)
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, CAT3(DT_SHORT, _, cu32), FULL_SUFFIX)
+#include "bs_sparse_csc_1d_tmpl.c"
 
 #undef DATATYPE
 #undef DT_SHORT
@@ -158,6 +176,7 @@ int64_t bshuf_untrans_bit_elem(const void* in, void* out, const size_t size,
 #undef CSC_DATA_T
 #undef CSC_SUM_T
 #undef KERNEL_CSC_FN
+#undef KERNEL_CSC1D_FN
 
 /* ================================================================
  * Pixel type: uint32_t (NB=4)
@@ -174,18 +193,26 @@ int64_t bshuf_untrans_bit_elem(const void* in, void* out, const size_t size,
 #define CSC_SUM_T double
 #define KERNEL_CSC_FN CAT3(FN_PREFIX, _csc_, CAT(DT_SHORT, FULL_SUFFIX))
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT3(FN_PREFIX, _csc1d_, CAT(DT_SHORT, FULL_SUFFIX))
+#include "bs_sparse_csc_1d_tmpl.c"
 #define CSC_DATA_T uint8_t
 #define CSC_SUM_T uint64_t
 #define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, CAT3(DT_SHORT, _, cu8), FULL_SUFFIX)
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, CAT3(DT_SHORT, _, cu8), FULL_SUFFIX)
+#include "bs_sparse_csc_1d_tmpl.c"
 #define CSC_DATA_T uint16_t
 #define CSC_SUM_T uint64_t
 #define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, CAT3(DT_SHORT, _, cu16), FULL_SUFFIX)
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, CAT3(DT_SHORT, _, cu16), FULL_SUFFIX)
+#include "bs_sparse_csc_1d_tmpl.c"
 #define CSC_DATA_T uint32_t
 #define CSC_SUM_T uint64_t
 #define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, CAT3(DT_SHORT, _, cu32), FULL_SUFFIX)
 #include "bs_sparse_csc_tmpl.c"
+#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, CAT3(DT_SHORT, _, cu32), FULL_SUFFIX)
+#include "bs_sparse_csc_1d_tmpl.c"
 
 #undef DATATYPE
 #undef DT_SHORT
@@ -194,3 +221,4 @@ int64_t bshuf_untrans_bit_elem(const void* in, void* out, const size_t size,
 #undef CSC_DATA_T
 #undef CSC_SUM_T
 #undef KERNEL_CSC_FN
+#undef KERNEL_CSC1D_FN

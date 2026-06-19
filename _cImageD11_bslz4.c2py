@@ -258,6 +258,44 @@
           - name: "bs_sse42"
             sig: "int bslz4_csc_u8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bslz4_csc1d_u8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (float CSC data, u8 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'B'"
+      - "outP.format == 'I'"
+      - "out.format == 'd'"
+      - "csc_flat.format == 'f'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'B' and outP.format == 'I' and out.format == 'd' and csc_flat.format == 'f' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u8_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u8_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u8_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u8_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u8_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bslz4_csc_u8_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (uint8 CSC data, u8 pixels). Returns total npx."
     checks:
@@ -296,6 +334,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bslz4_csc_u8_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint8_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bslz4_csc1d_u8_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (uint8 CSC data, u8 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'B'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'B'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'B' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'B' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u8_cu8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u8_cu8_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u8_cu8_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u8_cu8_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u8_cu8_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u8_cu8_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u8_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bslz4_csc_u8_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (uint16 CSC data, u8 pixels). Returns total npx."
@@ -336,6 +412,44 @@
           - name: "bs_sse42"
             sig: "int bslz4_csc_u8_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint16_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bslz4_csc1d_u8_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (uint16 CSC data, u8 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'B'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'H'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'B' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'H' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u8_cu16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u8_cu16_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u8_cu16_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u8_cu16_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u8_cu16_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u8_cu16_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u8_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bslz4_csc_u8_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (uint32 CSC data, u8 pixels). Returns total npx."
     checks:
@@ -374,6 +488,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bslz4_csc_u8_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint32_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bslz4_csc1d_u8_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (uint32 CSC data, u8 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'B'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'I'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'B' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'I' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u8_cu32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u8_cu32_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u8_cu32_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u8_cu32_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u8_cu32_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u8_cu32_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u8_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bslz4_csc_u16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (float CSC data, u16 pixels). Returns total npx."
@@ -414,6 +566,44 @@
           - name: "bs_sse42"
             sig: "int bslz4_csc_u16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bslz4_csc1d_u16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (float CSC data, u16 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'H'"
+      - "outP.format == 'I'"
+      - "out.format == 'd'"
+      - "csc_flat.format == 'f'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'H' and outP.format == 'I' and out.format == 'd' and csc_flat.format == 'f' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u16_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u16_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u16_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u16_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u16_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bslz4_csc_u16_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (uint8 CSC data, u16 pixels). Returns total npx."
     checks:
@@ -452,6 +642,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bslz4_csc_u16_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint8_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bslz4_csc1d_u16_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (uint8 CSC data, u16 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'H'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'B'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'H' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'B' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u16_cu8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u16_cu8_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u16_cu8_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u16_cu8_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u16_cu8_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u16_cu8_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u16_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bslz4_csc_u16_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (uint16 CSC data, u16 pixels). Returns total npx."
@@ -492,6 +720,44 @@
           - name: "bs_sse42"
             sig: "int bslz4_csc_u16_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint16_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bslz4_csc1d_u16_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (uint16 CSC data, u16 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'H'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'H'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'H' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'H' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u16_cu16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u16_cu16_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u16_cu16_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u16_cu16_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u16_cu16_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u16_cu16_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u16_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bslz4_csc_u16_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (uint32 CSC data, u16 pixels). Returns total npx."
     checks:
@@ -530,6 +796,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bslz4_csc_u16_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint32_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bslz4_csc1d_u16_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (uint32 CSC data, u16 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'H'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'I'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'H' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'I' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u16_cu32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u16_cu32_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u16_cu32_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u16_cu32_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u16_cu32_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u16_cu32_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u16_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bslz4_csc_u32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (float CSC data, u32 pixels). Returns total npx."
@@ -570,6 +874,44 @@
           - name: "bs_sse42"
             sig: "int bslz4_csc_u32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bslz4_csc1d_u32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (float CSC data, u32 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'I'"
+      - "outP.format == 'I'"
+      - "out.format == 'd'"
+      - "csc_flat.format == 'f'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'I' and outP.format == 'I' and out.format == 'd' and csc_flat.format == 'f' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u32_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u32_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u32_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u32_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u32_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bslz4_csc_u32_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (uint8 CSC data, u32 pixels). Returns total npx."
     checks:
@@ -608,6 +950,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bslz4_csc_u32_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint8_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bslz4_csc1d_u32_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (uint8 CSC data, u32 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'I'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'B'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'I' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'B' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u32_cu8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u32_cu8_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u32_cu8_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u32_cu8_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u32_cu8_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u32_cu8_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u32_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bslz4_csc_u32_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (uint16 CSC data, u32 pixels). Returns total npx."
@@ -648,6 +1028,44 @@
           - name: "bs_sse42"
             sig: "int bslz4_csc_u32_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint16_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bslz4_csc1d_u32_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (uint16 CSC data, u32 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'I'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'H'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'I' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'H' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u32_cu16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u32_cu16_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u32_cu16_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u32_cu16_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u32_cu16_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u32_cu16_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u32_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bslz4_csc_u32_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "LZ4 decompress + unshuffle + CSC accumulate (uint32 CSC data, u32 pixels). Returns total npx."
     checks:
@@ -686,6 +1104,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bslz4_csc_u32_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint32_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bslz4_csc1d_u32_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "LZ4 1D padded CSC decompress (uint32 CSC data, u32 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'I'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'I'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'I' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'I' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bslz4_csc1d_u32_cu32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bslz4_csc1d_u32_cu32_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bslz4_csc1d_u32_cu32_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bslz4_csc1d_u32_cu32_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bslz4_csc1d_u32_cu32_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bslz4_csc1d_u32_cu32_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bslz4_csc1d_u32_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bszstd_csc_u8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (float CSC data, u8 pixels). Returns total npx."
@@ -726,6 +1182,44 @@
           - name: "bs_sse42"
             sig: "int bszstd_csc_u8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bszstd_csc1d_u8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (float CSC data, u8 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'B'"
+      - "outP.format == 'I'"
+      - "out.format == 'd'"
+      - "csc_flat.format == 'f'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'B' and outP.format == 'I' and out.format == 'd' and csc_flat.format == 'f' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u8_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u8_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u8_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u8_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u8_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bszstd_csc_u8_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (uint8 CSC data, u8 pixels). Returns total npx."
     checks:
@@ -764,6 +1258,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bszstd_csc_u8_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint8_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bszstd_csc1d_u8_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (uint8 CSC data, u8 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'B'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'B'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'B' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'B' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u8_cu8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u8_cu8_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u8_cu8_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u8_cu8_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u8_cu8_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u8_cu8_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u8_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bszstd_csc_u8_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (uint16 CSC data, u8 pixels). Returns total npx."
@@ -804,6 +1336,44 @@
           - name: "bs_sse42"
             sig: "int bszstd_csc_u8_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint16_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bszstd_csc1d_u8_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (uint16 CSC data, u8 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'B'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'H'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'B' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'H' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u8_cu16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u8_cu16_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u8_cu16_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u8_cu16_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u8_cu16_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u8_cu16_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u8_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bszstd_csc_u8_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (uint32 CSC data, u8 pixels). Returns total npx."
     checks:
@@ -842,6 +1412,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bszstd_csc_u8_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint32_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bszstd_csc1d_u8_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (uint32 CSC data, u8 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'B'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'I'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'B' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'I' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u8_cu32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u8_cu32_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u8_cu32_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u8_cu32_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u8_cu32_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u8_cu32_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u8_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bszstd_csc_u16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (float CSC data, u16 pixels). Returns total npx."
@@ -882,6 +1490,44 @@
           - name: "bs_sse42"
             sig: "int bszstd_csc_u16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bszstd_csc1d_u16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (float CSC data, u16 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'H'"
+      - "outP.format == 'I'"
+      - "out.format == 'd'"
+      - "csc_flat.format == 'f'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'H' and outP.format == 'I' and out.format == 'd' and csc_flat.format == 'f' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u16_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u16_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u16_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u16_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u16_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bszstd_csc_u16_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (uint8 CSC data, u16 pixels). Returns total npx."
     checks:
@@ -920,6 +1566,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bszstd_csc_u16_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint8_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bszstd_csc1d_u16_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (uint8 CSC data, u16 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'H'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'B'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'H' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'B' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u16_cu8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u16_cu8_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u16_cu8_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u16_cu8_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u16_cu8_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u16_cu8_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u16_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bszstd_csc_u16_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (uint16 CSC data, u16 pixels). Returns total npx."
@@ -960,6 +1644,44 @@
           - name: "bs_sse42"
             sig: "int bszstd_csc_u16_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint16_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bszstd_csc1d_u16_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (uint16 CSC data, u16 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'H'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'H'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'H' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'H' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u16_cu16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u16_cu16_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u16_cu16_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u16_cu16_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u16_cu16_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u16_cu16_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u16_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bszstd_csc_u16_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (uint32 CSC data, u16 pixels). Returns total npx."
     checks:
@@ -998,6 +1720,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bszstd_csc_u16_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint32_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bszstd_csc1d_u16_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (uint32 CSC data, u16 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'H'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'I'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'H' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'I' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u16_cu32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u16_cu32_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u16_cu32_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u16_cu32_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u16_cu32_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u16_cu32_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u16_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bszstd_csc_u32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (float CSC data, u32 pixels). Returns total npx."
@@ -1038,6 +1798,44 @@
           - name: "bs_sse42"
             sig: "int bszstd_csc_u32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bszstd_csc1d_u32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (float CSC data, u32 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'I'"
+      - "outP.format == 'I'"
+      - "out.format == 'd'"
+      - "csc_flat.format == 'f'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'I' and outP.format == 'I' and out.format == 'd' and csc_flat.format == 'f' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u32_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u32_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u32_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u32_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u32_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, double *output, int NOUT, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bszstd_csc_u32_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (uint8 CSC data, u32 pixels). Returns total npx."
     checks:
@@ -1076,6 +1874,44 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bszstd_csc_u32_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint8_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bszstd_csc1d_u32_cu8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (uint8 CSC data, u32 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'I'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'B'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'I' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'B' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u32_cu8
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u32_cu8_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u32_cu8_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u32_cu8_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u32_cu8_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u32_cu8_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u32_cu8_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint8_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
   - py_sig: "bszstd_csc_u32_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (uint16 CSC data, u32 pixels). Returns total npx."
@@ -1116,6 +1952,44 @@
           - name: "bs_sse42"
             sig: "int bszstd_csc_u32_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint16_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
 
+  - py_sig: "bszstd_csc1d_u32_cu16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (uint16 CSC data, u32 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'I'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'H'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'I' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'H' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u32_cu16
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u32_cu16_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u32_cu16_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u32_cu16_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u32_cu16_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u32_cu16_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u32_cu16_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint16_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
   - py_sig: "bszstd_csc_u32_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
     doc: "ZSTD decompress + unshuffle + CSC accumulate (uint32 CSC data, u32 pixels). Returns total npx."
     checks:
@@ -1154,3 +2028,41 @@
             when: "c2py_amd64_avx2"
           - name: "bs_sse42"
             sig: "int bszstd_csc_u32_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, uint32_t *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+
+  - py_sig: "bszstd_csc1d_u32_cu32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
+    doc: "ZSTD 1D padded CSC decompress (uint32 CSC data, u32 pixels). Returns total npx."
+    checks:
+      - "compressed.format == 'B'"
+      - "mask.format == 'B'"
+      - "outpx.format == 'I'"
+      - "outP.format == 'I'"
+      - "out.format == 'Q' or out.format == 'L'"
+      - "csc_flat.format == 'I'"
+      - "csc_first_bin.format == 'I'"
+      - "chunk_offsets.format == 'q' or chunk_offsets.format == 'l'"
+      - "chunk_lengths.format == 'i'"
+      - "npx_per_chunk.format == 'i'"
+      - "chunk_offsets.n == chunk_lengths.n"
+      - "chunk_offsets.n == npx_per_chunk.n"
+    gil_release: true
+    c_overloads:
+      - when: "compressed.format == 'B' and mask.format == 'B' and outpx.format == 'I' and outP.format == 'I' and out.format == 'Q' or out.format == 'L' and csc_flat.format == 'I' and csc_first_bin.format == 'I' and (chunk_offsets.format == 'q' or chunk_offsets.format == 'l') and chunk_lengths.format == 'i' and npx_per_chunk.format == 'i'"
+        map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, output: "out.ptr", NOUT: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
+        group: bszstd_csc1d_u32_cu32
+        variants:
+          - name: "kcb_avx512"
+            sig: "int bszstd_csc1d_u32_cu32_kcb_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "kcb_avx2"
+            sig: "int bszstd_csc1d_u32_cu32_kcb_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "kcb_sse42"
+            sig: "int bszstd_csc1d_u32_cu32_kcb_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+          - name: "bs_avx512"
+            sig: "int bszstd_csc1d_u32_cu32_bs_avx512(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx512f"
+          - name: "bs_avx2"
+            sig: "int bszstd_csc1d_u32_cu32_bs_avx2(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"
+            when: "c2py_amd64_avx2"
+          - name: "bs_sse42"
+            sig: "int bszstd_csc1d_u32_cu32_bs_sse42(const uint8_t *compressed, int compressed_length, const uint8_t *mask, int NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, uint64_t *output, int NOUT, const uint32_t *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, int nchunks, int32_t *npx_per_chunk) -> int"

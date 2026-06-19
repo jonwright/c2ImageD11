@@ -106,6 +106,20 @@ def make_py_fn_name(prefix, dtshort, cscshort):
     else:
         return "{}_csc_{}".format(prefix, dtshort)
 
+def make_csc1d_fn_name(prefix, dtshort, cscshort, backend, isa):
+    """e.g. bslz4_csc1d_u16_cu16_kcb_avx512 (int) or bslz4_csc1d_u16_kcb_avx512 (float)"""
+    if cscshort:
+        return "{}_csc1d_{}_{}_{}_{}".format(prefix, dtshort, cscshort, backend, isa)
+    else:
+        return "{}_csc1d_{}_{}_{}".format(prefix, dtshort, backend, isa)
+
+def make_py_csc1d_fn_name(prefix, dtshort, cscshort):
+    """Python-visible 1D CSC function name. e.g. bslz4_csc1d_u16_cu16"""
+    if cscshort:
+        return "{}_csc1d_{}_{}".format(prefix, dtshort, cscshort)
+    else:
+        return "{}_csc1d_{}".format(prefix, dtshort)
+
 def make_kernel_suffix(backend, isa):
     """What gets passed via -DKERNEL_SUFFIX to cc"""
     return "_{}_{}".format(backend, isa)
@@ -127,9 +141,10 @@ BS_MASTER_HEADER = '''/* bs_master.c - bitshuffle sparse decompression master co
  *   -DUSE_KCB  (or leave undefined for bitshuffle-core)
  *   -DUSE_ZSTD (or leave undefined for LZ4)
  *
- * Each compilation includes bs_sparse_tmpl.c 3 times (once per pixel type)
- * and bs_sparse_csc_tmpl.c 12 times (3 pixel types x 4 CSC data types).
- * Generates  3 basic + 12 CSC = 15 functions per compilation unit.
+ * Each compilation includes bs_sparse_tmpl.c 3 times (once per pixel type),
+ * bs_sparse_csc_tmpl.c 12 times (3x4 CSC data types), and
+ * bs_sparse_csc_1d_tmpl.c 12 times (1D padded CSC).
+ * Generates 3 basic + 12 CSC + 12 CSC1D = 27 functions per compilation unit.
  */
 
 #include <stdlib.h>
@@ -228,18 +243,20 @@ def generate_bs_master_c():
         for csc in CSC_TYPES:
             cscshort = csc["cscshort"]
             if csc["is_float"]:
-                # Legacy naming: bslz4_csc_u16_kcb_avx512
                 lines.append("#define CSC_DATA_T {}".format(csc["cscdatatype"]))
                 lines.append("#define CSC_SUM_T {}".format(csc["sumtype"]))
                 lines.append("#define KERNEL_CSC_FN CAT3(FN_PREFIX, _csc_, CAT(DT_SHORT, FULL_SUFFIX))")
                 lines.append('#include "bs_sparse_csc_tmpl.c"')
+                lines.append("#define KERNEL_CSC1D_FN CAT3(FN_PREFIX, _csc1d_, CAT(DT_SHORT, FULL_SUFFIX))")
+                lines.append('#include "bs_sparse_csc_1d_tmpl.c"')
             else:
-                # Integer CSC naming: bslz4_csc_u16_cu16_kcb_avx512
                 cscid = "CAT3(DT_SHORT, _, {})".format(cscshort)
                 lines.append("#define CSC_DATA_T {}".format(csc["cscdatatype"]))
                 lines.append("#define CSC_SUM_T {}".format(csc["sumtype"]))
                 lines.append("#define KERNEL_CSC_FN CAT4(FN_PREFIX, _csc_, {}, FULL_SUFFIX)".format(cscid))
                 lines.append('#include "bs_sparse_csc_tmpl.c"')
+                lines.append("#define KERNEL_CSC1D_FN CAT4(FN_PREFIX, _csc1d_, {}, FULL_SUFFIX)".format(cscid))
+                lines.append('#include "bs_sparse_csc_1d_tmpl.c"')
 
         lines.append("")
         lines.append("#undef DATATYPE")
@@ -249,6 +266,7 @@ def generate_bs_master_c():
         lines.append("#undef CSC_DATA_T")
         lines.append("#undef CSC_SUM_T")
         lines.append("#undef KERNEL_CSC_FN")
+        lines.append("#undef KERNEL_CSC1D_FN")
 
     return "\n".join(lines) + "\n"
 
@@ -357,6 +375,28 @@ def generate_bs_functions_h():
                             "int nchunks, "
                             "int32_t *restrict npx_per_chunk);".format(
                                 fn=fn_csc, dt=datatype, sum=sumtype,
+                                cscdt=cscdatatype)
+                        )
+
+                        fn_csc1d = make_csc1d_fn_name(prefix, dtshort, cscshort,
+                                                      bkd_suffix, isa_suffix)
+                        lines.append("")
+                        lines.append("/* {} CSC1D {} */".format(dtshort, csc_label))
+                        lines.append(
+                            "int {fn}(const uint8_t *restrict compressed, "
+                            "int compressed_length, "
+                            "const uint8_t *restrict mask, int NIJ, "
+                            "{dt} *restrict outpx, uint32_t *restrict output_adr, "
+                            "int threshold, "
+                            "{sum} *restrict output, int NOUT, "
+                            "const {cscdt} *restrict csc_flat, "
+                            "const uint32_t *restrict csc_first_bin, "
+                            "int csc_entries_per_pixel, "
+                            "const int64_t *restrict chunk_offsets, "
+                            "const int32_t *restrict chunk_lengths, "
+                            "int nchunks, "
+                            "int32_t *restrict npx_per_chunk);".format(
+                                fn=fn_csc1d, dt=datatype, sum=sumtype,
                                 cscdt=cscdatatype)
                         )
 
@@ -578,6 +618,125 @@ def _py_sig_variants_csc(prefix, dtshort, csc):
     return lines
 
 
+def _py_sig_entry_csc1d(prefix, dtshort, csc, py_format):
+    """Generate a c2py23 CSC1D function entry."""
+    cscshort = csc["cscshort"]
+    cformat = csc["cformat"]
+    sformat = csc["sformat"]
+    fn_name = make_py_csc1d_fn_name(prefix, dtshort, cscshort)
+
+    if csc["is_float"]:
+        type_desc = "float"
+    elif cformat == "B":
+        type_desc = "uint8"
+    elif cformat == "H":
+        type_desc = "uint16"
+    else:
+        type_desc = "uint32"
+
+    if prefix == "bslz4":
+        eng_label = "LZ4"
+    else:
+        eng_label = "ZSTD"
+
+    lines = []
+    lines.append("")
+    lines.append('  - py_sig: "{}'.format(fn_name) +
+                 '(compressed: buffer, mask: buffer, '
+                 'outpx: buffer, outP: buffer, thresh: int, '
+                 'out: buffer, csc_flat: buffer, csc_first_bin: buffer, '
+                 'csc_entries_per_pixel: int, '
+                 'chunk_offsets: buffer, chunk_lengths: buffer, '
+                 'npx_per_chunk: buffer) -> int"')
+    lines.append('    doc: "{} 1D padded CSC decompress '
+                 '({} CSC data, {} pixels). Returns total npx."'.format(
+                     eng_label, type_desc, dtshort))
+    lines.append('    checks:')
+    lines.append('      - "compressed.format == \'B\'"')
+    lines.append('      - "mask.format == \'B\'"')
+    lines.append('      - "outpx.format == \'{}\'"'.format(py_format))
+    lines.append('      - "outP.format == \'I\'"')
+    if csc["is_float"]:
+        lines.append('      - "out.format == \'d\'"')
+        out_check = 'out.format == \'d\''
+    else:
+        lines.append('      - "out.format == \'Q\' or out.format == \'L\'"')
+        out_check = "out.format == 'Q' or out.format == 'L'"
+    lines.append('      - "csc_flat.format == \'{}\'"'.format(cformat))
+    lines.append('      - "csc_first_bin.format == \'I\'"')
+    lines.append('      - "chunk_offsets.format == \'q\' or chunk_offsets.format == \'l\'"')
+    lines.append('      - "chunk_lengths.format == \'i\'"')
+    lines.append('      - "npx_per_chunk.format == \'i\'"')
+    lines.append('      - "chunk_offsets.n == chunk_lengths.n"')
+    lines.append('      - "chunk_offsets.n == npx_per_chunk.n"')
+    lines.append('    gil_release: true')
+    lines.append('    c_overloads:')
+
+    when = ('      - when: "compressed.format == \'B\' and '
+            'mask.format == \'B\' and outpx.format == \'{pf}\' '
+            'and outP.format == \'I\' '
+            'and {oc} '
+            'and csc_flat.format == \'{cf}\' '
+            'and csc_first_bin.format == \'I\' '
+            'and (chunk_offsets.format == \'q\' or chunk_offsets.format == \'l\') '
+            'and chunk_lengths.format == \'i\' '
+            'and npx_per_chunk.format == \'i\'"'.format(
+                pf=py_format, oc=out_check, cf=cformat))
+    lines.append(when)
+    lines.append('        map: {compressed: "compressed.ptr", '
+                 'compressed_length: "compressed.shape[0]", '
+                 'mask: "mask.ptr", NIJ: "mask.shape[0]", '
+                 'outpx: "outpx.ptr", output_adr: "outP.ptr", '
+                 'threshold: thresh, '
+                 'output: "out.ptr", NOUT: "out.shape[0]", '
+                 'csc_flat: "csc_flat.ptr", '
+                 'csc_first_bin: "csc_first_bin.ptr", '
+                 'csc_entries_per_pixel: csc_entries_per_pixel, '
+                 'chunk_offsets: "chunk_offsets.ptr", '
+                 'chunk_lengths: "chunk_lengths.ptr", '
+                 'nchunks: "chunk_offsets.shape[0]", '
+                 'npx_per_chunk: "npx_per_chunk.ptr"}')
+    lines.append('        group: {}'.format(fn_name))
+
+    return lines
+
+
+def _py_sig_variants_csc1d(prefix, dtshort, csc):
+    """Generate the variants block for a CSC1D function."""
+    cscshort = csc["cscshort"]
+    cscdatatype = csc["cscdatatype"]
+    sumtype = csc["sumtype"]
+
+    px = [p for p in PIXEL_TYPES if p["dtshort"] == dtshort][0]
+    datatype = px["datatype"]
+
+    lines = []
+    lines.append('        variants:')
+    for bk in BACKENDS:
+        bkd = bk["suffix"]
+        for isa in ISAS:
+            isa_s = isa["suffix"]
+            fn_name = make_csc1d_fn_name(prefix, dtshort, cscshort, bkd, isa_s)
+            name = "{}_{}".format(bkd, isa_s)
+            sig = ("int {fn}(const uint8_t *compressed, int compressed_length, "
+                   "const uint8_t *mask, int NIJ, "
+                   "{dt} *outpx, uint32_t *output_adr, int threshold, "
+                   "{sum} *output, int NOUT, "
+                   "const {cscdt} *csc_flat, "
+                   "const uint32_t *csc_first_bin, "
+                   "int csc_entries_per_pixel, "
+                   "const int64_t *chunk_offsets, "
+                   "const int32_t *chunk_lengths, "
+                   "int nchunks, "
+                   "int32_t *npx_per_chunk) -> int".format(
+                       fn=fn_name, dt=datatype, sum=sumtype, cscdt=cscdatatype))
+            lines.append('          - name: "{}"'.format(name))
+            lines.append('            sig: "{}"'.format(sig))
+            if isa["when_cond"]:
+                lines.append('            when: "{}"'.format(isa["when_cond"]))
+    return lines
+
+
 def generate_c2py():
     """Generate the bslz4 section of the .c2py file."""
     lines = []
@@ -613,6 +772,13 @@ def generate_c2py():
                                                  py_format)
                 lines.extend(entry_lines)
                 variant_lines = _py_sig_variants_csc(prefix, dtshort, csc)
+                lines.extend(variant_lines)
+
+                # CSC1D function
+                entry_lines = _py_sig_entry_csc1d(prefix, dtshort, csc,
+                                                   py_format)
+                lines.extend(entry_lines)
+                variant_lines = _py_sig_variants_csc1d(prefix, dtshort, csc)
                 lines.extend(variant_lines)
 
     return "\n".join(lines) + "\n"
