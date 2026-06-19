@@ -14,3 +14,4 @@ build/
 .pytest_cache/
 _cImageD11.c2py
 *.lprof
+multi_bslz4.md
