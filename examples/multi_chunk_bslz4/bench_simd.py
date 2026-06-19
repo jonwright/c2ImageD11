@@ -216,14 +216,13 @@ quant_configs = [
 for v in ['kcb_avx512', 'kcb_avx2', 'kcb_sse42',
           'bs_avx512', 'bs_avx2', 'bs_sse42']:
     for qlabel, qarr, sf, pow_dest, fn_q in quant_configs:
-        # Rebind the appropriate function variant
-        fname = "bslz4_csc1d_u16%s%s" % (
-            "_cu" + qlabel[1:] if qlabel.startswith("u") else "", "")
-        rebind_name = "_rebind_bslz4_csc1d" + ("_u16" if qlabel == "f32" else "_u16_cu" + qlabel[1:])
-        rebind_fn = getattr(_m, rebind_name)
-        rebind_fn(v)
+        # Rebind the correct function variant for this quantization type
+        reb_name = ("_rebind_bslz4_csc1d_u16" if qlabel == "f32"
+                    else "_rebind_bslz4_csc1d_u16_cu" + qlabel[1:])
+        getattr(_m, reb_name)(v)
 
-        def make_csc1d(fn=fn_q, sf_=sf, qlabel_=qlabel):
+        # Make runner: capture everything by VALUE via defaults
+        def make_csc1d(fn=fn_q, qarr_=qarr, sf_=sf, pw_u64=pow_dest):
             def call():
                 for b in range(0, NFRAMES, BS):
                     bn = min(BS, NFRAMES - b)
@@ -231,14 +230,14 @@ for v in ['kcb_avx512', 'kcb_avx2', 'kcb_sse42',
                     if sf_ is None:
                         pw = all_powder_f64[b:b+bn].ravel()
                     else:
-                        pw = all_powder_u64[b:b+bn].ravel()
+                        pw = pw_u64[b:b+bn].ravel()
                         pw[:] = 0
                     fn(mmap, flat_mask, outpx, outadr, CUT,
-                       pw, qarr, csc_first_bin, epp,
+                       pw, qarr_, csc_first_bin, epp,
                        offsets[b:b+bn], lengths[b:b+bn], npc)
                     if sf_ is not None:
-                        pw_f64 = all_powder_f64[b:b+bn].ravel()
-                        pw_f64[:] = pw.astype(np.float64) * (1.0 / sf_)
+                        all_powder_f64[b:b+bn].ravel()[:] = (
+                            pw.astype(np.float64) * (1.0 / sf_))
             return call
 
         ms, _, fps, _ = benchmark_csc(
