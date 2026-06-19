@@ -72,6 +72,10 @@ if sys.platform == "darwin":
 _EXTRA_COMPILE_ARGS = COPT.get(sys.platform, ["-fopenmp", "-fPIC"])
 _EXTRA_LINK_ARGS = COPT.get(sys.platform, ["-fopenmp", "-fPIC"])
 
+if os.environ.get("ASAN"):
+    _EXTRA_COMPILE_ARGS = _EXTRA_COMPILE_ARGS + ["-fsanitize=address", "-fno-omit-frame-pointer"]
+    _EXTRA_LINK_ARGS = _EXTRA_LINK_ARGS + ["-fsanitize=address"]
+
 
 # ---------------------------------------------------------------------------
 # SIMD multi-flag compilation
