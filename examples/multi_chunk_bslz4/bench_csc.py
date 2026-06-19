@@ -106,7 +106,8 @@ print("CSC: %d nnz, %d bins, %.1f MB" % (
 
 # %%
 mask_2d = np.load(MASKFILE).astype(np.uint8)
-flat_mask = mask_2d.ravel()
+# Mask file: 1=masked (dead pixel).  C code expects 1=active.
+flat_mask = (1 - mask_2d.ravel()).astype(np.uint8)
 NIJ = len(flat_mask)
 nactive = flat_mask.sum()
 print("Mask: %d / %d active pixels (%.1f%%)" % (
