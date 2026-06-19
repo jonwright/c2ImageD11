@@ -3,7 +3,7 @@
 # #
 # # Processes frames from a bitshuffle-lz4 HDF5 file using pyFAI CSC matrix.
 # # Compares batch sizes [1, 2, 4, 8, 16, 32] with loop-interchanged C code.
-# # Single core, no parallelism.  Timed via c2py23 + Python time.perf_counter.
+# # Single core, no parallelism.  Timed via time.perf_counter.
 # #
 
 # %%
@@ -178,11 +178,13 @@ nout = csc_obj.bins
 powder_buf = np.zeros(max_bs * nout, dtype=np.float64)
 outpx_buf   = np.zeros(max_bs * NIJ, dtype=np.uint16)
 outadr_buf  = np.zeros(max_bs * NIJ, dtype=np.uint32)
-# npx_pc_buf allocated per batch call (size = batch_n)
 
-all_sparse_vals = [None] * NFRAMES
-all_sparse_inds = [None] * NFRAMES
-all_powder      = [None] * NFRAMES
+# Pre-allocated per-frame powder storage (no per-call copies)
+all_powder = np.zeros((NFRAMES, nout), dtype=np.float64)
+
+# Per-frame sparse output (list of arrays, variable length per frame)
+all_sparse_vals = np.empty(NFRAMES, dtype=object)
+all_sparse_inds = np.empty(NFRAMES, dtype=object)
 
 total_mb = (outpx_buf.nbytes + outadr_buf.nbytes
             + powder_buf.nbytes) / 1e6
@@ -213,83 +215,41 @@ timer_ptr = _m._perf_bslz4_csc_u16
 # %%
 results = {}
 
-s_offs = np.array([0], dtype=np.int64)
-s_lens = np.zeros(1, dtype=np.int32)
-s_npc  = np.zeros(1, dtype=np.int32)
-
 for bs in BATCH_SIZES:
     print("\n--- batch_size = %d ---" % bs)
-
-    # Record baseline C timer
-    set_enabled(_m._c2py_timing_enabled, 0)
-    set_enabled(_m._c2py_timing_enabled, 1)
-    t0_stats = read_perf(timer_ptr)
-
     t_py0 = time.perf_counter()
 
-    if bs == 1:
-        for frame in range(NFRAMES):
-            chunk_start = int(chunk_offsets[frame])
-            chunk_len   = int(chunk_lengths[frame])
-            s_lens[0]   = chunk_len
+    # C code zeros output histograms internally; no need to zero powder_buf
+    for batch_start in range(0, NFRAMES, bs):
+        batch_n = min(bs, NFRAMES - batch_start)
+        batch_offs = chunk_offsets[batch_start:batch_start + batch_n]
+        batch_lens = chunk_lengths[batch_start:batch_start + batch_n]
+        npx_pc = np.zeros(batch_n, dtype=np.int32)
 
-            chunk_view = mmap[chunk_start:chunk_start + chunk_len]
-            # mmap slices are memoryviews; copy to ensure contiguous
-            chunk_copy = np.frombuffer(chunk_view, dtype=np.uint8).copy()
+        dc.fun(
+            mmap, flat_mask,
+            outpx_buf, outadr_buf, 0,
+            powder_buf, csc_data, csc_indices, csc_indptr,
+            batch_offs, batch_lens, npx_pc,
+        )
 
-            npx = dc.fun(
-                chunk_copy,
-                flat_mask,
-                outpx_buf, outadr_buf, 0,
-                powder_buf, csc_data, csc_indices, csc_indptr,
-                s_offs, s_lens, s_npc,
-            )
-            all_sparse_vals[frame] = outpx_buf[:npx].copy()
-            all_sparse_inds[frame] = outadr_buf[:npx].copy()
-            all_powder[frame]      = powder_buf[:nout].copy()
-    else:
-        for batch_start in range(0, NFRAMES, bs):
-            batch_n = min(bs, NFRAMES - batch_start)
-            batch_offs = chunk_offsets[batch_start:batch_start + batch_n]
-            batch_lens = chunk_lengths[batch_start:batch_start + batch_n]
-
-            powder_buf[:batch_n * nout] = 0.0
-            npx_pc = np.zeros(batch_n, dtype=np.int32)
-
-            dc.fun(
-                mmap, flat_mask,
-                outpx_buf, outadr_buf, 0,
-                powder_buf, csc_data, csc_indices, csc_indptr,
-                batch_offs, batch_lens, npx_pc,
-            )
-
-            for f in range(batch_n):
-                frame = batch_start + f
-                npx = npx_pc[f]
-                all_sparse_vals[frame] = outpx_buf[f * NIJ : f * NIJ + npx_pc[f]].copy()
-                all_sparse_inds[frame] = outadr_buf[f * NIJ : f * NIJ + npx_pc[f]].copy()
-                all_powder[frame]      = powder_buf[f * nout : (f + 1) * nout].copy()
+        # Copy results out: powder via slice assignment, sparse via copy
+        all_powder[batch_start:batch_start + batch_n] = (
+            powder_buf[:batch_n * nout].reshape(-1, nout))
+        for f in range(batch_n):
+            frame = batch_start + f
+            npx = npx_pc[f]
+            all_sparse_vals[frame] = outpx_buf[f * NIJ : f * NIJ + npx].copy()
+            all_sparse_inds[frame] = outadr_buf[f * NIJ : f * NIJ + npx].copy()
 
     t_py1 = time.perf_counter()
-    t1_stats = read_perf(timer_ptr)
-
     py_total_ms = (t_py1 - t_py0) * 1000
-    c_total_ns  = t1_stats["c_dur_ns"]  - t0_stats["c_dur_ns"]
-    c_wrap_ns   = t1_stats["wrap_dur_ns"] - t0_stats["wrap_dur_ns"]
-    c_prec_ns   = t1_stats["t_enter"]   - t0_stats["t_enter"]
-    c_postc_ns  = t1_stats["t_post_c"]  - t0_stats["t_post_c"]
-    c_calls     = t1_stats["call_count"] - t0_stats["call_count"]
 
-    c_total_ms = max(0.0, c_total_ns / 1e6)  # clamp negative noise
-    print("  Python total: %.0f ms   C total: %.0f ms   C calls: %d" % (
-        py_total_ms, c_total_ms, c_calls))
-    print("  Per frame: %.2f ms" % (py_total_ms / NFRAMES))
+    print("  Total: %.0f ms   Calls: %d   Per frame: %.2f ms" % (
+        py_total_ms, (NFRAMES + bs - 1) // bs, py_total_ms / NFRAMES))
 
     results[bs] = {
         "py_total_ms": py_total_ms,
-        "c_total_ms":  c_total_ns / 1e6,
-        "c_calls":     c_calls,
-        "c_wrap_ms":   c_wrap_ns / 1e6,
         "per_frame_ms": py_total_ms / NFRAMES,
     }
 
@@ -311,25 +271,21 @@ ax.set_title("Per-Frame Processing Time vs Batch Size")
 ax.set_xscale("log", base=2)
 ax.grid(True, alpha=0.3)
 
-# Plot 2: Time breakdown
+# Plot 2: Total time vs batch size
 ax = axes[1]
-c_times  = np.array([results[bs]["c_total_ms"] for bs in BATCH_SIZES])
-w_times  = np.array([results[bs]["c_wrap_ms"] for bs in BATCH_SIZES])
-py_times = np.array([results[bs]["py_total_ms"] for bs in BATCH_SIZES])
-ov_times = py_times - c_times
 xr = np.arange(len(BATCH_SIZES))
-ax.bar(xr, c_times, label="C execution", color="steelblue")
-ax.bar(xr, (ov_times - w_times), bottom=c_times,
-       label="Python overhead", color="lightcoral")
+totals = [results[bs]["py_total_ms"] for bs in BATCH_SIZES]
+ax.bar(xr, totals, color="steelblue")
 ax.set_xticks(xr)
 ax.set_xticklabels([str(bs) for bs in BATCH_SIZES])
 ax.set_xlabel("Batch size")
 ax.set_ylabel("Total time (ms) for %d frames" % NFRAMES)
-ax.set_title("Time Breakdown")
-ax.legend(fontsize=8)
+ax.set_title("Total Processing Time")
 ax.grid(True, alpha=0.3, axis="y")
+for i, v in enumerate(totals):
+    ax.text(i, v + 5, "%d ms" % v, ha="center", fontsize=9)
 
-# Plot 3: Speedup
+# Plot 3: Speedup vs batch size
 ax = axes[2]
 speedups = [results[1]["py_total_ms"] / results[bs]["py_total_ms"]
             for bs in BATCH_SIZES]
@@ -378,3 +334,4 @@ print("=" * 65)
 # Check sparse output sanity
 npx_total = sum(len(v) for v in all_sparse_vals)
 print("\nSparse pixels stored: %d across %d frames" % (npx_total, NFRAMES))
+print("Powder shape: %s, dtype: %s" % (all_powder.shape, all_powder.dtype))
