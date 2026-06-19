@@ -114,6 +114,7 @@ if _IS_AMD64:
         ("avx512", ["-mavx512f"]),
         ("avx2",   ["-mavx2", "-mfma"]),
         ("sse42",  ["-msse4.2"]),
+        ("sse2",   ["-msse2"]),
     ]
 else:
     _SIMD_VARIANTS = [

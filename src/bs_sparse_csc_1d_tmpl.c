@@ -20,6 +20,7 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     const CSC_DATA_T *restrict csc_flat,
                     const uint32_t *restrict csc_first_bin,
                     int csc_entries_per_pixel,
+                    int csc1d_stride,
                     const int64_t *restrict chunk_offsets,
                     const int32_t *restrict chunk_lengths,
                     int nchunks,
@@ -33,6 +34,7 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     const CSC_DATA_T *restrict csc_flat,
                     const uint32_t *restrict csc_first_bin,
                     int csc_entries_per_pixel,
+                    int csc1d_stride,
                     const int64_t *restrict chunk_offsets,
                     const int32_t *restrict chunk_lengths,
                     int nchunks,
@@ -50,6 +52,16 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
 #ifdef USE_KCB
     char scratch[BLK];
 #endif
+
+    /* Stride for inner pixel loop: when caller passes <= 0, auto-choose
+     * as BLK/NB / 64 (≈64 for uint16, ≈128 for uint8).  This spreads
+     * consecutive inner-loop pixels across ~64 cache lines of the output
+     * histogram, reducing write-after-write serialisation.              */
+    if (csc1d_stride <= 0) {
+        int npix_block = BLK / NB;
+        csc1d_stride = npix_block / 64;
+        if (csc1d_stride < 1) csc1d_stride = 1;
+    }
 
     if (nchunks <= 0) return -1;
 
@@ -125,16 +137,12 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
 #endif
 
             /* ---- pixel loop with switch on csc_entries_per_pixel ---- */
-            /* Process pixels in 128-stride sub-blocks to spread write
-             * destinations across cache lines, reducing write-after-write
-             * serialisation on the output histogram array.              */
-            #define CSC1D_STRIDE 128
             int npix = BLK / NB;
             switch (csc_entries_per_pixel) {
             case 4: {
                 int ii;
-                for (ii = 0; ii < CSC1D_STRIDE; ii++) {
-                    for (j = ii; j < npix; j += CSC1D_STRIDE) {
+                for (ii = 0; ii < csc1d_stride; ii++) {
+                    for (j = ii; j < npix; j += csc1d_stride) {
                         int jj = j + i0;
                         val = tmp2[j] * mask[jj];
                         if (unlikely(val > 0)) {
@@ -158,8 +166,8 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                 } break;
             case 6: {
                 int ii;
-                for (ii = 0; ii < CSC1D_STRIDE; ii++) {
-                    for (j = ii; j < npix; j += CSC1D_STRIDE) {
+                for (ii = 0; ii < csc1d_stride; ii++) {
+                    for (j = ii; j < npix; j += csc1d_stride) {
                         int jj = j + i0;
                         val = tmp2[j] * mask[jj];
                         if (unlikely(val > 0)) {
@@ -185,8 +193,8 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                 } break;
             case 8: {
                 int ii;
-                for (ii = 0; ii < CSC1D_STRIDE; ii++) {
-                    for (j = ii; j < npix; j += CSC1D_STRIDE) {
+                for (ii = 0; ii < csc1d_stride; ii++) {
+                    for (j = ii; j < npix; j += csc1d_stride) {
                         int jj = j + i0;
                         val = tmp2[j] * mask[jj];
                         if (unlikely(val > 0)) {
@@ -214,8 +222,8 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                 } break;
             default: {
                 int ii;
-                for (ii = 0; ii < CSC1D_STRIDE; ii++) {
-                    for (j = ii; j < npix; j += CSC1D_STRIDE) {
+                for (ii = 0; ii < csc1d_stride; ii++) {
+                    for (j = ii; j < npix; j += csc1d_stride) {
                         int jj = j + i0;
                         val = tmp2[j] * mask[jj];
                         if (unlikely(val > 0)) {
@@ -271,8 +279,8 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
         }
         {
             int ii, npix2 = (rem + blocksize) / NB;
-            for (ii = 0; ii < CSC1D_STRIDE; ii++) {
-                for (j = ii; j < npix2; j += CSC1D_STRIDE) {
+            for (ii = 0; ii < csc1d_stride; ii++) {
+                for (j = ii; j < npix2; j += csc1d_stride) {
                     int jj = j + i0;
                     val = tmp2[j] * mask[jj];
                     if (unlikely(val > 0)) {
