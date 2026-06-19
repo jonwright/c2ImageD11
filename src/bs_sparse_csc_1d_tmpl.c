@@ -53,15 +53,10 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
     char scratch[BLK];
 #endif
 
-    /* Stride for inner pixel loop: when caller passes <= 0, auto-choose
-     * as BLK/NB / 64 (≈64 for uint16, ≈128 for uint8).  This spreads
-     * consecutive inner-loop pixels across ~64 cache lines of the output
-     * histogram, reducing write-after-write serialisation.              */
-    if (csc1d_stride <= 0) {
-        int npix_block = BLK / NB;
-        csc1d_stride = npix_block / 64;
-        if (csc1d_stride < 1) csc1d_stride = 1;
-    }
+    /* Stride for inner pixel loop: when caller passes <= 0, use 64.
+     * This spreads consecutive inner-loop pixels across ~64 cache lines
+     * of the output histogram, reducing write-after-write serialisation. */
+    if (csc1d_stride <= 0) csc1d_stride = 64;
 
     if (nchunks <= 0) return -1;
 
