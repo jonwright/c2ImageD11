@@ -111,9 +111,9 @@ _IS_AMD64 = sys.maxsize > 2**32 and hasattr(os, 'uname') and os.uname()[4] == 'x
 
 if _IS_AMD64:
     _SIMD_VARIANTS = [
-        ("avx512", "-mavx512f"),
-        ("avx2", "-mavx2"),
-        ("sse42", "-msse4.2"),
+        ("avx512", ["-mavx512f"]),
+        ("avx2",   ["-mavx2", "-mfma"]),
+        ("sse42",  ["-msse4.2"]),
     ]
 else:
     _SIMD_VARIANTS = [
@@ -144,7 +144,7 @@ def _compile_simd_variants(build_dir):
             fn_name = "{}_{}".format(kernel_name, variant_name)
             cflags = _CFLAGS_OMP[:]
             if simd_flag:
-                cflags.append(simd_flag)
+                cflags.extend(simd_flag)
 
             cmd = [cc, "-c"] + include_dirs + cflags + [
                 "-DKERNEL_FN=" + fn_name,
@@ -215,7 +215,7 @@ def _compile_bslz4_variants(build_dir):
 
                     cflags = _CFLAGS_BASE[:]
                     if simd_flag:
-                        cflags.append(simd_flag)
+                        cflags.extend(simd_flag)
                     cflags.extend(backend_cflags)
                     cflags.extend(engine_cflags)
 
