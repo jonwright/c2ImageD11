@@ -107,12 +107,12 @@ def generate_csc(poni_path, nout=2500):
     return data, indices, indptr, mask, nbins
 
 
-def to_1d_padded(data, indices, indptr, mask, verify=True):
+def to_1d_padded(data, indices, indptr, mask, verify=True, entries_per_pixel=None):
     """Convert standard CSC (data/indices/indptr) to 1D padded format.
 
     The 1D padded format stores exactly E entries per pixel (zero-padded),
     where E = max entries across all pixels (capped at 12).  The arrays are
-    dense (NIJ * E elements for csc_flat, NIJ + 1 for first_bin).
+    dense (NIJ * E elements for csc_flat, NIJ elements for first_bin).
 
     Parameters
     ----------
@@ -126,6 +126,8 @@ def to_1d_padded(data, indices, indptr, mask, verify=True):
         Detector mask 1=active.
     verify : bool
         Verify indices are sequential and weights sum to 1.0 (sample).
+    entries_per_pixel : int, optional
+        Pad width.  If None, computed from data (max entries across all pixels).
 
     Returns
     -------
@@ -139,16 +141,13 @@ def to_1d_padded(data, indices, indptr, mask, verify=True):
     if mask.ndim == 2:
         mask = mask.ravel()
     NIJ = len(indptr) - 1
-    flat_mask = (mask > 0).astype(np.uint8)
 
-    # Count entries per pixel
     counts = np.diff(indptr)
-    entries_per_pixel = int(counts.max())
-    if entries_per_pixel > 12:
-        entries_per_pixel = int(entries_per_pixel)
+    if entries_per_pixel is None:
+        entries_per_pixel = int(counts.max())
 
-    if verify:
-        # Verify sequential indices (sample up to 50000)
+    if verify and NIJ <= 50000:
+        # Verify sequential indices (first 50000 pixels)
         non_seq = 0
         for j in range(min(NIJ, 50000)):
             s = int(indptr[j]); e = int(indptr[j+1])
@@ -158,7 +157,7 @@ def to_1d_padded(data, indices, indptr, mask, verify=True):
             print("WARNING: %d/%d pixels have non-sequential indices. "
                   "Use standard CSC (not 1D) for 2D integration." % (non_seq, min(NIJ, 50000)))
 
-        # Verify weight sum = 1 (sample)
+        # Verify weight sum = 1 (sample, first 50000 non-zero)
         sums = np.zeros(min(NIJ, 50000), dtype=np.float64)
         for j in range(min(NIJ, 50000)):
             s = int(indptr[j]); e = int(indptr[j+1])
@@ -169,24 +168,34 @@ def to_1d_padded(data, indices, indptr, mask, verify=True):
             print("  Weight sum per pixel: min=%.6f max=%.6f" % (
                 sums[active].min(), sums[active].max()))
 
-    # Build padded arrays
+    # Build padded arrays using vectorized scatter
     csc_flat = np.zeros(NIJ * entries_per_pixel, dtype=np.float32)
     first_bin = np.zeros(NIJ, dtype=np.uint32)
 
+    # first_bin: gather first bin index per pixel (where cnt > 0)
+    has_data = counts > 0
+    first_bin[has_data] = indices[indptr[:-1][has_data]]
+
+    # csc_flat: scatter data into padded positions
+    cnts = counts.astype(np.intp)
+    nnz = len(data)
+    pixel_idx = np.repeat(np.arange(NIJ, dtype=np.intp), cnts)  # which pixel
+    local_idx = np.empty(nnz, dtype=np.intp)
+    pos = 0
     for j in range(NIJ):
-        s = int(indptr[j]); e = int(indptr[j+1])
-        cnt = e - s
-        if cnt > 0:
-            base = j * entries_per_pixel
-            csc_flat[base:base + cnt] = data[s:e]
-            first_bin[j] = indices[s]
+        if cnts[j]:
+            local_idx[pos:pos + cnts[j]] = np.arange(cnts[j], dtype=np.intp)
+            pos += cnts[j]
+    pad_pos = pixel_idx * entries_per_pixel + local_idx
+    csc_flat[pad_pos] = data
 
     print("1D padded: entries_per_pixel=%d, flat size=%.1f MB" % (
         entries_per_pixel, csc_flat.nbytes / 1e6))
     return csc_flat, first_bin, entries_per_pixel
 
 
-def quantize_weights(csc_flat, scale_factor, dtype=np.uint16, mask=None):
+def quantize_weights(csc_flat, scale_factor, dtype=np.uint16, mask=None,
+                     entries_per_pixel=None):
     """Quantize float32 CSC weights to integer type.
 
     Each pixel's weights are quantized as:
@@ -205,7 +214,9 @@ def quantize_weights(csc_flat, scale_factor, dtype=np.uint16, mask=None):
     dtype : numpy dtype
         Target type (np.uint8, np.uint16, np.uint32).
     mask : ndarray (NIJ,), optional
-        Active pixel mask.  If provided, only these are checked.
+        Active pixel mask (1=active).
+    entries_per_pixel : int, optional
+        Pad width.  If None, computed from flat array size and mask.
 
     Returns
     -------
@@ -213,26 +224,30 @@ def quantize_weights(csc_flat, scale_factor, dtype=np.uint16, mask=None):
         Quantized weights.
     """
     NIJ_E = len(csc_flat)
-    eps = int(np.sqrt(NIJ_E))  # detect entries_per_pixel
-    while NIJ_E % eps != 0 and eps > 1:
-        eps -= 1
-    entries_per_pixel = NIJ_E // eps
-    NIJ = eps
-    mask = np.ones(NIJ, dtype=np.uint8) if mask is None else mask.ravel()
+    if entries_per_pixel is not None:
+        epp = entries_per_pixel
+    elif mask is not None:
+        NIJ = len(mask.ravel())
+        epp = NIJ_E // NIJ
+    else:
+        raise ValueError("entries_per_pixel or mask required")
+    NIJ = NIJ_E // epp
 
     csc_quant = np.round(csc_flat * scale_factor).astype(dtype)
 
+    if mask is None:
+        mask = np.ones(NIJ, dtype=np.uint8)
+    else:
+        mask = mask.ravel()
+
     # Fix per-pixel rounding sum to exactly scale_factor
-    flat_m = (mask > 0).astype(np.int64)
-    for j in range(NIJ):
-        if not flat_m[j]:
-            continue
-        base = j * entries_per_pixel
-        row = csc_quant[base:base + entries_per_pixel]
+    active = np.where(mask > 0)[0]
+    for j in active:
+        base = j * epp
+        row = csc_quant[base:base + epp]
         s = int(row.sum(dtype=np.int64))
         if s > 0 and s != scale_factor:
             idx = int(np.argmax(row))
-            # Increment or decrement the largest entry
             diff = scale_factor - s
             new_val = int(row[idx]) + diff
             if 0 <= new_val <= np.iinfo(dtype).max:

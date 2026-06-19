@@ -125,6 +125,7 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
 #endif
 
             /* ---- pixel loop with switch on csc_entries_per_pixel ---- */
+            /* Unrolled cases: 4, 6, 8.  All others use variable loop.  */
             switch (csc_entries_per_pixel) {
             case 4:
                 for (j = 0; j < BLK/NB; j++) {
@@ -132,6 +133,7 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     val = tmp2[j] * mask[jj];
                     if (unlikely(val > 0)) {
                         int bin = (int)csc_first_bin[jj];
+                        if (unlikely(bin + 4 > NOUT)) return -102;
                         int off = jj * 4;
                         CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
                         output[c * (size_t)NOUT + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
@@ -152,6 +154,7 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     val = tmp2[j] * mask[jj];
                     if (unlikely(val > 0)) {
                         int bin = (int)csc_first_bin[jj];
+                        if (unlikely(bin + 6 > NOUT)) return -102;
                         int off = jj * 6;
                         CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
                         output[c * (size_t)NOUT + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
@@ -174,6 +177,7 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     val = tmp2[j] * mask[jj];
                     if (unlikely(val > 0)) {
                         int bin = (int)csc_first_bin[jj];
+                        if (unlikely(bin + 8 > NOUT)) return -102;
                         int off = jj * 8;
                         CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
                         output[c * (size_t)NOUT + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
@@ -200,7 +204,8 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                         int bin = (int)csc_first_bin[jj];
                         int off = jj * csc_entries_per_pixel;
                         CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                        for (k = 0; k < (unsigned int)csc_entries_per_pixel && k < NOUT; k++)
+                        int remain = NOUT - bin;
+                        for (k = 0; k < (unsigned int)csc_entries_per_pixel && (int)k < remain; k++)
                             output[c * (size_t)NOUT + bin + k] += (CSC_SUM_T)csc_flat[off + k] * v;
                         if (unlikely(tmp2[j] > cut)) {
                             *(chunk_wr_outpx[c]++)  = tmp2[j];
@@ -251,7 +256,8 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                 int bin = (int)csc_first_bin[jj];
                 int off = jj * csc_entries_per_pixel;
                 CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                for (k = 0; k < (unsigned int)csc_entries_per_pixel && k < NOUT; k++)
+                int remain = NOUT - bin;
+                for (k = 0; k < (unsigned int)csc_entries_per_pixel && (int)k < remain; k++)
                     output[c * (size_t)NOUT + bin + k] += (CSC_SUM_T)csc_flat[off + k] * v;
                 if (unlikely(tmp2[j] > cut)) {
                     *(chunk_wr_outpx[c]++)  = tmp2[j];
