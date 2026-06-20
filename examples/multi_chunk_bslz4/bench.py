@@ -1,126 +1,166 @@
 #!/usr/bin/env python
-"""Unified benchmark: dataset × SIMD × quantization × batch size.
+"""Benchmark all retained bslz4/bszstd variants on both test images.
 
-Also includes a Python baseline using scipy.sparse CSC dot product.
+Parameters varied:
+  engine:       LZ4 (bslz4) | ZSTD (bszstd)
+  function:     basic (decompress to sparse) | csc (std CSC) | csc1d (1D-padded CSC)
+  batch_size:   1 | 16 frames (loop-interchanged)
+  dataset:      eiger_lz4 | eiger_zstd | poisson
+  ISA:          auto-resolved: avx512 / avx2 / sse42 (not cycled here)
+  pixel_type:   u16 only (all test data is uint16)
+  backend:      KCB only (bitshuffle-core, integer CSC removed)
+
+Usage:
+  python3 examples/multi_chunk_bslz4/bench.py
 """
 
 from __future__ import print_function
 import os, sys, time
 import numpy as np
 import c2ImageD11._cImageD11 as _m
-from c2ImageD11.csc_convert import generate_csc, to_1d_padded, quantize_weights
+from c2ImageD11.csc_convert import generate_csc, to_1d_padded
 import h5py
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
-_HOME = os.environ.get("HOME", "/home/worker")
+HOME = os.environ.get("HOME", "/home/worker")
 EXDIR = os.path.dirname(os.path.abspath(__file__))
-PONIFILE = os.path.join(EXDIR, "example.poni")
 NREPEAT = 3
-BATCH_SIZES = [1, 2, 4, 8, 16, 32]
-VARIANTS = ['kcb_avx512', 'kcb_avx2', 'kcb_sse42']
+
+DATASETS = [
+    # (label, h5path, ds_path, nframes, engine)  -- engine='lz4'|'zstd'
+    ("eiger_lz4",  "/home/worker/test_data/eiger_lz4_u16.h5",
+     "entry_0000/measurement/data", 1000, "lz4"),
+    ("eiger_zstd", "/home/worker/test_data/eiger_zstd_u16.h5",
+     "entry_0000/measurement/data", 1000, "zstd"),
+    ("poisson",    os.path.join(EXDIR, "testdata_poisson.h5"),
+     "data", 32, "lz4"),
+]
+
+BATCH_SIZES = [1, 16]
+PONIFILE = os.path.join(EXDIR, "example.poni")
+MASKFILE = os.path.join(HOME, "test_data", "eiger_mask.npy")
+NOUT = 2500
+
 
 def get_offsets(h5path, ds_path, nframes):
-    offs = np.full(nframes, -1, dtype=np.int64); lens = np.full(nframes, -1, dtype=np.int32)
+    offs = np.full(nframes, -1, dtype=np.int64)
+    lens = np.full(nframes, -1, dtype=np.int32)
     with h5py.File(h5path, "r") as hf:
         ds = hf[ds_path]
         def cb(si):
-            lo,_,fl,sz=si
+            lo, _, fl, sz = si
             if lo[0] < nframes:
-                offs[lo[0]]=fl
-                lens[lo[0]]=sz
+                offs[lo[0]] = fl
+                lens[lo[0]] = sz
         ds.id.chunk_iter(cb)
-    if (offs < 0).any() or (lens < 0).any(): raise RuntimeError("Missing chunk offsets")
+    if (offs < 0).any() or (lens < 0).any():
+        raise RuntimeError("Missing chunk offsets for %s" % h5path)
     return offs, lens
 
-def load_csc(nout):
-    d,i,ip,_,_ = generate_csc(PONIFILE, nout)
-    ma = np.load(os.path.join(_HOME, "test_data", "eiger_mask.npy"))
-    ma = (1-ma).astype(np.uint8); fm = ma.ravel()
-    cf,fb,ep = to_1d_padded(d,i,ip,ma)
-    cu8  = quantize_weights(cf, 255,   np.uint8,  mask=fm, entries_per_pixel=ep)
-    cu16 = quantize_weights(cf, 32768, np.uint16, mask=fm, entries_per_pixel=ep)
-    cu32 = quantize_weights(cf, 1<<31, np.uint32, mask=fm, entries_per_pixel=ep)
-    return cf,fb,ep,cu8,cu16,cu32,d,i,ip,ma,fm
 
-def run_one(h5path, ds_path, nframes, nout, label):
-    print("\n=== %s (%d frames, %d bins) ===" % (label, nframes, nout)); sys.stdout.flush()
-    offs,lens = get_offsets(h5path,ds_path,nframes)
-    mm = np.memmap(h5path,dtype="B",mode="r")
-    ma = np.load(os.path.join(_HOME,"test_data","eiger_mask.npy"))
-    flat=(1-ma.ravel()).astype(np.uint8); NIJ=len(flat)
-    cf,fb,ep,cu8,cu16,cu32,ds3,is3,ip3,ma2,fm = load_csc(nout)
-    maxb=max(BATCH_SIZES); ox=np.zeros(maxb*NIJ,np.uint16); oa=np.zeros(maxb*NIJ,np.uint32)
+def bench_one(ds_label, h5path, ds_path, nframes, engine):
+    sys.stdout.flush()
+    offs, lens = get_offsets(h5path, ds_path, nframes)
+    mm = np.memmap(h5path, dtype="B", mode="r")
 
-    print("  warmup...",end=" "); sys.stdout.flush()
-    for b in range(0,min(32,nframes),4):
-        bn=min(4,nframes-b); npc=np.zeros(bn,np.int32)
-        _m.bslz4_csc_u16(mm,flat,ox,oa,50,np.zeros(bn*nout),ds3,is3,ip3,offs[b:b+bn],lens[b:b+bn],npc)
+    mask = np.load(MASKFILE)
+    mask = (1 - mask.ravel()).astype(np.uint8)
+    NIJ = mask.size
+
+    # Generate CSC data from PONI
+    csc_data, csc_idx, csc_ptr, _, _ = generate_csc(PONIFILE, NOUT)
+    csc_flat, csc_first, epp = to_1d_padded(csc_data, csc_idx, csc_ptr, mask)
+
+    max_batch = max(BATCH_SIZES)
+    ox = np.zeros(max_batch * NIJ, dtype=np.uint16)
+    oa = np.zeros(max_batch * NIJ, dtype=np.uint32)
+
+    print("  warmup ...", end=" "); sys.stdout.flush()
+    _m.bslz4_u16(mm, mask, ox, oa, 0, offs[:1], lens[:1], np.zeros(1, np.int32))
     print("done"); sys.stdout.flush()
 
-    # ---- Python baseline (single frame via scipy.sparse CSC) ----
-    print("  Python baseline (scipy CSC dot)...", end=" "); sys.stdout.flush()
-    try:
-        from scipy.sparse import csc_matrix
-        import gc
-        # Build the whole scipy CSC matrix once
-        scipy_csc = csc_matrix((ds3, is3, ip3), shape=(nout, NIJ))
-        # Time one frame
-        raw0 = None
-        with h5py.File(os.path.join(EXDIR if nframes==32 else _HOME+"/test_data","testdata_poisson.h5" if nframes==32 else "eiger_0000.h5"),"r") as hf:
-            raw0 = hf["data" if nframes==32 else "entry_0000/ESRF-ID11/eiger/data"][0].ravel().astype(np.float64)
-        gc.collect()
-        t0=time.perf_counter()
-        py_powder = scipy_csc.dot(raw0)
-        py_time = time.perf_counter()-t0
-        py_fps = 1.0/py_time
-        print("done: %.2f FPS (%.0f ms/frame)" % (py_fps, py_time*1000)); sys.stdout.flush()
-    except Exception as e:
-        print("SKIP: %s" % e); sys.stdout.flush()
-        py_fps = 0
+    # Results table header
+    print("  %-10s %-5s %-6s %2s  %8s  %7s" %
+          ("dataset", "type", "engine", "bs", "fps", "ms/frame"))
+    print("  " + "-" * 48)
 
-    # ---- Benchmark all C variants ----
-    print("%-7s %-12s %-4s %2s %-12s %8s %8s" % ("ds","fmt","dtype","bs","variant","best","2nd")); print("-"*70)
-    for bs in BATCH_SIZES:
-        # std_f32
-        for v in VARIANTS:
-            _m._rebind_bslz4_csc_u16(v); fps=[]
+    rows = []
+    VARIANTS = [
+        ("basic", "bslz4", _m.bslz4_u16,      None, None, "lz4"),
+        ("basic", "bszstd", _m.bszstd_u16,     None, None, "zstd"),
+        ("csc",   "bslz4", None, _m.bslz4_csc_u16,   None, "lz4"),
+        ("csc",   "bszstd", None, _m.bszstd_csc_u16,  None, "zstd"),
+        ("csc1d", "bslz4", None, None, _m.bslz4_csc1d_u16, "lz4"),
+        ("csc1d", "bszstd", None, None, _m.bszstd_csc1d_u16, "zstd"),
+    ]
+    for fun_type, eng_name, fn_basic, fn_csc, fn_csc1d, fn_engine in VARIANTS:
+        if fn_engine != engine:
+            continue
+        for bs in BATCH_SIZES:
+            actual = min(bs, nframes)
+            npc = np.zeros(actual, dtype=np.int32)
+
+            t0 = time.perf_counter()
             for _ in range(NREPEAT):
-                t0=time.perf_counter()
-                for b in range(0,nframes,bs):
-                    bn=min(bs,nframes-b); npc=np.zeros(bn,np.int32)
-                    _m.bslz4_csc_u16(mm,flat,ox,oa,50,np.zeros(bn*nout),ds3,is3,ip3,offs[b:b+bn],lens[b:b+bn],npc)
-                fps.append(nframes/(time.perf_counter()-t0))
-            fps.sort(reverse=True)
-            s=fps[1] if len(fps)>1 else 0
-            print("%-7s %-12s %-4s %2d %-12s %8.1f %8.1f"%(label,"std_f32","f32",bs,v[:12],fps[0],s)); sys.stdout.flush()
-        # csc1d f32 + quantized
-        for qlabel,fn,reb,qarr,sf in [
-            ("f32",_m.bslz4_csc1d_u16,_m._rebind_bslz4_csc1d_u16,cf,None),
-            ("u8",_m.bslz4_csc1d_u16_cu8,_m._rebind_bslz4_csc1d_u16_cu8,cu8,255),
-            ("u16",_m.bslz4_csc1d_u16_cu16,_m._rebind_bslz4_csc1d_u16_cu16,cu16,32768),
-            ("u32",_m.bslz4_csc1d_u16_cu32,_m._rebind_bslz4_csc1d_u16_cu32,cu32,1<<31),
-        ]:
-            for v in VARIANTS:
-                reb(v); fps=[]
-                for _ in range(NREPEAT):
-                    t0=time.perf_counter()
-                    for b in range(0,nframes,bs):
-                        bn=min(bs,nframes-b); npc=np.zeros(bn,np.int32)
-                        pw=np.zeros(bn*nout,dtype=np.float64 if sf is None else np.uint64)
-                        fn(mm,flat,ox,oa,50,pw,qarr,fb,ep,0,offs[b:b+bn],lens[b:b+bn],npc)
-                    fps.append(nframes/(time.perf_counter()-t0))
-                fps.sort(reverse=True)
-                s=fps[1] if len(fps)>1 else 0
-                print("%-7s %-12s %-4s %2d %-12s %8.1f %8.1f"%(label,"csc1d_"+qlabel,qlabel,bs,v[:12],fps[0],s)); sys.stdout.flush()
-    return py_fps
+                for b in range(0, nframes, actual):
+                    bn = min(actual, nframes - b)
+                    ob = bn * NIJ
+                    if fn_basic is not None:
+                        fn_basic(mm, mask, ox[:ob], oa[:ob], 0,
+                                 offs[b:b+bn], lens[b:b+bn], npc[:bn])
+                    elif fn_csc is not None:
+                        pw = np.zeros(bn * NOUT, dtype=np.float64)
+                        fn_csc(mm, mask, ox[:ob], oa[:ob], 0,
+                               pw, csc_data, csc_idx, csc_ptr,
+                               offs[b:b+bn], lens[b:b+bn], npc[:bn])
+                    else:
+                        pw = np.zeros(bn * NOUT, dtype=np.float64)
+                        fn_csc1d(mm, mask, ox[:ob], oa[:ob], 0,
+                                 pw, csc_flat, csc_first, epp,
+                                 offs[b:b+bn], lens[b:b+bn], npc[:bn])
 
-# ===== Run =====
-py_fps_poisson = run_one(os.path.join(EXDIR,"testdata_poisson.h5"),"data",32,2500,"poisson")
-py_fps_eiger   = run_one(os.path.join(_HOME,"test_data","eiger_0000.h5"),"entry_0000/ESRF-ID11/eiger/data",100,1500,"eiger")
+            elapsed = time.perf_counter() - t0
+            fps = nframes * NREPEAT / elapsed
+            rows.append((ds_label, fun_type, eng_name, bs, fps))
+            print("  %-10s %-5s %-6s %2d  %8.0f  %7.2f" %
+                  (ds_label, fun_type, eng_name, bs, fps, 1000.0 / fps))
+            sys.stdout.flush()
 
-print("\n===== Python baseline (scipy CSC, 1 frame) =====")
-print("  Poisson: %.1f FPS" % py_fps_poisson if py_fps_poisson else "  Poisson: N/A")
-print("  Eiger:   %.1f FPS" % py_fps_eiger if py_fps_eiger else "  Eiger:   N/A")
-print("Done.")
+    return rows
+
+
+def main():
+    print("=" * 72)
+    print("  c2ImageD11 benchmark: retained variants")
+    print("  Parameters:")
+    print("    engine:    LZ4 | ZSTD")
+    print("    function:  basic (decompress) | csc (std CSC) | csc1d (1D-padded CSC)")
+    print("    batch:     1 | 16 frames")
+    print("    dataset:   eiger_lz4 (LZ4) | eiger_zstd (ZSTD) | poisson (LZ4)")
+    print("    pixel:     u16 only")
+    print("    backend:   KCB only")
+    print("    ISA:       auto-resolved (avx512/avx2/sse42)")
+    print("    note:      each dataset uses its native engine only (no cross-engine tests)")
+    print("=" * 72)
+    print()
+
+    all_rows = []
+    for label, h5path, ds_path, nframes, engine in DATASETS:
+        print("\n--- %s (%s, %d frames, %s) ---" %
+              (label, os.path.basename(h5path), nframes, engine))
+        sys.stdout.flush()
+        rows = bench_one(label, h5path, ds_path, nframes, engine)
+        all_rows.extend(rows)
+
+    print("\n" + "=" * 72)
+    print("  Summary")
+    print("=" * 72)
+    print("  %-10s %-5s %-6s %2s  %8s" %
+          ("dataset", "type", "engine", "bs", "fps"))
+    print("  " + "-" * 38)
+    for row in all_rows:
+        print("  %-10s %-5s %-6s %2d  %8.0f" % row)
+    print("\nDone.")
+
+
+if __name__ == "__main__":
+    main()

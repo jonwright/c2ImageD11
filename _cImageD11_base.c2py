@@ -40,8 +40,6 @@ source:
   - src/bs_master.c
   - lz4/lib/lz4.c
   - kcb/src/bitshuffle.c
-  - bitshuffle/src/bitshuffle_core.c
-  - bitshuffle/src/iochain.c
   - zstd/lib/common/debug.c
   - zstd/lib/common/entropy_common.c
   - zstd/lib/common/error_private.c
@@ -79,8 +77,6 @@ headers:
   - src/bs_functions.h
   - lz4/lib/lz4.h
   - kcb/src/bitshuffle.h
-  - bitshuffle/src/bitshuffle_core.h
-  - bitshuffle/src/iochain.h
   - zstd/lib/zstd.h
   - zstd/lib/common/zstd_internal.h
   - zstd/lib/common/mem.h
@@ -93,11 +89,15 @@ functions:
   # ===================================================================
 
   - py_sig: "cimaged11_omp_set_num_threads(n: int) -> void"
+    doc: "Set the number of OpenMP threads used by all subsequent C calls."
+    params:
+      n: "Number of OpenMP threads. Pass 1 for single-threaded execution."
     c_overloads:
       - sig: "void cimaged11_omp_set_num_threads(int n)"
         map: {n: n}
 
   - py_sig: "cimaged11_omp_get_max_threads() -> int"
+    doc: "Return the maximum number of OpenMP threads available."
     c_overloads:
       - sig: "int cimaged11_omp_get_max_threads()"
         map: {}
@@ -110,6 +110,8 @@ functions:
 
   - py_sig: "verify_rounding(n: int) -> int"
     doc: "checks the round to nearest int code is correct"
+    params:
+      n: "ask jon about this parameter"
     c_overloads:
       - sig: "int verify_rounding(int n)"
         map: {n: n}
@@ -119,6 +121,9 @@ functions:
       closest_vec finds the closest neighbors for each row of X
       ignoring the self. Treated as a X=[v1,v2,v3,...], computes
       sum{(vi-vj)**2} for all i!=j and places minimum in ic.
+    params:
+      x: "2D array of feature vectors, shape (nv, dim). Each row is a vector."
+      ic: "Output array of shape (nv,). For each row i, ic[i] = index j of the nearest neighbor (j != i)."
     checks:
       - "x.format == 'd'"
       - "x.ndim == 2"
@@ -139,6 +144,11 @@ functions:
       e.g. x = cosine of angles between pairs of peaks
       v = idealised values based on hkl geometry
       ibest set to the x[i] matching to a v[j] with diff best
+    params:
+      x: "Array of candidate values to search (e.g. ideal cosines from hkl geometry)."
+      v: "Array of values to search for (e.g. experimental cosines)."
+      ibest: "Output scalar. Index into x of the closest match."
+      best: "Output scalar. Minimum absolute difference |x[i] - v[j]| found."
     checks:
       - "x.format == 'd'"
       - "v.format == 'd'"
@@ -148,6 +158,7 @@ functions:
       - "best.n == 1"
     c_overloads:
       - sig: "void closest(double *x, double *v, int *ribest, double *rbest, int nx, int nv)"
+        doc: "Standard O(nx*nv) scan-find-closest."
         map:
           x: "x.ptr"
           v: "v.ptr"
@@ -160,9 +171,13 @@ functions:
     doc: >-
       score takes a ubi matrix and list of g-vectors and computes
       hkl = dot(ubi, gv), then rounds these g-vectors to integer
-      and computes drlv2 = (h-int(h))**2 + (k-int(k))**2 + (l-int(l))**2
+      and computes drlv2 = (h-int(h))**2 + (k-int(k))**2 + (l-int(l))**2.
       If drlv2 is less than tol*tol then the peak is considered to
       be indexed. Returns the number of peaks found.
+    params:
+      ubi: "Orientation matrix UBI (UB inverse), shape (9,) flattened double. Maps g-vectors to Miller indices hkl."
+      gv: "G-vectors array, shape (ng, 3) flattened. Experimental scattering vectors."
+      tol: "Tolerance on |h - round(h)|. Peaks with drlv2 < tol*tol are counted."
     checks:
       - "ubi.format == 'd'"
       - "ubi.n == 9"
@@ -176,18 +191,26 @@ functions:
         variants:
           - name: "avx512"
             sig: "int score_avx512(const double *ubi, const double *gv, double tol, int ng) -> int"
+            doc: "AVX-512 fast path (64-bit SIMD)."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "int score_avx2(const double *ubi, const double *gv, double tol, int ng) -> int"
+            doc: "AVX2 fast path (256-bit SIMD)."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "int score_sse42(const double *ubi, const double *gv, double tol, int ng) -> int"
+            doc: "SSE4.2 fallback (128-bit SIMD)."
 
   - py_sig: "score_and_refine(ubi: buffer, gv: buffer, tol: float, sumdrlv2: buffer) -> int"
     doc: >-
       score_and_refine is very similar to score but it also refines the UB
       matrix using the assigned peaks and overwrite the argument.
       It returns the number of peaks. sumdrlv2 is a 1-element buffer output.
+    params:
+      ubi: "Orientation matrix UBI (9-element flattened double). Overwritten with the refined best fit."
+      gv: "G-vectors array, shape (ng, 3) flattened."
+      tol: "Matching tolerance on |h - round(h)|."
+      sumdrlv2: "Output scalar (1-element buffer). Sum of squared residuals for the matched peaks."
     checks:
       - "ubi.format == 'd'"
       - "ubi.n == 9"
@@ -203,18 +226,28 @@ functions:
         variants:
           - name: "avx512"
             sig: "int score_and_refine_avx512(const double *ubi, const double *gv, double tol, double *sumdrlv2_arg, int ng) -> int"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "int score_and_refine_avx2(const double *ubi, const double *gv, double tol, double *sumdrlv2_arg, int ng) -> int"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "int score_and_refine_sse42(const double *ubi, const double *gv, double tol, double *sumdrlv2_arg, int ng) -> int"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "score_and_assign(ubi: buffer, gv: buffer, tol: float, drlv2: buffer, labels: buffer, label: int) -> int"
     doc: >-
       score_and_assign is similar to score but it assigns peaks to this
       ubi only if they fit the data better than the current UBI.
       It updates drlv2 and labels to use best fitting grain for each peak.
+    params:
+      ubi: "Orientation matrix (9-element flattened double)."
+      gv: "G-vectors array, shape (ng, 3) flattened."
+      tol: "Matching tolerance."
+      drlv2: "Input/output array (ng). Current best squared residuals per peak; updated if this UBI is a better fit."
+      labels: "Input/output array (ng). Current grain labels per peak; updated to label if this UBI is a better fit."
+      label: "Grain label assigned to peaks that match this UBI."
     checks:
       - "ubi.format == 'd'"
       - "ubi.n == 9"
@@ -231,17 +264,27 @@ functions:
         variants:
           - name: "avx512"
             sig: "int score_and_assign_avx512(const double *ubi, const double *gv, double tol, double *drlv2, int *labels, int label, int ng) -> int"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "int score_and_assign_avx2(const double *ubi, const double *gv, double tol, double *drlv2, int *labels, int label, int ng) -> int"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "int score_and_assign_sse42(const double *ubi, const double *gv, double tol, double *drlv2, int *labels, int label, int ng) -> int"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "refine_assigned(ubi: buffer, gv: buffer, labels: buffer, label: int, npk: buffer, drlv2: buffer) -> void"
     doc: >-
       refine_assigned fits a ubi matrix to a set of g-vectors and assignments
       in labels. e.g. where(labels==label) it uses the peaks.
+    params:
+      ubi: "Orientation matrix (9-element flattened double). Overwritten with the refined UBI."
+      gv: "G-vectors array, shape (ng, 3) flattened."
+      labels: "Peak-to-grain assignments (ng ints). Peaks with labels[i]==label are used."
+      label: "Grain label to refine. Only peaks assigned to this grain are included."
+      npk: "Output scalar (1-element buffer). Number of peaks assigned to this grain."
+      drlv2: "Output scalar (1-element buffer). Sum of squared residuals after refinement."
     checks:
       - "ubi.format == 'd'"
       - "ubi.n == 9"
@@ -254,6 +297,7 @@ functions:
       - "drlv2.n == 1"
     c_overloads:
       - sig: "void refine_assigned_wrapper(double *ubi, const double *gv, int *labels, int label, int *npk, double *drlv2, int ng)"
+        doc: "Wrapper that casts flat double* to vec[3] for the original refine_assigned()."
         map:
           ubi: "ubi.ptr"
           gv: "gv.ptr"
@@ -267,6 +311,11 @@ functions:
     doc: >-
       put_incr32 does the simple loop: data[ind] += vals
       uses 32 bit addressing
+    params:
+      data: "Destination array (float32). Updated in place with scatter-add."
+      ind: "Indices array (int32). Performs data[ind[i]] += vals[i]."
+      vals: "Values array (float32) to add."
+      boundscheck: "If non-zero, enables bounds checking on ind. Default 0 (no check)."
     checks:
       - "data.format == 'f'"
       - "ind.format == 'i'"
@@ -280,17 +329,25 @@ functions:
         variants:
           - name: "avx512"
             sig: "void put_incr32_avx512(float *data, const int32_t *ind, const float *vals, int boundscheck, int n, int m)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void put_incr32_avx2(float *data, const int32_t *ind, const float *vals, int boundscheck, int n, int m)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void put_incr32_sse42(float *data, const int32_t *ind, const float *vals, int boundscheck, int n, int m)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "put_incr64(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void"
     doc: >-
       put_incr64 does the simple loop: data[ind] += vals
       uses 64 bit addressing
+    params:
+      data: "Destination array (float32). Updated in place with scatter-add."
+      ind: "Indices array (int64). Performs data[ind[i]] += vals[i]."
+      vals: "Values array (float32) to add."
+      boundscheck: "If non-zero, enables bounds checking on ind. Default 0 (no check)."
     checks:
       - "data.format == 'f'"
       - "ind.format == 'q' or ind.itemsize == 8"
@@ -304,15 +361,25 @@ functions:
         variants:
           - name: "avx512"
             sig: "void put_incr64_avx512(float *data, const int64_t *ind, const float *vals, int boundscheck, int n, int m)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void put_incr64_avx2(float *data, const int64_t *ind, const float *vals, int boundscheck, int n, int m)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void put_incr64_sse42(float *data, const int64_t *ind, const float *vals, int boundscheck, int n, int m)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "cluster1d(ar: buffer, order: buffer, tol: float, nclusters: buffer, ids: buffer, avgs: buffer) -> void"
     doc: "cluster1d is used to find clusters of peaks. Work in progress."
+    params:
+      ar: "ask jon about this parameter"
+      order: "ask jon about this parameter"
+      tol: "ask jon about this parameter"
+      nclusters: "ask jon about this parameter"
+      ids: "ask jon about this parameter"
+      avgs: "ask jon about this parameter"
     checks:
       - "ar.format == 'd'"
       - "order.format == 'i'"
@@ -340,6 +407,15 @@ functions:
       For all peaks it computes h = ubi.g, rounds to nearest ih = int(h)
       and then computes gcalc = ub.ih. Error is projected into
       co-ordinate system g0,g1,g2 for errors along g, z and the rhs.
+    params:
+      ubi: "UBI matrix (9-element flattened double). Maps g-vectors to Miller indices."
+      ub: "UB matrix (9-element flattened double). Maps Miller indices back to g-vectors."
+      gv: "Experimental g-vectors, shape (ng, 3) flattened."
+      g0: "ask jon about this parameter"
+      g1: "ask jon about this parameter"
+      g2: "ask jon about this parameter"
+      e: "ask jon about this parameter"
+      recompute: "ask jon about this parameter"
     checks:
       - "ubi.format == 'd'"
       - "ubi.n == 9"
@@ -357,6 +433,7 @@ functions:
       - "e.ndim >= 1"
     c_overloads:
       - sig: "void score_gvec_z(double *ubi, double *ub, double *gv, double *g0, double *g1, double *g2, double *e, int recompute, int n)"
+        doc: "Standard scan-all-peaks path."
         map:
           ubi: "ubi.ptr"
           ub: "ub.ptr"
@@ -372,6 +449,9 @@ functions:
     doc: >-
       misori_cubic computes the trace of the smallest misorientation
       for cubic symmetry. u1 and u2 are both orientation matrices U.
+    params:
+      u1: "Orientation matrix U (9-element flattened double)."
+      u2: "Orientation matrix U (9-element flattened double)."
     checks:
       - "u1.format == 'd'"
       - "u1.n == 9"
@@ -379,12 +459,16 @@ functions:
       - "u2.n == 9"
     c_overloads:
       - sig: "double misori_cubic_wrapper(const double *u1, const double *u2) -> double"
+        doc: "Wrapper: casts flat double* to vec[3] for the original misori_cubic()."
         map: {u1: "u1.ptr", u2: "u2.ptr"}
 
   - py_sig: "misori_orthorhombic(u1: buffer, u2: buffer) -> float"
     doc: >-
       misori_orthorhombic computes the trace of the smallest misorientation.
       Looks like point group mmm.
+    params:
+      u1: "Orientation matrix U (9-element flattened double)."
+      u2: "Orientation matrix U (9-element flattened double)."
     checks:
       - "u1.format == 'd'"
       - "u1.n == 9"
@@ -392,12 +476,16 @@ functions:
       - "u2.n == 9"
     c_overloads:
       - sig: "double misori_orthorhombic_wrapper(const double *u1, const double *u2) -> double"
+        doc: "Wrapper: casts flat double* to vec[3]."
         map: {u1: "u1.ptr", u2: "u2.ptr"}
 
   - py_sig: "misori_tetragonal(u1: buffer, u2: buffer) -> float"
     doc: >-
       misori_tetragonal computes the trace of the smallest misorientation.
       Looks like point group 4/mmm.
+    params:
+      u1: "Orientation matrix U (9-element flattened double)."
+      u2: "Orientation matrix U (9-element flattened double)."
     checks:
       - "u1.format == 'd'"
       - "u1.n == 9"
@@ -405,12 +493,16 @@ functions:
       - "u2.n == 9"
     c_overloads:
       - sig: "double misori_tetragonal_wrapper(const double *u1, const double *u2) -> double"
+        doc: "Wrapper: casts flat double* to vec[3]."
         map: {u1: "u1.ptr", u2: "u2.ptr"}
 
   - py_sig: "misori_monoclinic(u1: buffer, u2: buffer) -> float"
     doc: >-
       misori_monoclinic assumes a unique b axis and only checks
       the flip of b -> -b.
+    params:
+      u1: "Orientation matrix U (9-element flattened double)."
+      u2: "Orientation matrix U (9-element flattened double)."
     checks:
       - "u1.format == 'd'"
       - "u1.n == 9"
@@ -418,17 +510,22 @@ functions:
       - "u2.n == 9"
     c_overloads:
       - sig: "double misori_monoclinic_wrapper(const double *u1, const double *u2) -> double"
+        doc: "Wrapper: casts flat double* to vec[3]."
         map: {u1: "u1.ptr", u2: "u2.ptr"}
 
   - py_sig: "count_shared(pi: buffer, pj: buffer) -> int"
     doc: >-
       count_shared takes two sorted arrays in pi and pj and counts
       how many collisions there are.
+    params:
+      pi: "ask jon about this parameter"
+      pj: "ask jon about this parameter"
     checks:
       - "pi.format == 'i'"
       - "pj.format == 'i'"
     c_overloads:
       - sig: "int count_shared(int *pi, int ni, int *pj, int nj) -> int"
+        doc: "Standard merge-scan of two sorted arrays."
         map: {pi: "pi.ptr", ni: "pi.n", pj: "pj.ptr", nj: "pj.n"}
 
   # ===================================================================
@@ -440,6 +537,10 @@ functions:
       localmaxlabel assigns a label for each pixel so they are grouped
       to the local maximum. Equal values choose to assign towards the earlier
       value in memory.
+    params:
+      data: "Input float32 2D image. Pixel values used to determine local maxima."
+      labels: "Output int32 array (same size as data). Assigned labels for each pixel."
+      wrk: "Temporary uint8 workspace (same size as data). "
     checks:
       - "data.format == 'f'"
       - "data.ndim == 2"
@@ -449,6 +550,7 @@ functions:
       - "wrk.n == data.n"
     c_overloads:
       - sig: "int localmaxlabel(const float *im, int32_t *lout, uint8_t *l, int dim0, int dim1) -> int"
+        doc: "Standard flood-fill local maximum assignment."
         map:
           im: "data.ptr"
           lout: "labels.ptr"
@@ -465,6 +567,10 @@ functions:
     doc: >-
       uint16_to_float_darksub subtracts image drk(float32) from
       raw data in data (uint16) and returns in img.
+    params:
+      img: "Output float32 image (same size as data)."
+      drk: "Dark current image (float32, same size as data)."
+      data: "Raw input uint16 image."
     checks:
       - "img.format == 'f'"
       - "drk.format == 'f'"
@@ -479,17 +585,26 @@ functions:
         variants:
           - name: "avx512"
             sig: "void uint16_to_float_darksub_avx512(float *img, const float *drk, const uint16_t *data, int npx)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void uint16_to_float_darksub_avx2(float *img, const float *drk, const uint16_t *data, int npx)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void uint16_to_float_darksub_sse42(float *img, const float *drk, const uint16_t *data, int npx)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "uint16_to_float_darkflm(img: buffer, drk: buffer, flm: buffer, data: buffer) -> void"
     doc: >-
       uint16_to_float_darkflm subtracts image drk(float32) from
       raw data in data (uint16), multiplies by flm(float32) and returns in img.
+      Implements: img = (data - drk) * flm.
+    params:
+      img: "Output float32 image."
+      drk: "Dark current image (float32)."
+      flm: "Flat field image (float32, multiplicative correction)."
+      data: "Raw input uint16 image."
     checks:
       - "img.format == 'f'"
       - "drk.format == 'f'"
@@ -506,20 +621,27 @@ functions:
         variants:
           - name: "avx512"
             sig: "void uint16_to_float_darkflm_avx512(float *img, const float *drk, const float *flm, const uint16_t *data, int npx)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void uint16_to_float_darkflm_avx2(float *img, const float *drk, const float *flm, const uint16_t *data, int npx)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void uint16_to_float_darkflm_sse42(float *img, const float *drk, const float *flm, const uint16_t *data, int npx)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "frelon_lines(img: buffer, cut: float) -> void"
     doc: "frelon_lines Subtracts the average value of (pixels < cut) per row"
+    params:
+      img: "Input/output float32 2D image. Row-dependent baseline subtracted in place."
+      cut: "Threshold for selecting quiet pixels. Only pixels with value < cut are averaged to estimate row baseline."
     checks:
       - "img.format == 'f'"
       - "img.ndim == 2"
     c_overloads:
       - sig: "void frelon_lines(float *img, int ns, int nf, float cut)"
+        doc: "Standard row-median stripe correction."
         map:
           img: "img.ptr"
           ns: "img.shape[0]"
@@ -528,6 +650,10 @@ functions:
 
   - py_sig: "frelon_lines_sub(img: buffer, drk: buffer, cut: float) -> void"
     doc: "frelon_lines_sub Subtracts drk from img and then same as frelon_lines"
+    params:
+      img: "Input/output float32 2D image. Dark-subtracted, then row-baseline corrected."
+      drk: "Dark current image (float32, same size as img)."
+      cut: "Threshold for selecting quiet pixels."
     checks:
       - "img.format == 'f'"
       - "img.ndim == 2"
@@ -535,6 +661,7 @@ functions:
       - "drk.n == img.n"
     c_overloads:
       - sig: "void frelon_lines_sub(float *img, float *drk, int ns, int nf, float cut)"
+        doc: "Dark-subtract then row-median stripe correction."
         map:
           img: "img.ptr"
           drk: "drk.ptr"
@@ -547,6 +674,13 @@ functions:
       array_mean_var_cut computes the mean and variance of an image
       with pixels above the value mean+cut*stddev removed. This is iterated
       n times as the mean and variance change as pixels are removed.
+    params:
+      img: "Input float32 array (1D or 2D)."
+      mean: "Output scalar (1-element buffer). Computed mean of the uncontaminated pixels."
+      var: "Output scalar (1-element buffer). Computed variance."
+      n: "Number of sigma-clipping iterations. Default 3."
+      cut: "Sigma threshold for outlier rejection in units of stddev. Default 3.0."
+      verbose: "If non-zero, prints diagnostic output."
     checks:
       - "img.format == 'f'"
       - "mean.format == 'f'"
@@ -555,6 +689,7 @@ functions:
       - "var.n == 1"
     c_overloads:
       - sig: "void array_mean_var_cut(float *img, int npx, float *mean, float *std, int n, float cut, int verbose)"
+        doc: "Iterative sigma-clipped mean/var (cut threshold, no mask)."
         map:
           img: "img.ptr"
           npx: "img.n"
@@ -568,6 +703,14 @@ functions:
     doc: >-
       array_mean_var_msk computes the mean and variance of an image
       with mask. Pixels above the value mean+cut*stddev removed iteratively.
+    params:
+      img: "Input float32 array."
+      msk: "Mask (uint8). Non-zero pixels are excluded from statistics."
+      mean: "Output scalar (1-element buffer)."
+      var: "Output scalar (1-element buffer)."
+      n: "Number of iterations. Default 3."
+      cut: "Sigma threshold. Default 3.0."
+      verbose: "If non-zero, prints diagnostic output."
     checks:
       - "img.format == 'f'"
       - "msk.format == 'B' or msk.format == 'b'"
@@ -578,6 +721,7 @@ functions:
       - "var.n == 1"
     c_overloads:
       - sig: "void array_mean_var_msk(float *img, uint8_t *msk, int npx, float *mean, float *std, int n, float cut, int verbose)"
+        doc: "Iterative sigma-clipped mean/var with mask."
         map:
           img: "img.ptr"
           msk: "msk.ptr"
@@ -592,6 +736,12 @@ functions:
     doc: >-
       array_stats computes statistics for an image.
       img Input data array (1D or 2D.ravel(), so sparse or dense)
+    params:
+      img: "Input float32 array."
+      minval: "Output scalar (1-element buffer). Minimum pixel value."
+      maxval: "Output scalar (1-element buffer). Maximum pixel value."
+      mean: "Output scalar (1-element buffer). Mean pixel value."
+      var: "Output scalar (1-element buffer). Variance."
     checks:
       - "img.format == 'f'"
       - "minval.format == 'f'"
@@ -604,6 +754,7 @@ functions:
       - "var.n == 1"
     c_overloads:
       - sig: "void array_stats(float *img, int npx, float *minval, float *maxval, float *mean, float *var)"
+        doc: "Single-pass min/max/mean/var."
         map:
           img: "img.ptr"
           npx: "img.n"
@@ -616,11 +767,17 @@ functions:
     doc: >-
       array_histogram computes the histogram for an image.
       Go through the data to compute a histogram of the values.
+    params:
+      img: "Input float32 array."
+      low: "Lower bound of histogram range."
+      high: "Upper bound of histogram range."
+      hist: "Output int32 array. Histogram bins."
     checks:
       - "img.format == 'f'"
       - "hist.format == 'i'"
     c_overloads:
       - sig: "void array_histogram(float *img, int npx, float low, float high, int32_t *hist, int nhist)"
+        doc: "Linear-bin histogram."
         map:
           img: "img.ptr"
           npx: "img.n"
@@ -633,6 +790,10 @@ functions:
     doc: >-
       reorder_u16_a32 simple loop with openmp saying out[adr[i]] in data[i].
       e.g. semi-random writing.
+    params:
+      data: "Input uint16 array, read in sequential order."
+      adr: "Destination addresses (uint32). out[adr[i]] = data[i]."
+      out: "Output uint16 array. Must be sized >= data.n."
     checks:
       - "data.format == 'H' or data.itemsize == 2"
       - "adr.format == 'I' or adr.itemsize == 4"
@@ -647,15 +808,22 @@ functions:
         variants:
           - name: "avx512"
             sig: "void reorder_u16_a32_avx512(const uint16_t *data, const uint32_t *adr, uint16_t *out, int N)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void reorder_u16_a32_avx2(const uint16_t *data, const uint32_t *adr, uint16_t *out, int N)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void reorder_u16_a32_sse42(const uint16_t *data, const uint32_t *adr, uint16_t *out, int N)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "reorder_f32_a32(data: buffer, adr: buffer, out: buffer) -> void"
     doc: "reorder_f32_a32 simple loop with openmp saying out[adr[i]] in data[i]."
+    params:
+      data: "Input float32 array, read in sequential order."
+      adr: "Destination addresses (uint32). out[adr[i]] = data[i]."
+      out: "Output float32 array. Must be sized >= data.n."
     checks:
       - "data.format == 'f'"
       - "adr.format == 'I' or adr.itemsize == 4"
@@ -670,15 +838,22 @@ functions:
         variants:
           - name: "avx512"
             sig: "void reorder_f32_a32_avx512(const float *data, const uint32_t *adr, float *out, int N)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void reorder_f32_a32_avx2(const float *data, const uint32_t *adr, float *out, int N)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void reorder_f32_a32_sse42(const float *data, const uint32_t *adr, float *out, int N)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "reorderlut_u16_a32(data: buffer, adr: buffer, out: buffer) -> void"
     doc: "reorderlut_u16_a32 simple loop with openmp saying out[i] in data[adr[i]]."
+    params:
+      data: "Input uint16 array (LUT). data[adr[i]] is read for each i."
+      adr: "Lookup addresses (uint32). out[i] = data[adr[i]]."
+      out: "Output uint16 array. Same size as data."
     checks:
       - "data.format == 'H' or data.itemsize == 2"
       - "adr.format == 'I' or adr.itemsize == 4"
@@ -693,15 +868,22 @@ functions:
         variants:
           - name: "avx512"
             sig: "void reorderlut_u16_a32_avx512(uint16_t *data, const uint32_t *adr, uint16_t *out, int N)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void reorderlut_u16_a32_avx2(uint16_t *data, const uint32_t *adr, uint16_t *out, int N)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void reorderlut_u16_a32_sse42(uint16_t *data, const uint32_t *adr, uint16_t *out, int N)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "reorderlut_f32_a32(data: buffer, adr: buffer, out: buffer) -> void"
     doc: "reorderlut_f32_a32 loop with openmp saying out[i] in data[adr[i]]."
+    params:
+      data: "Input float32 array (LUT)."
+      adr: "Lookup addresses (uint32). out[i] = data[adr[i]]."
+      out: "Output float32 array. Same size as data."
     checks:
       - "data.format == 'f'"
       - "adr.format == 'I' or adr.itemsize == 4"
@@ -716,18 +898,26 @@ functions:
         variants:
           - name: "avx512"
             sig: "void reorderlut_f32_a32_avx512(const float *data, const uint32_t *adr, float *out, int N)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void reorderlut_f32_a32_avx2(const float *data, const uint32_t *adr, float *out, int N)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void reorderlut_f32_a32_sse42(const float *data, const uint32_t *adr, float *out, int N)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "reorder_u16_a32_a16(data: buffer, adr0: buffer, adr1: buffer, out: buffer) -> void"
     doc: >-
       reorder_u16_a32_a16: data source data read in order.
       adr0 output position for the first pixel in each row.
       adr1 difference offset to output next pixel in each row.
+    params:
+      data: "Input uint16 2D array (ns, nf), read row by row."
+      adr0: "Base addresses per row (uint32, length ns). adr0[row] = starting output position."
+      adr1: "Per-pixel offsets (int16, length data.n). Cumulative difference offsets."
+      out: "Output uint16 array."
     checks:
       - "data.format == 'H' or data.itemsize == 2"
       - "data.ndim == 2"
@@ -739,6 +929,7 @@ functions:
       - "out.n >= data.n"
     c_overloads:
       - sig: "void reorder_u16_a32_a16(const uint16_t *data, const uint32_t *a0, const int16_t *a1, uint16_t *out, int ns, int nf)"
+        doc: "Row-wise reroder with base+delta addressing."
         map:
           data: "data.ptr"
           a0: "adr0.ptr"
@@ -755,6 +946,13 @@ functions:
       sigmap = weight for abs background value
       sigmat = constant weight
       gain for b += diff * gain
+    params:
+      img: "Input float32 2D image."
+      bg: "Output float32 background image (same size as img). Running background estimate."
+      msk: "Output uint8 mask. 0=background, 1=positive outlier, 2=negative outlier."
+      gain: "Recursive background gain factor. bg += diff * gain."
+      sp: "Sigma proportional weight for background-dependent threshold. t = sp * |bg| + st."
+      st: "Sigma constant weight (threshold floor)."
     checks:
       - "img.format == 'f'"
       - "img.ndim == 2"
@@ -764,6 +962,7 @@ functions:
       - "msk.n == img.n"
     c_overloads:
       - sig: "void bgcalc(const float *img, float *bg, uint8_t *msk, int ns, int nf, float gain, float sigmap, float sigmat)"
+        doc: "Bidirectional recursive background estimation."
         map:
           img: "img.ptr"
           bg: "bg.ptr"
@@ -783,6 +982,15 @@ functions:
       compute_geometry is for the updateGeometry method of columnfiles.
       From xlylzl it will compute tth, eta, ds, gve into out.
       out should contain: (tth, eta, ds, gx, gy, gz).
+    params:
+      xlylzl: "Spot positions in laboratory frame, shape (n, 3): x, y, z."
+      omega: "Omega rotation per spot (radians), shape (n,)."
+      omegasign: "Omega rotation sign (+1 or -1, detector geometry)."
+      wvln: "Wavelength (angstroms)."
+      wedge: "Wedge angle (detector tilt, radians)."
+      chi: "Chi angle (radians)."
+      t: "ask jon about this parameter"
+      out: "Output array shape (n, 6): tth, eta, ds, gx, gy, gz."
     checks:
       - "xlylzl.format == 'd'"
       - "xlylzl.ndim == 2"
@@ -803,18 +1011,30 @@ functions:
         variants:
           - name: "avx512"
             sig: "void compute_geometry_avx512(const double *xlylzl, const double *omega, double omegasign, double wvln, double wedge, double chi, const double *t, double *out, int n)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void compute_geometry_avx2(const double *xlylzl, const double *omega, double omegasign, double wvln, double wedge, double chi, const double *t, double *out, int n)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void compute_geometry_sse42(const double *xlylzl, const double *omega, double omegasign, double wvln, double wedge, double chi, const double *t, double *out, int n)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "compute_gv(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, gv: buffer) -> void"
     doc: >-
       compute_gv computes scattering vectors given the positions of the spot
       in the laboratory in xlylzl[npks], the omega rotation[npks], and
       the rest of the parameters (wedge,wvln,chi,t[3] and omegasign).
+    params:
+      xlylzl: "Spot positions in laboratory frame, shape (n, 3)."
+      omega: "Omega rotation per spot (radians), shape (n,)."
+      omegasign: "Omega rotation sign."
+      wvln: "Wavelength (angstroms)."
+      wedge: "Wedge angle (radians)."
+      chi: "Chi angle (radians)."
+      t: "ask jon about this parameter"
+      gv: "Output g-vectors array, shape (n, 3)."
     checks:
       - "xlylzl.format == 'd'"
       - "xlylzl.ndim == 2"
@@ -835,12 +1055,15 @@ functions:
         variants:
           - name: "avx512"
             sig: "void compute_gv_avx512(const double *xlylzl, const double *omega, double omegasign, double wvln, double wedge, double chi, const double *t, double *gv, int n)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void compute_gv_avx2(const double *xlylzl, const double *omega, double omegasign, double wvln, double wedge, double chi, const double *t, double *gv, int n)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void compute_gv_sse42(const double *xlylzl, const double *omega, double omegasign, double wvln, double wedge, double chi, const double *t, double *gv, int n)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "compute_xlylzl(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xlylzl: buffer) -> void"
     doc: >-
@@ -850,6 +1073,13 @@ functions:
       p = [s_cen, f_cen, s_size, f_size]
       r[9] = dot(transform.detector_rotation_matrix, flipmatrix)
       dist = [distancex, distancey, distancez] is 3D
+    params:
+      s: "Slow-scan pixel positions (double array)."
+      f: "Fast-scan pixel positions (double array, same size as s)."
+      p: "Detector parameters (4 elements): [s_cen, f_cen, s_size, f_size]."
+      r: "Rotation matrix (9 elements): det(rotation) * flip."
+      dist: "Detector distance vector (3 elements): [distancex, distancey, distancez]."
+      xlylzl: "Output spot positions in laboratory frame (n, 3)."
     checks:
       - "s.format == 'd'"
       - "f.format == 'd'"
@@ -870,17 +1100,28 @@ functions:
         variants:
           - name: "avx512"
             sig: "void compute_xlylzl_avx512(const double *s, const double *f, const double *p, const double *r, const double *dist, double *xlylzl, int n)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void compute_xlylzl_avx2(const double *s, const double *f, const double *p, const double *r, const double *dist, double *xlylzl, int n)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void compute_xlylzl_sse42(const double *s, const double *f, const double *p, const double *r, const double *dist, double *xlylzl, int n)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "compute_xlylzl_xpos_variable(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xpos: buffer, xlylzl: buffer) -> void"
     doc: >-
       compute_xlylzl_xpos_variable finds spot positions in the laboratory frame
       like compute_xlylzl but with an extra per-spot x-offset xpos.
+    params:
+      s: "Slow-scan pixel positions (double array)."
+      f: "Fast-scan pixel positions (double array)."
+      p: "Detector parameters (4 elements): [s_cen, f_cen, s_size, f_size]."
+      r: "Rotation matrix (9 elements)."
+      dist: "Detector distance vector (3 elements)."
+      xpos: "Per-spot x-axis offset (double, same size as s)."
+      xlylzl: "Output spot positions in laboratory frame."
     checks:
       - "s.format == 'd'"
       - "f.format == 'd'"
@@ -903,18 +1144,24 @@ functions:
         variants:
           - name: "avx512"
             sig: "void compute_xlylzl_xpos_avx512(const double *s, const double *f, const double *p, const double *r, const double *dist, const double *xpos, double *xlylzl, int n)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void compute_xlylzl_xpos_avx2(const double *s, const double *f, const double *p, const double *r, const double *dist, const double *xpos, double *xlylzl, int n)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void compute_xlylzl_xpos_sse42(const double *s, const double *f, const double *p, const double *r, const double *dist, const double *xpos, double *xlylzl, int n)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "quickorient(ubi: buffer, bt: buffer) -> void"
     doc: >-
       quickorient takes two g-vectors in UBI[0] and UBI[1]
       and overwrites with UBI orientation using cache in bt.
       Algorithm was due to Busing and Levy.
+    params:
+      ubi: "Orientation matrix (9-element flattened double). First two rows are g-vectors on entry; overwritten with UBI on exit."
+      bt: "Busing-Levy cache (9-element flattened double). Crystallographic B tensor."
     checks:
       - "ubi.format == 'd'"
       - "ubi.n == 9"
@@ -922,6 +1169,7 @@ functions:
       - "bt.n == 9"
     c_overloads:
       - sig: "void quickorient(double *ubi, const double *bt)"
+        doc: "Busing-Levy orientation from two g-vectors."
         map: {ubi: "ubi.ptr", bt: "bt.ptr"}
 
   # ===================================================================
@@ -930,6 +1178,14 @@ functions:
 
   - py_sig: "splat(rgba: buffer, w: int, h: int, gve: buffer, ng: int, u: buffer, npx: int) -> void"
     doc: "splat draws gvectors into an rgba image."
+    params:
+      rgba: "Output uint8 RGBA image buffer (h, w, 4). Zero-initialise before calling."
+      w: "Image width in pixels."
+      h: "Image height in pixels."
+      gve: "G-vectors to draw, shape (ng, 3)."
+      ng: "Number of g-vectors."
+      u: "Camera projection matrix (9 elements). Projects 3D g-vectors to 2D screen."
+      npx: "Marker half-size in pixels. 0=single pixel, 1=3x3 square, etc."
     checks:
       - "rgba.format == 'B' or rgba.format == 'b'"
       - "rgba.ndim >= 1"
@@ -939,6 +1195,7 @@ functions:
       - "u.n == 9"
     c_overloads:
       - sig: "void splat_wrapper(uint8_t *rgba, int w, int h, const double *gve, int ng, const double *u, int npx)"
+        doc: "Wrapper that casts flat double* to vec[3] for original splat()."
         map:
           rgba: "rgba.ptr"
           w: w
@@ -959,6 +1216,12 @@ functions:
       user supplied threshold and assigns them into connected objects
       which are output in labels. Connectivity is 3x3 box (8) by default
       and reduces to a +(4) if con8==0.
+    params:
+      data: "Input float32 2D image."
+      labels: "Output int32 array (same size as data). Connected-component labels."
+      threshold: "Pixel value threshold. Only pixels above threshold are labelled."
+      verbose: "If non-zero, prints diagnostic output."
+      con8: "Connectivity mode: 1=8-connected (3x3 box), 0=4-connected (+). Default 1."
     checks:
       - "data.format == 'f'"
       - "data.ndim == 2"
@@ -966,6 +1229,7 @@ functions:
       - "labels.n == data.n"
     c_overloads:
       - sig: "int connectedpixels(float *data, int32_t *labels, float threshold, int verbose, int eightconnected, int ns, int nf) -> int"
+        doc: "Standard connected-component labeling."
         map:
           data: "data.ptr"
           labels: "labels.ptr"
@@ -980,6 +1244,13 @@ functions:
       blobproperties fills the array results with properties of each labelled
       object described by data (pixel values) and labels. The omega value
       is the angle for this frame. results shape is (np, 36).
+    params:
+      data: "Input float32 2D image (pixel values)."
+      labels: "Connected-component labels (int32, same size as data)."
+      np: "Number of labelled objects (max label value)."
+      results: "Output array shape (np, 36). Per-blob properties (moments, position, etc.)."
+      omega: "Omega rotation angle for this frame. Default 0.0."
+      verbose: "If non-zero, prints diagnostic output."
     checks:
       - "data.format == 'f'"
       - "data.ndim == 2"
@@ -996,12 +1267,15 @@ functions:
         variants:
           - name: "avx512"
             sig: "void blobproperties_avx512(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, int ns, int nf, double *res)"
+            doc: "AVX-512 fast path."
             when: "c2py_amd64_avx512f"
           - name: "avx2"
             sig: "void blobproperties_avx2(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, int ns, int nf, double *res)"
+            doc: "AVX2 fast path."
             when: "c2py_amd64_avx2"
           - name: "sse"
             sig: "void blobproperties_sse42(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, int ns, int nf, double *res)"
+            doc: "SSE4.2 fallback."
 
   - py_sig: "bloboverlaps(labels1: buffer, npk1: int, results1: buffer, labels2: buffer, npk2: int, results2: buffer) -> int"
     doc: >-
@@ -1009,6 +1283,13 @@ functions:
       for an image series. Peaks in labels2 may be merged if they were
       joined by a peak on labels1. Results in results1 are accumulated
       into results2 if peaks are overlapped.
+    params:
+      labels1: "Labels from first frame (int32 2D)."
+      npk1: "Number of objects in first frame."
+      results1: "Properties from first frame (npk1, 36). Updated if overlaps merge peaks."
+      labels2: "Labels from second frame (int32, same size as labels1)."
+      npk2: "Number of objects in second frame."
+      results2: "Properties from second frame (npk2, 36). Accumulated if peaks are overlapped."
     checks:
       - "labels1.format == 'i'"
       - "labels1.ndim == 2"
@@ -1022,6 +1303,7 @@ functions:
       - "results2.shape[1] == 36"
     c_overloads:
       - sig: "int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2, double *res2, int verbose, int ns, int nf) -> int"
+        doc: "Standard overlap detection."
         map:
           b1: "labels1.ptr"
           n1: npk1
@@ -1035,12 +1317,15 @@ functions:
 
   - py_sig: "blob_moments(results: buffer) -> void"
     doc: "blob_moments fills in the reduced moments in results array."
+    params:
+      results: "Input/output array (np, 36). Blob properties with raw moments; filled with reduced moments on output."
     checks:
       - "results.format == 'd'"
       - "results.ndim == 2"
       - "results.shape[1] == 36"
     c_overloads:
       - sig: "void blob_moments(double *results, int np)"
+        doc: "Standard reduced-moment computation."
         map:
           results: "results.ptr"
           np: "results.shape[0]"
@@ -1049,6 +1334,9 @@ functions:
     doc: >-
       clean_mask removes pixels which are not 4 connected from msk
       while copying into ret.
+    params:
+      msk: "Input uint8 2D mask. Isolated pixels (no 4-connected neighbors) will be removed."
+      ret: "Output uint8 mask (same size as msk). Cleaned mask."
     checks:
       - "msk.format == 'b' or msk.format == 'B'"
       - "msk.ndim == 2"
@@ -1056,6 +1344,7 @@ functions:
       - "ret.n == msk.n"
     c_overloads:
       - sig: "int clean_mask(const int8_t *msk, int8_t *ret, int ns, int nf) -> int"
+        doc: "Standard 4-connected cleanup."
         map:
           msk: "msk.ptr"
           ret: "ret.ptr"
@@ -1066,6 +1355,11 @@ functions:
     doc: >-
       make_clean_mask is a lot like clean_mask but it generates
       the msk using img and cut.
+    params:
+      img: "Input float32 2D image."
+      cut: "Intensity threshold. Pixels above cut are initially included in mask."
+      msk: "Input priority mask (int8). Non-zero pixels force inclusion in initial mask regardless of cut."
+      ret: "Output int8 mask (same size as img). Cleaned mask after 4-connected removal."
     checks:
       - "img.format == 'f'"
       - "img.ndim == 2"
@@ -1075,6 +1369,7 @@ functions:
       - "ret.n == img.n"
     c_overloads:
       - sig: "int make_clean_mask(const float *img, float cut, const int8_t *msk, int8_t *ret, int ns, int nf) -> int"
+        doc: "Threshold-then-clean pipeline."
         map:
           img: "img.ptr"
           cut: cut
@@ -1096,6 +1391,11 @@ functions:
       of i,j coordinates in a sparse array coo format.
       Returns: 0=>success, 1=>ns out of range, 2=>nf out of range,
       3=>nnz<1 empty mask, 4=>nnz did not match this mask.
+    params:
+      msk: "Input int8 2D mask. Non-zero pixels are included."
+      i: "Output uint16 array. Row coordinates of active pixels."
+      j: "Output uint16 array (same size as i). Column coordinates."
+      w: "Output int32 array (size msk.shape[0]). Per-row count of active pixels."
     checks:
       - "msk.format == 'b' or msk.format == 'B'"
       - "msk.ndim == 2"
@@ -1106,6 +1406,7 @@ functions:
       - "w.n == msk.shape[0]"
     c_overloads:
       - sig: "int mask_to_coo(int8_t *msk, int ns, int nf, uint16_t *i, uint16_t *j, int nnz, int *w) -> int"
+        doc: "Standard mask-to-COO conversion."
         map:
           msk: "msk.ptr"
           ns: "msk.shape[0]"
@@ -1121,12 +1422,16 @@ functions:
       coo format come in the order that they would appear inside an image.
       Returns 0 for all OK, k for first non-sorted element,
       -k for first duplicate.
+    params:
+      i: "Row indices (uint16). Should be sorted in row-major order."
+      j: "Column indices (uint16, same size as i)."
     checks:
       - "i.format == 'H' or i.itemsize == 2"
       - "j.format == 'H' or j.itemsize == 2"
       - "j.n == i.n"
     c_overloads:
       - sig: "int sparse_is_sorted(uint16_t *i, uint16_t *j, int nnz) -> int"
+        doc: "Validation check."
         map: {i: "i.ptr", j: "j.ptr", nnz: "i.n"}
 
   - py_sig: "sparse_connectedpixels(v: buffer, i: buffer, j: buffer, threshold: float, labels: buffer) -> int"
@@ -1134,6 +1439,12 @@ functions:
       sparse_connectedpixels runs the connectedpixels algorithm on
       a sparse image using a supplied threshold putting labels
       into labels array and returning the number of blobs found.
+    params:
+      v: "Input pixel values (float32)."
+      i: "Row indices (uint16)."
+      j: "Column indices (uint16, same size as i)."
+      threshold: "Pixel value threshold."
+      labels: "Output int32 array (same size as i). Connected-component labels."
     checks:
       - "v.format == 'f'"
       - "i.format == 'H' or i.itemsize == 2"
@@ -1144,6 +1455,7 @@ functions:
       - "labels.n == i.n"
     c_overloads:
       - sig: "int sparse_connectedpixels(float *v, uint16_t *i, uint16_t *j, int nnz, float threshold, int32_t *labels) -> int"
+        doc: "Sparse connected-component labeling."
         map:
           v: "v.ptr"
           i: "i.ptr"
@@ -1157,6 +1469,15 @@ functions:
       sparse_connectedpixels_splat is for debugging/timing. It splats
       the sparse array into a dense array and runs the old connectedpixels
       code on that.
+    params:
+      v: "Input pixel values (float32)."
+      i: "Row indices (uint16)."
+      j: "Column indices (uint16)."
+      th: "Pixel value threshold."
+      lbl: "Output int32 labels array."
+      Z: "Temporary int32 workspace (splat buffer, size ni*nj)."
+      ni: "Number of rows in the original image."
+      nj: "Number of columns in the original image."
     checks:
       - "v.format == 'f'"
       - "i.format == 'H' or i.itemsize == 2"
@@ -1168,6 +1489,7 @@ functions:
       - "Z.format == 'i'"
     c_overloads:
       - sig: "int sparse_connectedpixels_splat(float *v, uint16_t *i, uint16_t *j, int nnz, float threshold, int32_t *labels, int32_t *Z, int imax, int jmax) -> int"
+        doc: "Dense fallback for debugging."
         map:
           v: "v.ptr"
           i: "i.ptr"
@@ -1183,6 +1505,13 @@ functions:
     doc: >-
       sparse_blob2Dproperties fills the array results with properties of
       each labelled object. results shape is (npk, 11).
+    params:
+      v: "Input pixel values (float32)."
+      i: "Row indices (uint16)."
+      j: "Column indices (uint16)."
+      labels: "Connected-component labels (int32)."
+      npk: "Number of labelled objects."
+      results: "Output array shape (npk, 11). Per-blob properties."
     checks:
       - "v.format == 'f'"
       - "i.format == 'H' or i.itemsize == 2"
@@ -1196,6 +1525,7 @@ functions:
       - "results.shape[1] == 11"
     c_overloads:
       - sig: "void sparse_blob2Dproperties(float *v, uint16_t *i, uint16_t *j, int nnz, int32_t *labels, int32_t npk, double *res)"
+        doc: "Sparse 2D blob property extraction."
         map:
           v: "v.ptr"
           i: "i.ptr"
@@ -1209,6 +1539,11 @@ functions:
     doc: >-
       sparse_smooth smooths data in coo format. Workaround for avoiding
       equal pixels on peak tails for localmaxlabel. Single threaded.
+    params:
+      v: "Input pixel values (float32)."
+      i: "Row indices (uint16)."
+      j: "Column indices (uint16)."
+      s: "Output smoothed values (float32, same size as v)."
     checks:
       - "v.format == 'f'"
       - "i.format == 'H' or i.itemsize == 2"
@@ -1219,6 +1554,7 @@ functions:
       - "s.n == i.n"
     c_overloads:
       - sig: "void sparse_smooth(float *v, uint16_t *i, uint16_t *j, int nnz, float *s)"
+        doc: "Sparse smoothing."
         map:
           v: "v.ptr"
           i: "i.ptr"
@@ -1230,6 +1566,13 @@ functions:
     doc: >-
       sparse_localmaxlabel assigns labels to sparse array in sorted coo format
       supplied in (v,(i,j)). MV and iMV are temporaries. Single threaded.
+    params:
+      v: "Input pixel values (float32)."
+      i: "Row indices (uint16)."
+      j: "Column indices (uint16)."
+      MV: "Temporary float32 workspace (same size as v)."
+      iMV: "Temporary int32 workspace (same size as v)."
+      labels: "Output int32 labels array."
     checks:
       - "v.format == 'f'"
       - "i.format == 'H' or i.itemsize == 2"
@@ -1244,6 +1587,7 @@ functions:
       - "labels.n == i.n"
     c_overloads:
       - sig: "int sparse_localmaxlabel(float *v, uint16_t *i, uint16_t *j, int nnz, float *MV, int32_t *iMV, int32_t *labels) -> int"
+        doc: "Sparse local maxima labeling."
         map:
           v: "v.ptr"
           i: "i.ptr"
@@ -1258,6 +1602,13 @@ functions:
       sparse_overlaps identifies the pixels in i1,j1 which overlap i2,j2.
       The list of overlaps is returned in k1/k2 such that i1[k1]==i2[k2]
       and j1[k1]==j2[k2].
+    params:
+      i1: "Row indices of first sparse array (uint16)."
+      j1: "Column indices of first sparse array (uint16)."
+      k1: "Output int32 array. Indices into i1/j1 of overlapping pixels."
+      i2: "Row indices of second sparse array (uint16)."
+      j2: "Column indices of second sparse array (uint16)."
+      k2: "Output int32 array. Indices into i2/j2 of overlapping pixels."
     checks:
       - "i1.format == 'H' or i1.itemsize == 2"
       - "j1.format == 'H' or j1.itemsize == 2"
@@ -1271,6 +1622,7 @@ functions:
       - "k2.n == i2.n"
     c_overloads:
       - sig: "int sparse_overlaps(uint16_t *i1, uint16_t *j1, int *k1, int nnz1, uint16_t *i2, uint16_t *j2, int *k2, int nnz2) -> int"
+        doc: "Sparse overlap detection."
         map:
           i1: "i1.ptr"
           j1: "j1.ptr"
@@ -1287,6 +1639,12 @@ functions:
       i and j are set as the labels from two images. They are sorted
       and on exit i,j hold the unique pairs and oi holds the count
       for the number of overlaps. oj and tmp are temporaries.
+    params:
+      i: "Input/output int32. On entry: first column of (i,j) pairs. On exit: unique pairs first column."
+      j: "Input/output int32. On entry: second column. On exit: unique pairs second column."
+      oi: "Output int32. Count of each unique pair found (number of overlapping pixels)."
+      oj: "Temporary int32 workspace for counting sort."
+      tmp: "Temporary int32 workspace sized max(max(i), max(j)) + 1."
     checks:
       - "i.format == 'i'"
       - "j.format == 'i'"
@@ -1298,6 +1656,7 @@ functions:
       - "tmp.format == 'i'"
     c_overloads:
       - sig: "int compress_duplicates(int *i, int *j, int *oi, int *oj, int *tmp, int n, int nt) -> int"
+        doc: "Counting-sort deduplication of (i, j) pairs."
         map:
           i: "i.ptr"
           j: "j.ptr"
@@ -1311,6 +1670,15 @@ functions:
     doc: >-
       coverlaps determines which of (row1,col1,labels1) and (row2,col2,labels2)
       are overlapped.
+    params:
+      row1: "Row indices of first sparse frame (uint16)."
+      col1: "Column indices of first sparse frame (uint16)."
+      labels1: "Peak labels for first frame (int32)."
+      row2: "Row indices of second sparse frame (uint16)."
+      col2: "Column indices of second sparse frame (uint16)."
+      labels2: "Peak labels for second frame (int32)."
+      mat: "Output int32 overlap matrix (npk1, npk2). Zero-initialise before calling."
+      results: "Output int32 array for overlap triples (label1, label2, count)."
     checks:
       - "row1.format == 'H' or row1.itemsize == 2"
       - "col1.format == 'H' or col1.itemsize == 2"
@@ -1327,6 +1695,7 @@ functions:
       - "results.format == 'i'"
     c_overloads:
       - sig: "int coverlaps(uint16_t *row1, uint16_t *col1, int *labels1, int nnz1, uint16_t *row2, uint16_t *col2, int *labels2, int nnz2, int *mat, int npk1, int npk2, int *results) -> int"
+        doc: "Sparse frame overlap detection."
         map:
           row1: "row1.ptr"
           col1: "col1.ptr"
@@ -1345,6 +1714,13 @@ functions:
     doc: >-
       tosparse_u16 stores pixels from img into row/col/val.
       msk determines whether pixels are masked. Returns the number of pixels found.
+    params:
+      img: "Input uint16 2D image."
+      msk: "Mask (uint8). Non-zero pixels are excluded."
+      row: "Output uint16 array. Row coordinates of non-excluded pixels."
+      col: "Output uint16 array (same size as row). Column coordinates."
+      val: "Output uint16 array. Pixel values."
+      cut: "Intensity threshold. Pixels <= cut are excluded."
     checks:
       - "img.format == 'H' or img.itemsize == 2"
       - "img.ndim == 2"
@@ -1355,6 +1731,7 @@ functions:
       - "val.format == 'H' or val.itemsize == 2"
     c_overloads:
       - sig: "int tosparse_u16(uint16_t *img, uint8_t *msk, uint16_t *row, uint16_t *col, uint16_t *val, int cut, int ns, int nf) -> int"
+        doc: "Standard dense-to-sparse conversion."
         map:
           img: "img.ptr"
           msk: "msk.ptr"
@@ -1369,6 +1746,13 @@ functions:
     doc: >-
       tosparse_u32 stores pixels from img into row/col/val.
       Returns the number of pixels found.
+    params:
+      img: "Input uint32 2D image."
+      msk: "Mask (uint8). Non-zero pixels are excluded."
+      row: "Output uint16 array. Row coordinates."
+      col: "Output uint16 array. Column coordinates."
+      val: "Output uint32 array. Pixel values."
+      cut: "Intensity threshold (float). Pixels <= cut are excluded."
     checks:
       - "img.format == 'I' or img.itemsize == 4"
       - "img.ndim == 2"
@@ -1379,6 +1763,7 @@ functions:
       - "val.format == 'I' or val.itemsize == 4"
     c_overloads:
       - sig: "int tosparse_u32(uint32_t *img, uint8_t *msk, uint16_t *row, uint16_t *col, uint32_t *val, float cut, int ns, int nf) -> int"
+        doc: "Standard dense-to-sparse conversion."
         map:
           img: "img.ptr"
           msk: "msk.ptr"
@@ -1393,6 +1778,13 @@ functions:
     doc: >-
       tosparse_f32 stores pixels from img into row/col/val.
       Returns the number of pixels found.
+    params:
+      img: "Input float32 2D image."
+      msk: "Mask (uint8). Non-zero pixels are excluded."
+      row: "Output uint16 array. Row coordinates."
+      col: "Output uint16 array. Column coordinates."
+      val: "Output float32 array. Pixel values."
+      cut: "Intensity threshold (float). Pixels <= cut are excluded."
     checks:
       - "img.format == 'f'"
       - "img.ndim == 2"
@@ -1403,6 +1795,7 @@ functions:
       - "val.format == 'f'"
     c_overloads:
       - sig: "int tosparse_f32(float *img, uint8_t *msk, uint16_t *row, uint16_t *col, float *val, float cut, int ns, int nf) -> int"
+        doc: "Standard dense-to-sparse conversion."
         map:
           img: "img.ptr"
           msk: "msk.ptr"
@@ -1412,4 +1805,3 @@ functions:
           cut: cut
           ns: "img.shape[0]"
           nf: "img.shape[1]"
-

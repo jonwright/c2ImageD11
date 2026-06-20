@@ -7,10 +7,6 @@ Provides:
     chunk2sparse(mask, dtype)   -- callable class for frame-by-frame decoding
     chunk2sparseCSC(mask, csc)  -- same with CSC powder integration
     bslz4_to_sparse(ds, num)    -- convenience for HDF5 datasets
-
-CSC powder integration supports both float and integer CSC matrix data:
-    float CSC data  -> f64 histogram (existing behaviour)
-    integer CSC data -> u64 histogram (exact arithmetic, no roundoff)
 """
 
 from __future__ import print_function
@@ -34,17 +30,11 @@ version = "0.2.0"
 # Pixel itemsize -> type suffix lookup
 _PIXEL_SUFFIX = {1: "u8", 2: "u16", 4: "u32"}
 
-# Integer CSC itemsize -> type suffix lookup (c prefix = csc data type)
-_CSC_INT_SUFFIX = {1: "cu8", 2: "cu16", 4: "cu32"}
 
+def _get_csc_function(pixel_dtype):
+    """Return the right bslz4_csc_* function for given pixel type.
 
-def _get_csc_function(pixel_dtype, csc_data_dtype):
-    """Return the right bslz4_csc_* function for given pixel and CSC data types.
-
-    For float CSC data: uses legacy naming (bslz4_csc_u16)
-    For integer CSC data: uses new naming (bslz4_csc_u16_cu16)
-
-    Returns (function, powder_dtype) tuple.
+    Returns function object (powder is always float64).
     """
     import c2ImageD11._cImageD11 as _m
 
@@ -55,40 +45,19 @@ def _get_csc_function(pixel_dtype, csc_data_dtype):
             "Unsupported pixel dtype: %s (need uint8/uint16/uint32)" %
             str(pixel_dt))
 
-    pixel_suffix = _PIXEL_SUFFIX[pixel_itemsize]
-
-    csc_dt = np.dtype(csc_data_dtype)
-    if np.issubdtype(csc_dt, np.integer):
-        csc_itemsize = csc_dt.itemsize
-        if csc_itemsize not in _CSC_INT_SUFFIX:
-            raise ValueError(
-                "Unsupported integer CSC dtype: %s "
-                "(need uint8/uint16/uint32)" % str(csc_dt))
-        csc_suffix = _CSC_INT_SUFFIX[csc_itemsize]
-        fn_name = "bslz4_csc_%s_%s" % (pixel_suffix, csc_suffix)
-        powder_dtype = np.uint64
-    else:
-        fn_name = "bslz4_csc_%s" % pixel_suffix
-        powder_dtype = np.float64
+    fn_name = "bslz4_csc_%s" % _PIXEL_SUFFIX[pixel_itemsize]
 
     try:
-        fun = getattr(_m, fn_name)
+        return getattr(_m, fn_name)
     except AttributeError:
         raise ValueError(
-            "CSC function %s not found in _cImageD11. "
-            "Supported: u8/u16/u32 pixel types x "
-            "f32/u8/u16/u32 CSC data types." % fn_name)
-
-    return fun, powder_dtype
+            "CSC function %s not found in _cImageD11." % fn_name)
 
 
-def _get_csc_1d_function(pixel_dtype, csc_data_dtype):
-    """Return the right bslz4_csc1d_* function for 1D padded CSC.
+def _get_csc_1d_function(pixel_dtype):
+    """Return the right bslz4_csc1d_* function for given pixel type.
 
-    For float CSC data: bslz4_csc1d_u16
-    For integer CSC data: bslz4_csc1d_u16_cu16
-
-    Returns (function, powder_dtype) tuple.
+    Returns function object (powder is always float64).
     """
     import c2ImageD11._cImageD11 as _m
 
@@ -99,31 +68,13 @@ def _get_csc_1d_function(pixel_dtype, csc_data_dtype):
             "Unsupported pixel dtype: %s (need uint8/uint16/uint32)" %
             str(pixel_dt))
 
-    pixel_suffix = _PIXEL_SUFFIX[pixel_itemsize]
-
-    csc_dt = np.dtype(csc_data_dtype)
-    if np.issubdtype(csc_dt, np.integer):
-        csc_itemsize = csc_dt.itemsize
-        if csc_itemsize not in _CSC_INT_SUFFIX:
-            raise ValueError(
-                "Unsupported integer CSC dtype: %s "
-                "(need uint8/uint16/uint32)" % str(csc_dt))
-        csc_suffix = _CSC_INT_SUFFIX[csc_itemsize]
-        fn_name = "bslz4_csc1d_%s_%s" % (pixel_suffix, csc_suffix)
-        powder_dtype = np.uint64
-    else:
-        fn_name = "bslz4_csc1d_%s" % pixel_suffix
-        powder_dtype = np.float64
+    fn_name = "bslz4_csc1d_%s" % _PIXEL_SUFFIX[pixel_itemsize]
 
     try:
-        fun = getattr(_m, fn_name)
+        return getattr(_m, fn_name)
     except AttributeError:
         raise ValueError(
-            "CSC1D function %s not found in _cImageD11. "
-            "Supported: u8/u16/u32 pixel types x "
-            "f32/u8/u16/u32 CSC data types." % fn_name)
-
-    return fun, powder_dtype
+            "CSC1D function %s not found in _cImageD11." % fn_name)
 
 
 class chunk2sparse:
@@ -243,13 +194,8 @@ class chunk2sparseCSC:
         Detector mask.
     csc : scipy.sparse.csc_matrix or pyFAI CSCIntegrator
         Sparse matrix in CSC format (data, indices, indptr, shape/bins).
-        CSC data dtype may be float32 (legacy, f64 output) or
-        uint8/uint16/uint32 (integer, u64 exact output).
     dtype : numpy dtype, optional
         Pixel data type. Default uint16.
-
-    Float CSC data yields float64 powder (existing behaviour).
-    Integer CSC data yields uint64 powder (exact arithmetic, no roundoff).
     """
 
     def __init__(self, mask, csc, dtype=np.uint16):
@@ -269,9 +215,9 @@ class chunk2sparseCSC:
         else:
             raise Exception("csc argument has no shape or bins attribute")
 
-        # Look up CSC function and allocate powder with correct dtype
-        self.fun, powder_dtype = _get_csc_function(dtype, csc.data.dtype)
-        self.powder = np.empty(nbins, dtype=powder_dtype)
+        # Look up CSC function. Powder is always float64.
+        self.fun = _get_csc_function(dtype)
+        self.powder = np.empty(nbins, dtype=np.float64)
 
         self.indices = np.empty(mask.size, np.uint32)
         self.values = np.empty(mask.size, dtype)
@@ -363,49 +309,37 @@ class chunk2sparseCSC_1d(object):
 
     Uses bslz4_csc1d_* functions where each pixel has exactly
     entries_per_pixel entries (zero-padded if fewer in pyFAI matrix).
-    Supports float32 CSC data (legacy) and quantized integer (via
-    scale_factor).  Renormalize integer results by dividing by
-    scale_factor.
 
     Parameters
     ----------
     mask : 2D ndarray
         Detector mask (1=active).
     csc_flat : ndarray (NIJ * entries_per_pixel)
-        Padded weights (float32 or uint8/16/32).
+        Padded weights (float32).
     csc_first_bin : ndarray (NIJ,)
         First bin index per pixel.
     entries_per_pixel : int
         Pad width (max entries per pixel).
-    scale_factor : float, optional
-        Scale factor if csc_flat is quantized integer.
     dtype : numpy dtype, optional
         Pixel data type. Default uint16.
     """
 
     def __init__(self, mask, csc_flat, csc_first_bin,
-                 entries_per_pixel, scale_factor=None,
+                 entries_per_pixel,
                  dtype=np.uint16):
         self.nfast = mask.shape[1]
         self.mask = mask.ravel()
         self.csc_flat = csc_flat
         self.csc_first_bin = csc_first_bin
         self.entries_per_pixel = entries_per_pixel
-        self.scale_factor = scale_factor
 
         self.indices = np.empty(self.mask.size, np.uint32)
         self.values = np.empty(self.mask.size, dtype)
 
-        # Determine powder dtype
-        if scale_factor is not None:
-            powder_dtype = np.uint64
-        else:
-            powder_dtype = np.float64
+        # Look up CSC1D function. Powder is always float64.
+        self.fun = _get_csc_1d_function(dtype)
 
-        # Look up CSC1D function
-        self.fun, _ = _get_csc_1d_function(dtype, csc_flat.dtype)
-
-        self.powder = np.empty(0, dtype=powder_dtype)
+        self.powder = np.empty(0, dtype=np.float64)
         self._offsets  = np.array([0], dtype=np.int64)
         self._lengths  = np.zeros(1, dtype=np.int32)
         self._npx_pc   = np.zeros(1, dtype=np.int32)
@@ -432,9 +366,6 @@ class chunk2sparseCSC_1d(object):
             self._lengths,
             self._npx_pc,
         )
-        if self.scale_factor:
-            renormalized = self.powder.astype(np.float64) * (1.0 / self.scale_factor)
-            return npixels, (self.values, self.indices), renormalized
         return npixels, (self.values, self.indices), self.powder
 
     def set_nout(self, nout):
@@ -472,7 +403,4 @@ class chunk2sparseCSC_1d(object):
             off, le, npx_pc,
         )
 
-        powder_2d = powder.reshape((nframes, nout))
-        if self.scale_factor:
-            powder_2d = powder_2d.astype(np.float64) * (1.0 / self.scale_factor)
-        return powder_2d
+        return powder.reshape((nframes, nout))

@@ -12,7 +12,7 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
                   const uint8_t *restrict mask, int NIJ,
                   DATATYPE *restrict outpx, uint32_t *restrict output_adr,
                   int threshold,
-                  CSC_SUM_T *restrict output, int NOUT,
+                  CSC_SUM_T *restrict output, int nout_total,
                   CSC_DATA_T *restrict data, uint32_t *restrict indices,
                   uint32_t *restrict indptr,
                   const int64_t *restrict chunk_offsets,
@@ -24,7 +24,7 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
                   const uint8_t *restrict mask, int NIJ,
                   DATATYPE *restrict outpx, uint32_t *restrict output_adr,
                   int threshold,
-                  CSC_SUM_T *restrict output, int NOUT,
+                  CSC_SUM_T *restrict output, int nout_total,
                   CSC_DATA_T *restrict data, uint32_t *restrict indices,
                   uint32_t *restrict indptr,
                   const int64_t *restrict chunk_offsets,
@@ -46,6 +46,8 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
 #endif
 
     if (nchunks <= 0) return -1;
+    if (nout_total % nchunks != 0) return -103;
+    int nbins = nout_total / nchunks;
 
     chunk_p   = (int *)malloc((size_t)nchunks * sizeof(int));
     chunk_rem = (int *)malloc((size_t)nchunks * sizeof(int));
@@ -88,8 +90,8 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
     }
 
     for (c = 0; c < nchunks; c++)
-        for (j = 0; j < NOUT; j++)
-            output[c * (size_t)NOUT + j] = (CSC_SUM_T)0;
+        for (j = 0; j < nbins; j++)
+            output[c * (size_t)nbins + j] = (CSC_SUM_T)0;
 
     max_rem = chunk_rem[0];
     i0 = 0;
@@ -122,7 +124,7 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
                 val = tmp2[j] * mask[j + i0];
                 if (unlikely(val > 0)) {
                     for (k = indptr[j + i0]; k < indptr[j + i0 + 1]; k++) {
-                        output[c * (size_t)NOUT + indices[k]] +=
+                        output[c * (size_t)nbins + indices[k]] +=
                             ((CSC_SUM_T)data[k]) * (CSC_SUM_T)tmp2[j];
                     }
                     if (unlikely(tmp2[j] > cut)) {
@@ -169,7 +171,7 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, int compressed_length,
             val = tmp2[j] * mask[j + i0];
             if (unlikely(val > 0)) {
                 for (k = indptr[j + i0]; k < indptr[j + i0 + 1]; k++) {
-                    output[c * (size_t)NOUT + indices[k]] +=
+                    output[c * (size_t)nbins + indices[k]] +=
                         ((CSC_SUM_T)data[k]) * (CSC_SUM_T)tmp2[j];
                 }
                 if (unlikely(tmp2[j] > cut)) {

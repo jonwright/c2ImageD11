@@ -1,0 +1,79 @@
+========================================================================
+  c2ImageD11 benchmark: retained variants
+  Parameters:
+    engine:    LZ4 | ZSTD
+    function:  basic (decompress) | csc (std CSC) | csc1d (1D-padded CSC)
+    batch:     1 | 16 frames
+    dataset:   eiger_lz4 (LZ4) | eiger_zstd (ZSTD) | poisson (LZ4)
+    pixel:     u16 only
+    backend:   KCB only
+    ISA:       auto-resolved (avx512/avx2/sse42)
+    note:      each dataset uses its native engine only (no cross-engine tests)
+========================================================================
+
+
+--- eiger_lz4 (eiger_lz4_u16.h5, 1000 frames, lz4) ---
+CSC: NIJ=4471016 nnz=13023713 bins=2500
+1D padded: entries_per_pixel=4, flat size=71.5 MB
+  warmup ... done
+  dataset    type  engine bs       fps  ms/frame
+  ------------------------------------------------
+  eiger_lz4  basic bslz4   1       308     3.25
+  eiger_lz4  basic bslz4  16       314     3.19
+  eiger_lz4  csc   bslz4   1       105     9.54
+  eiger_lz4  csc   bslz4  16       142     7.05
+  eiger_lz4  csc1d bslz4   1       141     7.08
+  eiger_lz4  csc1d bslz4  16       163     6.12
+
+--- eiger_zstd (eiger_zstd_u16.h5, 1000 frames, zstd) ---
+CSC: NIJ=4471016 nnz=13023713 bins=2500
+1D padded: entries_per_pixel=4, flat size=71.5 MB
+  warmup ... done
+  dataset    type  engine bs       fps  ms/frame
+  ------------------------------------------------
+  eiger_zstd basic bszstd  1       109     9.20
+  eiger_zstd basic bszstd 16       113     8.86
+  eiger_zstd csc   bszstd  1        62    16.03
+  eiger_zstd csc   bszstd 16        78    12.83
+  eiger_zstd csc1d bszstd  1        71    14.03
+  eiger_zstd csc1d bszstd 16        81    12.40
+
+--- poisson (testdata_poisson.h5, 32 frames, lz4) ---
+CSC: NIJ=4471016 nnz=13023713 bins=2500
+1D padded: entries_per_pixel=4, flat size=71.5 MB
+  warmup ... done
+  dataset    type  engine bs       fps  ms/frame
+  ------------------------------------------------
+  poisson    basic bslz4   1       134     7.46
+  poisson    basic bslz4  16       105     9.54
+  poisson    csc   bslz4   1        46    21.84
+  poisson    csc   bslz4  16        50    19.99
+  poisson    csc1d bslz4   1        54    18.37
+  poisson    csc1d bslz4  16        62    16.09
+
+========================================================================
+  Summary
+========================================================================
+  dataset    type  engine bs       fps
+  --------------------------------------
+  eiger_lz4  basic bslz4   1       308
+  eiger_lz4  basic bslz4  16       314
+  eiger_lz4  csc   bslz4   1       105
+  eiger_lz4  csc   bslz4  16       142
+  eiger_lz4  csc1d bslz4   1       141
+  eiger_lz4  csc1d bslz4  16       163
+  eiger_zstd basic bszstd  1       109
+  eiger_zstd basic bszstd 16       113
+  eiger_zstd csc   bszstd  1        62
+  eiger_zstd csc   bszstd 16        78
+  eiger_zstd csc1d bszstd  1        71
+  eiger_zstd csc1d bszstd 16        81
+  poisson    basic bslz4   1       134
+  poisson    basic bslz4  16       105
+  poisson    csc   bslz4   1        46
+  poisson    csc   bslz4  16        50
+  poisson    csc1d bslz4   1        54
+  poisson    csc1d bslz4  16        62
+
+Done.
+ret -6 expected 8192

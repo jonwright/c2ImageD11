@@ -16,11 +16,10 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     const uint8_t *restrict mask, int NIJ,
                     DATATYPE *restrict outpx, uint32_t *restrict output_adr,
                     int threshold,
-                    CSC_SUM_T *restrict output, int NOUT,
+                    CSC_SUM_T *restrict output, int nout_total,
                     const CSC_DATA_T *restrict csc_flat,
                     const uint32_t *restrict csc_first_bin,
                     int csc_entries_per_pixel,
-                    int csc1d_stride,
                     const int64_t *restrict chunk_offsets,
                     const int32_t *restrict chunk_lengths,
                     int nchunks,
@@ -30,16 +29,19 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     const uint8_t *restrict mask, int NIJ,
                     DATATYPE *restrict outpx, uint32_t *restrict output_adr,
                     int threshold,
-                    CSC_SUM_T *restrict output, int NOUT,
+                    CSC_SUM_T *restrict output, int nout_total,
                     const CSC_DATA_T *restrict csc_flat,
                     const uint32_t *restrict csc_first_bin,
                     int csc_entries_per_pixel,
-                    int csc1d_stride,
                     const int64_t *restrict chunk_offsets,
                     const int32_t *restrict chunk_lengths,
                     int nchunks,
                     int32_t *restrict npx_per_chunk)
 {
+    /* Stride for inner pixel loop, fixed at 64.
+     * This spreads consecutive inner-loop pixels across ~64 cache lines
+     * of the output histogram, reducing write-after-write serialisation. */
+    const int csc1d_stride = 64;
     int blocksize, c, j, ret;
     uint32_t nbytes;
     unsigned int k;
@@ -53,12 +55,9 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
     char scratch[BLK];
 #endif
 
-    /* Stride for inner pixel loop: when caller passes <= 0, use 64.
-     * This spreads consecutive inner-loop pixels across ~64 cache lines
-     * of the output histogram, reducing write-after-write serialisation. */
-    if (csc1d_stride <= 0) csc1d_stride = 64;
-
     if (nchunks <= 0) return -1;
+    if (nout_total % nchunks != 0) return -103;
+    int nbins = nout_total / nchunks;
 
     chunk_p   = (int *)malloc((size_t)nchunks * sizeof(int));
     chunk_rem = (int *)malloc((size_t)nchunks * sizeof(int));
@@ -101,8 +100,8 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
     }
 
     for (c = 0; c < nchunks; c++)
-        for (j = 0; j < NOUT; j++)
-            output[c * (size_t)NOUT + j] = (CSC_SUM_T)0;
+        for (j = 0; j < nbins; j++)
+            output[c * (size_t)nbins + j] = (CSC_SUM_T)0;
 
     max_rem = chunk_rem[0];
     i0 = 0;
@@ -142,10 +141,10 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                         val = tmp2[j] * mask[jj];
                         if (unlikely(val > 0)) {
                             int bin = (int)csc_first_bin[jj];
-                            if (unlikely(bin + 4 > NOUT)) return -102;
+                            if (unlikely(bin + 4 > nbins)) return -102;
                             int off = jj * 4;
                             CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                            size_t base = c * (size_t)NOUT;
+                            size_t base = c * (size_t)nbins;
                             output[base + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
                             output[base + bin + 1] += (CSC_SUM_T)csc_flat[off+1] * v;
                             output[base + bin + 2] += (CSC_SUM_T)csc_flat[off+2] * v;
@@ -167,10 +166,10 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                         val = tmp2[j] * mask[jj];
                         if (unlikely(val > 0)) {
                             int bin = (int)csc_first_bin[jj];
-                            if (unlikely(bin + 6 > NOUT)) return -102;
+                            if (unlikely(bin + 6 > nbins)) return -102;
                             int off = jj * 6;
                             CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                            size_t base = c * (size_t)NOUT;
+                            size_t base = c * (size_t)nbins;
                             output[base + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
                             output[base + bin + 1] += (CSC_SUM_T)csc_flat[off+1] * v;
                             output[base + bin + 2] += (CSC_SUM_T)csc_flat[off+2] * v;
@@ -194,10 +193,10 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                         val = tmp2[j] * mask[jj];
                         if (unlikely(val > 0)) {
                             int bin = (int)csc_first_bin[jj];
-                            if (unlikely(bin + 8 > NOUT)) return -102;
+                            if (unlikely(bin + 8 > nbins)) return -102;
                             int off = jj * 8;
                             CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                            size_t base = c * (size_t)NOUT;
+                            size_t base = c * (size_t)nbins;
                             output[base + bin]     += (CSC_SUM_T)csc_flat[off]   * v;
                             output[base + bin + 1] += (CSC_SUM_T)csc_flat[off+1] * v;
                             output[base + bin + 2] += (CSC_SUM_T)csc_flat[off+2] * v;
@@ -224,9 +223,9 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                         if (unlikely(val > 0)) {
                             int bin = (int)csc_first_bin[jj];
                             int off = jj * csc_entries_per_pixel;
-                            size_t base = c * (size_t)NOUT;
+                            size_t base = c * (size_t)nbins;
                             CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                            int remain = NOUT - bin;
+                            int remain = nbins - bin;
                             for (k = 0; k < (unsigned int)csc_entries_per_pixel && (int)k < remain; k++)
                                 output[base + bin + k] += (CSC_SUM_T)csc_flat[off + k] * v;
                             if (unlikely(tmp2[j] > cut)) {
@@ -281,9 +280,9 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     if (unlikely(val > 0)) {
                         int bin = (int)csc_first_bin[jj];
                         int off = jj * csc_entries_per_pixel;
-                        size_t base = c * (size_t)NOUT;
+                        size_t base = c * (size_t)nbins;
                         CSC_SUM_T v = (CSC_SUM_T)tmp2[j];
-                        int remain = NOUT - bin;
+                        int remain = nbins - bin;
                         for (k = 0; k < (unsigned int)csc_entries_per_pixel && (int)k < remain; k++)
                             output[base + bin + k] += (CSC_SUM_T)csc_flat[off + k] * v;
                         if (unlikely(tmp2[j] > cut)) {

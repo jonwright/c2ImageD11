@@ -105,53 +105,30 @@ class TestCSC1DMemory:
     def setup_method(self):
         self.mask = _make_mask()
         self.csc_flat, self.first_bin = _make_csc_flat(EASY_EPP)
-        self.csc_u8 = _make_quantized(self.csc_flat, 255, np.uint8)
-        self.csc_u16 = _make_quantized(self.csc_flat, 32768, np.uint16)
-        self.csc_u32 = _make_quantized(self.csc_flat, 1 << 31, np.uint32)
 
-    def _run_variant(self, nframes, fn, csc_arr, epp, scale_factor=None):
+    def _run_variant(self, nframes, fn, csc_arr, epp):
         """Run the C function with valid data.  No error expected."""
         mask = self.mask
         compressed, offsets, lengths = get_chunk_offsets(NIJ_SMALL)
 
         ox = np.zeros(nframes * NIJ_SMALL, dtype=np.uint16)
         oa = np.zeros(nframes * NIJ_SMALL, dtype=np.uint32)
-        pw_shape = nframes * NOUT_SMALL
+        pw = np.zeros(nframes * NOUT_SMALL, dtype=np.float64)
 
         for _ in range(NITERS):
             offs_batch = np.array([0] * nframes if nframes > 1 else [0], dtype=np.int64)
             lens_batch = np.array([len(compressed)] * nframes if nframes > 1 else [len(compressed)], dtype=np.int32)
 
-            if scale_factor is None:
-                pw = np.zeros(pw_shape, dtype=np.float64)
-            else:
-                pw = np.zeros(pw_shape, dtype=np.uint64)
-
             npc = np.zeros(nframes, dtype=np.int32)
             fn(compressed, mask, ox, oa, 0,
-               pw, csc_arr, self.first_bin, epp, 0,  # stride=0 (auto)
+               pw, csc_arr, self.first_bin, epp,
                offs_batch, lens_batch, npc)
 
-    def test_f32_1frame(self):
+    def test_csc1d_f32_1frame(self):
         self._run_variant(1, _m.bslz4_csc1d_u16, self.csc_flat, EASY_EPP)
 
-    def test_f32_4frames(self):
+    def test_csc1d_f32_4frames(self):
         self._run_variant(4, _m.bslz4_csc1d_u16, self.csc_flat, EASY_EPP)
-
-    def test_u8_1frame(self):
-        self._run_variant(1, _m.bslz4_csc1d_u16_cu8, self.csc_u8, EASY_EPP, 255)
-
-    def test_u8_4frames(self):
-        self._run_variant(4, _m.bslz4_csc1d_u16_cu8, self.csc_u8, EASY_EPP, 255)
-
-    def test_u16_1frame(self):
-        self._run_variant(1, _m.bslz4_csc1d_u16_cu16, self.csc_u16, EASY_EPP, 32768)
-
-    def test_u16_4frames(self):
-        self._run_variant(4, _m.bslz4_csc1d_u16_cu16, self.csc_u16, EASY_EPP, 32768)
-
-    def test_u32_4frames(self):
-        self._run_variant(4, _m.bslz4_csc1d_u16_cu32, self.csc_u32, EASY_EPP, 1 << 31)
 
 
 class TestCSCStandardMemory:

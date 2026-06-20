@@ -184,7 +184,6 @@ def _compile_bslz4_variants(build_dir):
         "-I" + REPO_ROOT,
         "-I" + LZ4_DIR + "/lib",
         "-I" + KCB_DIR + "/src",
-        "-I" + BITSHUFFLE_DIR + "/src",
         "-I" + ZSTD_DIR + "/lib",
         "-I" + ZSTD_DIR + "/lib/common",
         "-I" + ZSTD_DIR + "/lib/compress",
@@ -206,7 +205,6 @@ def _compile_bslz4_variants(build_dir):
         ]:
             for backend_suffix, backend_cflags in [
                 ("kcb", ["-DUSE_KCB"]),
-                ("bs", []),
             ]:
                 for variant_name, simd_flag in _SIMD_VARIANTS:
                     full_suffix = "_{}_{}_{}".format(engine_suffix, backend_suffix, variant_name)
@@ -304,33 +302,32 @@ class c2py23_build_ext(build_ext):
         for ext in self.extensions:
             ext.sources.insert(0, wrapper_rel)
             ext.sources.insert(0, runtime_rel)
-            ext.include_dirs.append(C2PY_RUNTIME_DIR)
-            ext.include_dirs.append(REPO_ROOT)
-            ext.include_dirs.append(SRC_DIR)
-            ext.include_dirs.append(WRAPPER_DIR)
-            ext.include_dirs.append(SIMD_DIR)
-            ext.include_dirs.append(os.path.join(LZ4_DIR, "lib"))
-            ext.include_dirs.append(os.path.join(KCB_DIR, "src"))
-            ext.include_dirs.append(os.path.join(BITSHUFFLE_DIR, "src"))
-            ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib"))
-            ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "common"))
-            ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "compress"))
-            ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "decompress"))
-            for flag in _EXTRA_COMPILE_ARGS:
-                if flag not in ext.extra_compile_args:
-                    ext.extra_compile_args.append(flag)
-            for flag in _EXTRA_LINK_ARGS:
-                if flag not in ext.extra_link_args:
-                    ext.extra_link_args.append(flag)
-            ext.libraries.extend(['dl', 'm'])
+        ext.include_dirs.append(C2PY_RUNTIME_DIR)
+        ext.include_dirs.append(REPO_ROOT)
+        ext.include_dirs.append(SRC_DIR)
+        ext.include_dirs.append(WRAPPER_DIR)
+        ext.include_dirs.append(SIMD_DIR)
+        ext.include_dirs.append(os.path.join(LZ4_DIR, "lib"))
+        ext.include_dirs.append(os.path.join(KCB_DIR, "src"))
+        ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib"))
+        ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "common"))
+        ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "compress"))
+        ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "decompress"))
+        for flag in _EXTRA_COMPILE_ARGS:
+            if flag not in ext.extra_compile_args:
+                ext.extra_compile_args.append(flag)
+        for flag in _EXTRA_LINK_ARGS:
+            if flag not in ext.extra_link_args:
+                ext.extra_link_args.append(flag)
+        ext.libraries.extend(['dl', 'm'])
 
-            # Link SIMD kernel objects
-            if simd_objects:
-                for obj in simd_objects:
-                    ext.extra_objects.append(os.path.relpath(obj, REPO_ROOT))
-            if bslz4_objects:
-                for obj in bslz4_objects:
-                    ext.extra_objects.append(os.path.relpath(obj, REPO_ROOT))
+        # Link SIMD kernel objects
+        if simd_objects:
+            for obj in simd_objects:
+                ext.extra_objects.append(os.path.relpath(obj, REPO_ROOT))
+        if bslz4_objects:
+            for obj in bslz4_objects:
+                ext.extra_objects.append(os.path.relpath(obj, REPO_ROOT))
 
         print("c2ImageD11: linked {} SIMD + {} BSLZ4 kernel objects".format(
             len(simd_objects), len(bslz4_objects)))
@@ -354,11 +351,9 @@ SOURCES = [
     os.path.join("src", "sparse_image.c"),
     os.path.join("src", "splat.c"),
     os.path.join("src_wrapper", "_wrappers.c"),
-    # bslz4 dependencies
+    # bslz4 dependencies (KCB backend only)
     os.path.join("lz4", "lib", "lz4.c"),
     os.path.join("kcb", "src", "bitshuffle.c"),
-    os.path.join("bitshuffle", "src", "bitshuffle_core.c"),
-    os.path.join("bitshuffle", "src", "iochain.c"),
     # zstd decompress engine
     os.path.join("zstd", "lib", "common", "debug.c"),
     os.path.join("zstd", "lib", "common", "entropy_common.c"),
