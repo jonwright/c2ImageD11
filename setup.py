@@ -47,18 +47,17 @@ RUNTIME_C = os.path.join(WRAPPER_DIR, "c2py_runtime.c")
 
 
 # ---------------------------------------------------------------------------
-# c2py23 - optional, only for regeneration
+# c2py23 - for wrapper regeneration and runtime files
 # ---------------------------------------------------------------------------
 
 _C2PY23_AVAILABLE = False
 _C2PY23_RUNTIME_DIR = None
 
 try:
-    if os.environ.get("C2PY23_REBUILD"):
-        import c2py23
-        _C2PY23_AVAILABLE = True
-        _C2PY23_DIR = os.path.dirname(os.path.abspath(c2py23.__file__))
-        _C2PY23_RUNTIME_DIR = os.path.join(_C2PY23_DIR, "runtime")
+    import c2py23
+    _C2PY23_AVAILABLE = True
+    _C2PY23_DIR = os.path.dirname(os.path.abspath(c2py23.__file__))
+    _C2PY23_RUNTIME_DIR = os.path.join(_C2PY23_DIR, "runtime")
 except ImportError:
     pass
 
@@ -248,7 +247,10 @@ def _regenerate_wrapper():
     from c2py23.parser import load_c2py
     from c2py23.generator import generate
 
-    os.makedirs(os.path.dirname(C2PY_FILE), exist_ok=True)
+    try:
+        os.makedirs(os.path.dirname(C2PY_FILE))
+    except OSError:
+        pass
 
     print("c2ImageD11: assembling {} from {} + {}".format(
         os.path.basename(C2PY_FILE),
@@ -266,11 +268,40 @@ def _regenerate_wrapper():
     module_def = load_c2py(C2PY_FILE)
     wrapper_c = generate(module_def)
 
-    os.makedirs(WRAPPER_DIR, exist_ok=True)
+    try:
+        os.makedirs(WRAPPER_DIR)
+    except OSError:
+        pass
     wrapper_path = os.path.join(WRAPPER_DIR, "__cImageD11_wrapper.c")
     with open(wrapper_path, "w") as f:
         f.write(wrapper_c)
     print("c2ImageD11: wrapper written to", wrapper_path)
+    return True
+
+
+def _sync_runtime():
+    """Copy runtime files from c2py23 to WRAPPER_DIR for compilation."""
+    if not _C2PY23_AVAILABLE or not _C2PY23_RUNTIME_DIR:
+        return False
+    try:
+        os.makedirs(WRAPPER_DIR)
+    except OSError:
+        pass
+    updated = False
+    for fname in ("c2py_runtime.h", "c2py_runtime.c", "c2py_amd64.h"):
+        src = os.path.join(_C2PY23_RUNTIME_DIR, fname)
+        dst = os.path.join(WRAPPER_DIR, fname)
+        if not os.path.isfile(src):
+            continue
+        if (not os.path.isfile(dst) or
+                os.path.getmtime(src) > os.path.getmtime(dst)):
+            with open(src, "rb") as f:
+                content = f.read()
+            with open(dst, "wb") as f:
+                f.write(content)
+            updated = True
+    if updated:
+        print("c2ImageD11: synced runtime files from c2py23")
     return True
 
 
@@ -333,6 +364,9 @@ class c2py23_build_ext(build_ext):
                       "c2py23 not available. Generate one with: "
                       "pip install c2py23 && C2PY23_REBUILD=1 pip install -e .")
                 sys.exit(1)
+
+        # Step 1.5: Sync runtime files from installed c2py23 (always fresh)
+        _sync_runtime()
 
         # Step 2: Add wrapper + runtime to each extension's sources
         wrapper_rel = os.path.relpath(wrapper_used, REPO_ROOT)

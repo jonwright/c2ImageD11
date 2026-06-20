@@ -1,23 +1,23 @@
-/* darkflm_kernel.c -- SIMD kernel for uint16_to_float_darkflm()
+/* Auto-extracted from ImageD11/src/darkflat.c, function uint16_to_float_darkflm, commit 8f7d29e
  *
- * img[i] = ((float)data[i] - drk[i]) * flm[i]  (uint16 -> float dark+flat)
- * Simple element-wise loop, auto-vectorizes cleanly.
+ * DO NOT EDIT BY HAND -- regenerate with tools/extract_kernels.py
  */
-
-#include "cImageD11.h"
-#include <stdint.h>
-
 #ifndef KERNEL_FN
-#define KERNEL_FN uint16_to_float_darkflm_sse42
+#error "KERNEL_FN must be defined (e.g. -DKERNEL_FN=score_sse42)"
 #endif
 
-void KERNEL_FN(float *restrict img, const float *restrict drk,
-               const float *restrict flm, const uint16_t *restrict data,
-               int npx)
-{
-    int i;
+#include "cImageD11.h"
 
+void KERNEL_FN(float *restrict img, const float *restrict drk,
+                             const float *restrict flm,
+                             const uint16_t *restrict data, int npx) {
+    int i;
+#ifdef GOT_OMP_SIMD
 #pragma omp parallel for simd
-    for (i = 0; i < npx; i++)
+#else
+#pragma omp parallel for
+#endif
+    for (i = 0; i < npx; i++) {
         img[i] = (((float)data[i]) - drk[i]) * flm[i];
+    }
 }

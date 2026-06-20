@@ -1,95 +1,95 @@
-/* score_and_refine_kernel.c -- SIMD kernel for score_and_refine()
+/* Auto-extracted from ImageD11/src/closest.c, function score_and_refine, commit 8f7d29e
  *
- * Scores g-vectors AND refines the UBI matrix using least-squares.
- * Takes flat double* (matches c2py23 .ptr) instead of vec[3].
- * Returns number of indexed peaks; sumdrlv2 is written via pointer.
+ * DO NOT EDIT BY HAND -- regenerate with tools/extract_kernels.py
  */
+#ifndef KERNEL_FN
+#error "KERNEL_FN must be defined (e.g. -DKERNEL_FN=score_sse42)"
+#endif
 
 #include "cImageD11.h"
 #include <math.h>
 #include <string.h>
-
-#ifndef KERNEL_FN
-#define KERNEL_FN score_and_refine_sse42
-#endif
-
-#define MAGIC 6755399441055744.0
-static inline double fast_round(double x) { return (x + MAGIC) - MAGIC; }
-
-static int inverse3x3(double m[9])
-{
-    double det = m[0]*(m[4]*m[8] - m[5]*m[7])
-               - m[1]*(m[3]*m[8] - m[5]*m[6])
-               + m[2]*(m[3]*m[7] - m[4]*m[6]);
-    if (fabs(det) < 1e-30) return 777;
-    double inv_det = 1.0 / det;
-    double a00 =  (m[4]*m[8] - m[5]*m[7]) * inv_det;
-    double a01 = -(m[1]*m[8] - m[2]*m[7]) * inv_det;
-    double a02 =  (m[1]*m[5] - m[2]*m[4]) * inv_det;
-    double a10 = -(m[3]*m[8] - m[5]*m[6]) * inv_det;
-    double a11 =  (m[0]*m[8] - m[2]*m[6]) * inv_det;
-    double a12 = -(m[0]*m[5] - m[2]*m[3]) * inv_det;
-    double a20 =  (m[3]*m[7] - m[4]*m[6]) * inv_det;
-    double a21 = -(m[0]*m[7] - m[1]*m[6]) * inv_det;
-    double a22 =  (m[0]*m[4] - m[1]*m[3]) * inv_det;
-    m[0]=a00; m[1]=a01; m[2]=a02;
-    m[3]=a10; m[4]=a11; m[5]=a12;
-    m[6]=a20; m[7]=a21; m[8]=a22;
-    return 0;
+int inverse3x3(double A[3][3]);  /* defined in closest.c */
+static inline double conv_double_to_int_fast(double x) {
+    return (x + 6755399441055744.0) - 6755399441055744.0;
 }
 
-int KERNEL_FN(const double *restrict ubi, const double *restrict gv,
-              double tol, double *sumdrlv2_arg, int ng)
-{
+void KERNEL_FN(vec ubi[3], vec gv[], double tol, int *n_arg,
+                      double *sumdrlv2_arg, int ng) {
+    /* ng = number of g vectors */
     double h0, h1, h2, t0, t1, t2, ih[3];
     double sumsq, tolsq, sumdrlv2;
-    double R[9], H[9], UB[9];
+    double R[3][3], H[3][3], UB[3][3];
     int n, k, i, j, l;
-
-    memset(R, 0, sizeof(R));
-    memset(H, 0, sizeof(H));
-    memset(UB, 0, sizeof(UB));
+    /* Zero some stuff for refinement */
+    for (i = 0; i < 3; i++) {
+        ih[i] = 0;
+        for (j = 0; j < 3; j++) {
+            R[i][j] = 0.;
+            H[i][j] = 0.;
+            UB[i][j] = 0.;
+        }
+    }
     tolsq = tol * tol;
     n = 0;
     sumdrlv2 = 0.;
-
+    /* Test peaks */
     for (k = 0; k < ng; k++) {
-        const double *g = gv + k * 3;
-        h0 = ubi[0]*g[0] + ubi[1]*g[1] + ubi[2]*g[2];
-        h1 = ubi[3]*g[0] + ubi[4]*g[1] + ubi[5]*g[2];
-        h2 = ubi[6]*g[0] + ubi[7]*g[1] + ubi[8]*g[2];
-        t0 = h0 - fast_round(h0);
-        t1 = h1 - fast_round(h1);
-        t2 = h2 - fast_round(h2);
-        sumsq = t0*t0 + t1*t1 + t2*t2;
-        if (sumsq < tolsq) {
-            n++;
+        h0 = ubi[0][0] * gv[k][0] + ubi[0][1] * gv[k][1] + ubi[0][2] * gv[k][2];
+        h1 = ubi[1][0] * gv[k][0] + ubi[1][1] * gv[k][1] + ubi[1][2] * gv[k][2];
+        h2 = ubi[2][0] * gv[k][0] + ubi[2][1] * gv[k][1] + ubi[2][2] * gv[k][2];
+        t0 = h0 - conv_double_to_int_fast(h0);
+        t1 = h1 - conv_double_to_int_fast(h1);
+        t2 = h2 - conv_double_to_int_fast(h2);
+        sumsq = t0 * t0 + t1 * t1 + t2 * t2;
+        if (sumsq < tolsq) { /* Add into lsq problem */
+            n = n + 1;
             sumdrlv2 += sumsq;
-            ih[0] = fast_round(h0);
-            ih[1] = fast_round(h1);
-            ih[2] = fast_round(h2);
+            /*   From Paciorek et al Acta A55 543 (1999)
+             *   UB = R H-1
+             *   where:
+             *   R = sum_n r_n h_n^t
+             *   H = sum_n h_n h_n^t
+             *   r = g-vectors
+             *   h = hkl indices
+             *   The hkl integer indices are: */
+            ih[0] = conv_double_to_int_fast(h0);
+            ih[1] = conv_double_to_int_fast(h1);
+            ih[2] = conv_double_to_int_fast(h2);
+            /* The g-vector is: gv[k][012] */
             for (i = 0; i < 3; i++) {
                 for (j = 0; j < 3; j++) {
-                    R[i*3+j] += ih[j] * g[i];
-                    H[i*3+j] += ih[j] * ih[i];
+                    /* Robust weight factor, fn(tol), would go here */
+                    R[i][j] = R[i][j] + ih[j] * gv[k][i];
+                    H[i][j] = H[i][j] + ih[j] * ih[i];
                 }
-            }
-        }
-    }
+            } /* End lsq addins */
+        } /* End selected peaks */
+    } /* End first loop over spots */
 
-    l = inverse3x3(H);
-    if (l == 0) {
+    /* Now solve the least squares problem */
+    /* inverse overwrites H with the inverse */
+    k = inverse3x3(H);
+    if (k == 0) {
         for (i = 0; i < 3; i++)
             for (j = 0; j < 3; j++)
                 for (l = 0; l < 3; l++)
-                    UB[i*3+j] += R[i*3+l] * H[l*3+j];
+                    UB[i][j] += R[i][l] * H[l][j];
     }
-    if ((l == 0) && (inverse3x3(UB) == 0)) {
-        for (i = 0; i < 9; i++)
-            ((double*)ubi)[i] = UB[i];
+    /* Now form ubi and copy to argument */
+    if ((k == 0) && (inverse3x3(UB) == 0)) {
+        for (i = 0; i < 3; i++)
+            for (j = 0; j < 3; j++)
+                ubi[i][j] = UB[i][j];
+    } else {
+        /* Determinant was zero - leave ubi as it is */
     }
 
-    if (n > 0) sumdrlv2 /= n;
+    if (n > 0) {
+        sumdrlv2 /= n;
+    }
+
+    /* return values */
+    *n_arg = n;
     *sumdrlv2_arg = sumdrlv2;
-    return n;
 }

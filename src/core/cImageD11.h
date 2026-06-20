@@ -57,6 +57,9 @@ typedef unsigned __int64 uint64_t;
 #include <stdint.h>
 #endif
 
+/* 3-vector type used by geometry kernels (from ImageD11/src/closest.c) */
+typedef double vec[3];
+
 /* implemented in imaged11utils.c */
 void cimaged11_omp_set_num_threads(int);
 int cimaged11_omp_get_max_threads(void);

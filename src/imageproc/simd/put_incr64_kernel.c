@@ -1,36 +1,28 @@
-/* put_incr64_kernel.c -- SIMD kernel for put_incr64()
+/* Auto-extracted from ImageD11/src/closest.c, function put_incr64, commit 8f7d29e
  *
- * Scatter-add: data[ind[i]] += vals[i]
- * Uses 64-bit addressing.
+ * DO NOT EDIT BY HAND -- regenerate with tools/extract_kernels.py
  */
+#ifndef KERNEL_FN
+#error "KERNEL_FN must be defined (e.g. -DKERNEL_FN=score_sse42)"
+#endif
 
 #include "cImageD11.h"
 #include <stdio.h>
-#include <stdint.h>
 
-#ifndef KERNEL_FN
-#define KERNEL_FN put_incr64_sse42
-#endif
-
-void KERNEL_FN(float *restrict data, const int64_t *restrict ind,
-               const float *restrict vals, int boundscheck, int n, int m)
-{
-    int i;
-    (void)m;
+void KERNEL_FN(float data[], int64_t ind[], float vals[], int boundscheck,
+                int n, int m) {
+    int64_t k, ik;
     if (boundscheck == 0) {
-#pragma omp parallel for
-        for (i = 0; i < n; i++)
-            data[ind[i]] += vals[i];
+        for (k = 0; k < n; k++)
+            data[ind[k]] += vals[k];
     } else {
-        int64_t ik;
-#pragma omp parallel for private(ik)
-        for (i = 0; i < n; i++) {
-            ik = ind[i];
+        for (k = 0; k < n; k++) {
+            ik = ind[k];
             if (ik < 0 || ik >= m) {
-                printf("Array bounds error! i=%d ind[i]=%lld\n",
-                       (int)i, (long long)ik);
+                printf("Array bounds error! k=%d ind[k]=%d\n", (int)k,
+                       (int)ind[k]);
             } else {
-                data[ik] += vals[i];
+                data[ind[k]] += vals[k];
             }
         }
     }

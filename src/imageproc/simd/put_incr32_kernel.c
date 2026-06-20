@@ -1,35 +1,28 @@
-/* put_incr32_kernel.c -- SIMD kernel for put_incr32()
+/* Auto-extracted from ImageD11/src/closest.c, function put_incr32, commit 8f7d29e
  *
- * Scatter-add: data[ind[i]] += vals[i]
- * Uses 32-bit addressing. SIMD limited by scatter pattern but still
- * benefits from loop-level auto-vectorization (esp. with AVX-512 scatter).
+ * DO NOT EDIT BY HAND -- regenerate with tools/extract_kernels.py
  */
+#ifndef KERNEL_FN
+#error "KERNEL_FN must be defined (e.g. -DKERNEL_FN=score_sse42)"
+#endif
 
 #include "cImageD11.h"
 #include <stdio.h>
 
-#ifndef KERNEL_FN
-#define KERNEL_FN put_incr32_sse42
-#endif
-
-void KERNEL_FN(float *restrict data, const int32_t *restrict ind,
-               const float *restrict vals, int boundscheck, int n, int m)
-{
+void KERNEL_FN(float data[], int32_t ind[], float vals[], int boundscheck,
+                int n, int m) {
     int32_t k, ik;
-    (void)m;
     if (boundscheck == 0) {
-#pragma omp parallel for
         for (k = 0; k < n; k++)
             data[ind[k]] += vals[k];
     } else {
-#pragma omp parallel for private(ik)
         for (k = 0; k < n; k++) {
             ik = ind[k];
             if (ik < 0 || ik >= m) {
-                printf("Array bounds error! k=%d ind[k]=%d\n",
-                       (int)k, (int)ik);
+                printf("Array bounds error! k=%d ind[k]=%d\n", (int)k,
+                       (int)ind[k]);
             } else {
-                data[ik] += vals[k];
+                data[ind[k]] += vals[k];
             }
         }
     }

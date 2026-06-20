@@ -1,38 +1,49 @@
-/* compute_xlylzl_kernel.c -- SIMD kernel for compute_xlylzl()
+/* Auto-extracted from ImageD11/src/cdiffraction.c, function compute_xlylzl, commit 8f7d29e
  *
- * Converts detector pixel coordinates (slow, fast) to laboratory
- * frame (x, y, z) using detector parameters.
- * v[0]=0 (beam direction), v[1]=fast offset, v[2]=slow offset.
- * Uses only columns 1 and 2 of rotation matrix r[9].
- * Takes flat double* (matches c2py23 .ptr).
+ * DO NOT EDIT BY HAND -- regenerate with tools/extract_kernels.py
  */
-
-#include "cImageD11.h"
-#include <math.h>
-
 #ifndef KERNEL_FN
-#define KERNEL_FN compute_xlylzl_sse42
+#error "KERNEL_FN must be defined (e.g. -DKERNEL_FN=score_sse42)"
 #endif
 
-void KERNEL_FN(const double *restrict s, const double *restrict f,
-               const double *p, const double *r, const double *dist,
-               double *restrict xlylzl, int n)
-{
+#include "cImageD11.h"
+#include <stdio.h>
+#include <math.h>
+#include "cdiffraction.h"
+#define NOISY 0
+
+void KERNEL_FN(double s[], double f[], double p[4], double r[9],
+                    double dist[3], double xlylzl[][3], int n) {
     double s_cen, f_cen, s_size, f_size, v[3];
     int i, j;
-
     s_cen = p[0];
     f_cen = p[1];
     s_size = p[2];
     f_size = p[3];
-    (void)v[0];
-
-#pragma omp parallel for private(v, j)
+    v[0] = 0.0;
+    if (NOISY) {
+        printf("s_cen %f f_cen %f s_size %f f_size %f\n", s_cen, f_cen, s_size,
+               f_size);
+        for (j = 0; j < 3; j++)
+            printf("dist[%d]=%f ", j, dist[j]);
+        for (j = 0; j < 9; j++)
+            printf("r[%d]=%f ", j, r[j]);
+        printf("\n");
+    }
     for (i = 0; i < n; i++) {
-        double *xyz = xlylzl + i * 3;
+        //     ! Place on the detector plane accounting for centre and size
+        //     ! subtraction of centre is done here and not later for fear of
+        //     ! rounding errors
+
         v[1] = (f[i] - f_cen) * f_size;
         v[2] = (s[i] - s_cen) * s_size;
-        for (j = 0; j < 3; j++)
-            xyz[j] = r[3*j + 1]*v[1] + r[3*j + 2]*v[2] + dist[j];
-    }
-}
+        // ! Apply the flip and rotation, python was :
+        // ! fl = dot( [[o11, o12], [o21, o22]], peaks=[[z],[y]] )
+        // ! vec = [0,fl[1],fl[0]]
+        // ! return dist + dot(rotmat, vec)
+        for (j = 0; j < 3; j++) {
+            //  ! Skip as v[0] is zero : r(1,j)*v(1)
+            xlylzl[i][j] = r[3 * j + 1] * v[1] + r[3 * j + 2] * v[2] + dist[j];
+        } // enddo
+    } // enddo
+} // end subroutine compute_xlylz

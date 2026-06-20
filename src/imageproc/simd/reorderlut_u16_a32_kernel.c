@@ -1,21 +1,20 @@
-/* reorderlut_u16_a32_kernel.c -- SIMD kernel for reorderlut_u16_a32()
+/* Auto-extracted from ImageD11/src/darkflat.c, function reorderlut_u16_a32, commit 8f7d29e
  *
- * Gather: out[i] = data[lut[i]]  (uint16 version)
+ * DO NOT EDIT BY HAND -- regenerate with tools/extract_kernels.py
  */
-
-#include "cImageD11.h"
-#include <stdint.h>
-
 #ifndef KERNEL_FN
-#define KERNEL_FN reorderlut_u16_a32_sse42
+#error "KERNEL_FN must be defined (e.g. -DKERNEL_FN=score_sse42)"
 #endif
 
-void KERNEL_FN(uint16_t *restrict data, const uint32_t *restrict lut,
-               uint16_t *restrict out, int N)
-{
-    int i;
+#include "cImageD11.h"
+#include <stdio.h>
 
+void KERNEL_FN(uint16_t *restrict data, uint32_t *restrict lut,
+                        uint16_t *restrict out, int N) {
+    int i;
+    /*  printf("Hello, got N=%d\n",N);*/
 #pragma omp parallel for
-    for (i = 0; i < N; i++)
+    for (i = 0; i < N; i++) {
         out[i] = data[lut[i]];
+    }
 }
