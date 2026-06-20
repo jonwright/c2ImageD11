@@ -82,8 +82,13 @@ _EXTRA_COMPILE_ARGS = COPT.get(sys.platform, ["-fopenmp", "-fPIC"])
 _EXTRA_LINK_ARGS = COPT.get(sys.platform, ["-fopenmp", "-fPIC"])
 
 if os.environ.get("ASAN"):
-    _EXTRA_COMPILE_ARGS = _EXTRA_COMPILE_ARGS + ["-fsanitize=address", "-fno-omit-frame-pointer"]
-    _EXTRA_LINK_ARGS = _EXTRA_LINK_ARGS + ["-fsanitize=address"]
+    _ASAN_COMPILE = ["-fsanitize=address", "-fno-omit-frame-pointer"]
+    _ASAN_LINK = ["-fsanitize=address"]
+    _EXTRA_COMPILE_ARGS = _EXTRA_COMPILE_ARGS + _ASAN_COMPILE
+    _EXTRA_LINK_ARGS = _EXTRA_LINK_ARGS + _ASAN_LINK
+else:
+    _ASAN_COMPILE = []
+    _ASAN_LINK = []
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +167,7 @@ def _compile_simd_variants(build_dir):
             fn_name = "{}_{}".format(kernel_name, variant_name)
             if kernel_name == "score_and_refine":
                 fn_name = fn_name + "_impl"
-            cflags = _CFLAGS_OMP[:]
+            cflags = _CFLAGS_OMP[:] + _ASAN_COMPILE
             if simd_flag:
                 cflags.extend(simd_flag)
 
@@ -223,7 +228,7 @@ def _compile_bslz4_variants(build_dir):
                 obj_name = "{}{}.o".format(kernel_name, fn_suffix)
                 obj_path = os.path.join(build_dir, obj_name)
 
-                cflags = _CFLAGS_BASE[:]
+                cflags = _CFLAGS_BASE[:] + _ASAN_COMPILE
                 if simd_flag:
                     cflags.extend(simd_flag)
                 cflags.extend(backend_cflags)

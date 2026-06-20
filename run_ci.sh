@@ -28,6 +28,15 @@ PYTHON=""
 USE_VENV=1
 INSTALL_IMAGED11=1
 
+# ASAN support: preload the sanitizer runtime if enabled
+if [ "${ASAN:-}" = "1" ]; then
+    ASAN_LIB=$(gcc -print-file-name=libasan.so 2>/dev/null || echo "")
+    [ -f "$ASAN_LIB" ] && export LD_PRELOAD="${LD_PRELOAD:+$LD_PRELOAD:}$ASAN_LIB"
+    [ -f "$ASAN_LIB" ] && echo "ASAN: preloading $ASAN_LIB"
+    # Python intentionally leaks memory at shutdown; don't fail on those.
+    export ASAN_OPTIONS="detect_leaks=0:exitcode=0:${ASAN_OPTIONS:-}"
+fi
+
 for arg in "$@"; do
     case "$arg" in
         --no-venv)
@@ -132,7 +141,7 @@ fi
 banner "Running tests (timeout: ${TIMEOUT_SEC}s)"
 
 cd "$PROJECT_DIR"
-TEST_CMD="python -m pytest tests/test_buffer.py tests/test_equivalence.py -v --tb=short -W ignore::DeprecationWarning"
+TEST_CMD="python -m pytest tests/test_buffer.py tests/test_equivalence.py tests/test_verify_kernels.py -v --tb=short -W ignore::DeprecationWarning"
 
 if timeout "$TIMEOUT_SEC" bash -c "$TEST_CMD" 2>&1; then
     green ""
