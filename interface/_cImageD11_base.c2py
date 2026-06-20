@@ -1725,7 +1725,7 @@ functions:
     checks:
       - "img.format == 'H' or img.itemsize == 2"
       - "img.ndim == 2"
-      - "msk.format == 'B' or msk.format == 'b'"
+      - "msk.format == 'B' or msk.format == 'b' or msk.format == '?'"
       - "msk.n == img.n"
       - "row.format == 'H' or row.itemsize == 2"
       - "col.format == 'H' or col.itemsize == 2"
@@ -1757,7 +1757,7 @@ functions:
     checks:
       - "img.format == 'I' or img.itemsize == 4"
       - "img.ndim == 2"
-      - "msk.format == 'B' or msk.format == 'b'"
+      - "msk.format == 'B' or msk.format == 'b' or msk.format == '?'"
       - "msk.n == img.n"
       - "row.format == 'H' or row.itemsize == 2"
       - "col.format == 'H' or col.itemsize == 2"
@@ -1789,7 +1789,7 @@ functions:
     checks:
       - "img.format == 'f'"
       - "img.ndim == 2"
-      - "msk.format == 'B' or msk.format == 'b'"
+      - "msk.format == 'B' or msk.format == 'b' or msk.format == '?'"
       - "msk.n == img.n"
       - "row.format == 'H' or row.itemsize == 2"
       - "col.format == 'H' or col.itemsize == 2"

@@ -28,6 +28,55 @@ import warnings
 from c2ImageD11._cImageD11 import *
 from c2ImageD11._constants import *
 
+# Save C function references before Python wrappers override them
+_closest_c = closest
+_score_and_refine_c = score_and_refine
+_blobproperties_c = blobproperties
+_splat_c = splat
+
+
+# ---------------------------------------------------------------------------
+# API compatibility wrappers (f2py calling conventions)
+# ---------------------------------------------------------------------------
+
+def closest(x, v):
+    """Closest match: returns (index, value) tuple (f2py-compatible)."""
+    import numpy as np
+    ibest = np.zeros(1, dtype=np.int32)
+    best = np.zeros(1, dtype=np.float64)
+    _closest_c(x, v, ibest, best)
+    return ibest[0], best[0]
+
+
+def score_and_refine(ubi, gv, tol):
+    """Score and refine: returns (npk, drlv2) tuple (f2py-compatible)."""
+    import numpy as np
+    sumdrlv2 = np.zeros(1, dtype=np.float64)
+    npk = _score_and_refine_c(ubi, gv, tol, sumdrlv2)
+    return npk, sumdrlv2[0]
+
+
+def blobproperties(data, labels, npk, omega=0.0, verbose=0):
+    """Blob properties: allocates and returns results array (f2py-compatible)."""
+    import numpy as np
+    results = np.zeros((npk, 36), dtype=np.float64)
+    _blobproperties_c(data, labels, npk, results, omega, verbose)
+    return results
+
+
+def splat(*args):
+    """Splat g-vectors into RGBA image. Accepts both f2py and c2py23 calling conventions."""
+    import numpy as np
+    if len(args) == 4:
+        rgba, gv, u, npx = args
+        if rgba.ndim == 3:
+            h, w = rgba.shape[:2]
+        else:
+            h, w = rgba.shape[0], rgba.shape[1]
+        ng = gv.shape[0]
+        return _splat_c(rgba, w, h, gv, ng, u, npx)
+    return _splat_c(*args)
+
 
 # ---------------------------------------------------------------------------
 # OpenMP safety
@@ -58,6 +107,8 @@ def _check_multiprocessing(patch=False):
             if "OMP_NUM_THREADS" not in os.environ:
                 cimaged11_omp_set_num_threads(1)
 
+
+check_multiprocessing = _check_multiprocessing  # public alias (f2py compat)
 
 if cimaged11_omp_get_max_threads() == 0:
     OPENMP = False
