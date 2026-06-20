@@ -164,7 +164,7 @@ def _compile_simd_variants(build_dir):
     objects = []
     obj_ext = ".obj" if _IS_WINDOWS else ".o"
 
-    include_dirs = [
+    include_gcc = [
         "-I" + SRC_DIR,
         "-I" + os.path.join(SRC_DIR, "core"),
         "-I" + os.path.join(SRC_DIR, "geometry"),
@@ -175,8 +175,7 @@ def _compile_simd_variants(build_dir):
         "-I" + os.path.join(SRC_DIR, "wrappers"),
         "-I" + REPO_ROOT,
     ]
-    if _IS_WINDOWS:
-        include_dirs = ["/I" + d[2:] for d in include_dirs]
+    include_msvc = ["/I" + d[2:] for d in include_gcc]
 
     for kernel_name, subpath in _SIMD_KERNELS:
         src_path = os.path.join(SRC_DIR, subpath)
@@ -191,28 +190,38 @@ def _compile_simd_variants(build_dir):
             fn_name = "{}_{}".format(kernel_name, variant_name)
             if kernel_name == "score_and_refine":
                 fn_name = fn_name + "_impl"
-            if _IS_WINDOWS:
-                cflags = _CFLAGS_OMP_MSC[:] + _ASAN_COMPILE
-            else:
-                cflags = _CFLAGS_OMP[:] + _ASAN_COMPILE
-            if simd_flag:
-                cflags.extend(simd_flag)
 
             if _IS_WINDOWS:
-                define_flag = "/D"
-                out_flag = "/Fo"
-                cmd = [cc, "/c"] + include_dirs + cflags + [
-                    define_flag + "KERNEL_FN=" + fn_name,
-                    src_path, out_flag + obj_path,
-                ]
+                cflags = list(_CFLAGS_OMP_MSC) + _ASAN_COMPILE
+                inc_flags = include_msvc
+                define = "/DKERNEL_FN=" + fn_name
+                out = "/Fo" + obj_path
+                cmd = [cc, "/c", "/nologo"] + inc_flags + cflags + [
+                    define, src_path, out]
+                # shell=True needed for MSVC env (vcvars) to apply
+                cmd_str = " ".join(cmd)
             else:
-                cmd = [cc, "-c"] + include_dirs + cflags + [
-                    "-DKERNEL_FN=" + fn_name,
-                    src_path, "-o", obj_path,
-                ]
-            print("c2ImageD11: SIMD compile {}".format(obj_name))
-            rc = subprocess.call(cmd)
+                cflags = list(_CFLAGS_OMP) + _ASAN_COMPILE
+                inc_flags = include_gcc
+                if simd_flag:
+                    cflags.extend(simd_flag)
+                define = "-DKERNEL_FN=" + fn_name
+                cmd = [cc, "-c"] + inc_flags + cflags + [
+                    define, src_path, "-o", obj_path]
+
+            print("c2ImageD11: SIMD compile {}: {}".format(
+                obj_name, cmd_str if _IS_WINDOWS else " ".join(cmd)))
+            try:
+                if _IS_WINDOWS:
+                    rc = subprocess.call(cmd_str, shell=True)
+                else:
+                    rc = subprocess.call(cmd)
+            except OSError as e:
+                print("c2ImageD11: ERROR running compiler: {}".format(e))
+                sys.exit(1)
             if rc != 0:
+                print("c2ImageD11: ERROR compiling {} (exit {})".format(
+                    obj_name, rc))
                 sys.exit(rc)
             objects.append(obj_path)
 
