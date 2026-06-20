@@ -33,31 +33,47 @@ _closest_c = closest
 _score_and_refine_c = score_and_refine
 _blobproperties_c = blobproperties
 _splat_c = splat
+_array_stats_c = array_stats
+_array_mean_var_cut_c = array_mean_var_cut
+_localmaxlabel_c = localmaxlabel
+_compute_geometry_c = compute_geometry
+_compute_xlylzl_c = compute_xlylzl
+
+
+def _compat_deprecated(name):
+    """Issue DeprecationWarning for f2py-compatibility wrappers."""
+    warnings.warn(
+        "%s() is an f2py-compatibility wrapper and will be removed "
+        "in a future release." % name,
+        DeprecationWarning, stacklevel=3)
 
 
 # ---------------------------------------------------------------------------
-# API compatibility wrappers (f2py calling conventions)
+# f2py-compatibility wrappers (with DeprecationWarning)
 # ---------------------------------------------------------------------------
 
 def closest(x, v):
     """Closest match: returns (index, value) tuple (f2py-compatible)."""
+    _compat_deprecated('closest')
     import numpy as np
     ibest = np.zeros(1, dtype=np.int32)
     best = np.zeros(1, dtype=np.float64)
     _closest_c(x, v, ibest, best)
-    return ibest[0], best[0]
+    return int(ibest[0]), best[0]
 
 
 def score_and_refine(ubi, gv, tol):
     """Score and refine: returns (npk, drlv2) tuple (f2py-compatible)."""
+    _compat_deprecated('score_and_refine')
     import numpy as np
     sumdrlv2 = np.zeros(1, dtype=np.float64)
     npk = _score_and_refine_c(ubi, gv, tol, sumdrlv2)
-    return npk, sumdrlv2[0]
+    return int(npk), sumdrlv2[0]
 
 
 def blobproperties(data, labels, npk, omega=0.0, verbose=0):
     """Blob properties: allocates and returns results array (f2py-compatible)."""
+    _compat_deprecated('blobproperties')
     import numpy as np
     results = np.zeros((npk, 36), dtype=np.float64)
     _blobproperties_c(data, labels, npk, results, omega, verbose)
@@ -68,6 +84,7 @@ def splat(*args):
     """Splat g-vectors into RGBA image. Accepts both f2py and c2py23 calling conventions."""
     import numpy as np
     if len(args) == 4:
+        _compat_deprecated('splat')
         rgba, gv, u, npx = args
         if rgba.ndim == 3:
             h, w = rgba.shape[:2]
@@ -76,6 +93,64 @@ def splat(*args):
         ng = gv.shape[0]
         return _splat_c(rgba, w, h, gv, ng, u, npx)
     return _splat_c(*args)
+
+
+def array_stats(*args):
+    """Compute min/max/mean/var.
+    f2py: array_stats(img) -> (min, max, mean, var) tuple
+    c2py23: array_stats(img, minval, maxval, mean, var) -> void"""
+    if len(args) != 1:
+        return _array_stats_c(*args)
+    _compat_deprecated('array_stats')
+    import numpy as np
+    mn = np.zeros(1, dtype=np.float32)
+    mx = np.zeros(1, dtype=np.float32)
+    me = np.zeros(1, dtype=np.float32)
+    va = np.zeros(1, dtype=np.float32)
+    _array_stats_c(args[0], mn, mx, me, va)
+    return float(mn[0]), float(mx[0]), float(me[0]), float(va[0])
+
+
+def array_mean_var_cut(img, n=3, cut=3.0, verbose=0):
+    """Sigma-clipped mean/var. Returns (mean, var) tuple (f2py-compatible)."""
+    _compat_deprecated('array_mean_var_cut')
+    import numpy as np
+    me = np.zeros(1, dtype=np.float32)
+    va = np.zeros(1, dtype=np.float32)
+    _array_mean_var_cut_c(img, me, va, n, cut, verbose)
+    return float(me[0]), float(va[0])
+
+
+def localmaxlabel(data, labels, wrk):
+    """Local maximum label assignment. Casts integer data to float32."""
+    _compat_deprecated('localmaxlabel')
+    import numpy as np
+    if hasattr(data, 'dtype') and data.dtype not in (np.float32,):
+        data = np.asarray(data, dtype=np.float32)
+    return _localmaxlabel_c(data, labels, wrk)
+
+
+def compute_geometry(xlylzl, omega, omegasign, wvln, wedge, chi, t, out):
+    """Update geometry: computes tth, eta, ds, gve from xlylzl. Casts integer arrays to float64."""
+    _compat_deprecated('compute_geometry')
+    import numpy as np
+    def _f64(a):
+        if hasattr(a, 'dtype') and a.dtype not in (np.float64, np.float32):
+            return np.asarray(a, dtype=np.float64)
+        return a
+    return _compute_geometry_c(
+        _f64(xlylzl), _f64(omega), omegasign, wvln, wedge, chi, _f64(t), out)
+
+
+def compute_xlylzl(s, f, p, r, dist, xlylzl):
+    """Spot positions in lab frame. Casts integer arrays to float64."""
+    _compat_deprecated('compute_xlylzl')
+    import numpy as np
+    def _f64(a):
+        if hasattr(a, 'dtype') and a.dtype not in (np.float64, np.float32):
+            return np.asarray(a, dtype=np.float64)
+        return a
+    return _compute_xlylzl_c(_f64(s), _f64(f), _f64(p), _f64(r), _f64(dist), xlylzl)
 
 
 # ---------------------------------------------------------------------------

@@ -1278,7 +1278,7 @@ functions:
             sig: "void blobproperties_sse42(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, int ns, int nf, double *res)"
             doc: "SSE4.2 fallback."
 
-  - py_sig: "bloboverlaps(labels1: buffer, npk1: int, results1: buffer, labels2: buffer, npk2: int, results2: buffer) -> int"
+  - py_sig: "bloboverlaps(labels1: buffer, npk1: int, results1: buffer, labels2: buffer, npk2: int, results2: buffer, verbose: int = 0) -> int"
     doc: >-
       bloboverlaps determines the overlaps between labels1 and labels2
       for an image series. Peaks in labels2 may be merged if they were
@@ -1291,6 +1291,7 @@ functions:
       labels2: "Labels from second frame (int32, same size as labels1)."
       npk2: "Number of objects in second frame."
       results2: "Properties from second frame (npk2, 36). Accumulated if peaks are overlapped."
+      verbose: "If non-zero, prints diagnostic output. Default 0."
     checks:
       - "labels1.format == 'i'"
       - "labels1.ndim == 2"
@@ -1312,7 +1313,7 @@ functions:
           b2: "labels2.ptr"
           n2: npk2
           res2: "results2.ptr"
-          verbose: "0"
+          verbose: verbose
           ns: "labels1.shape[0]"
           nf: "labels1.shape[1]"
 
