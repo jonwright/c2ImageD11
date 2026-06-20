@@ -59,12 +59,12 @@ def _pysparse_csc(frame, mask, cut, data, indices, indptr, out):
 class TestBslz4Smoke:
     """Basic buffer protocol tests for all 12 Python-facing functions."""
 
-    @pytest.mark.parametrize("func,dtype", [
-        (_m.bslz4_u8,  np.uint8),
-        (_m.bslz4_u16, np.uint16),
-        (_m.bslz4_u32, np.uint32),
+    @pytest.mark.parametrize("func,dtype,enc", [
+        (_m.bs_u8,  np.uint8,  2),
+        (_m.bs_u16, np.uint16, 2),
+        (_m.bs_u32, np.uint32, 2),
     ])
-    def test_bslz4_basic(self, func, dtype):
+    def test_bslz4_basic(self, func, dtype, enc):
         compressed = np.zeros(100, dtype=np.uint8)
         mask = np.ones(4, dtype=np.uint8)
         out = np.zeros(4, dtype=dtype)
@@ -72,15 +72,15 @@ class TestBslz4Smoke:
         offs = np.array([0], dtype=np.int64)
         lens = np.array([len(compressed)], dtype=np.int32)
         npc  = np.zeros(1, dtype=np.int32)
-        npx = func(compressed, mask, out, outP, 0, offs, lens, npc)
+        npx = func(compressed, mask, out, outP, 0, enc, offs, lens, npc)
         assert isinstance(npx, int)
 
-    @pytest.mark.parametrize("func,dtype", [
-        (_m.bslz4_csc_u8,  np.uint8),
-        (_m.bslz4_csc_u16, np.uint16),
-        (_m.bslz4_csc_u32, np.uint32),
+    @pytest.mark.parametrize("func,dtype,enc", [
+        (_m.bs_csc_u8,  np.uint8,  2),
+        (_m.bs_csc_u16, np.uint16, 2),
+        (_m.bs_csc_u32, np.uint32, 2),
     ])
-    def test_bslz4_csc(self, func, dtype):
+    def test_bslz4_csc(self, func, dtype, enc):
         compressed = np.zeros(100, dtype=np.uint8)
         mask = np.ones(4, dtype=np.uint8)
         outpx = np.zeros(4, dtype=dtype)
@@ -92,16 +92,16 @@ class TestBslz4Smoke:
         offs = np.array([0], dtype=np.int64)
         lens = np.array([len(compressed)], dtype=np.int32)
         npc  = np.zeros(1, dtype=np.int32)
-        npx = func(compressed, mask, outpx, outP, 0, out, data, indices, indptr,
+        npx = func(compressed, mask, outpx, outP, 0, enc, out, data, indices, indptr,
                    offs, lens, npc)
         assert isinstance(npx, int)
 
-    @pytest.mark.parametrize("func,dtype", [
-        (_m.bszstd_u8,  np.uint8),
-        (_m.bszstd_u16, np.uint16),
-        (_m.bszstd_u32, np.uint32),
+    @pytest.mark.parametrize("func,dtype,enc", [
+        (_m.bs_u8,  np.uint8,  3),
+        (_m.bs_u16, np.uint16, 3),
+        (_m.bs_u32, np.uint32, 3),
     ])
-    def test_bszstd_basic(self, func, dtype):
+    def test_bszstd_basic(self, func, dtype, enc):
         compressed = np.zeros(100, dtype=np.uint8)
         mask = np.ones(4, dtype=np.uint8)
         out = np.zeros(4, dtype=dtype)
@@ -109,15 +109,15 @@ class TestBslz4Smoke:
         offs = np.array([0], dtype=np.int64)
         lens = np.array([len(compressed)], dtype=np.int32)
         npc  = np.zeros(1, dtype=np.int32)
-        npx = func(compressed, mask, out, outP, 0, offs, lens, npc)
+        npx = func(compressed, mask, out, outP, 0, enc, offs, lens, npc)
         assert isinstance(npx, int)
 
-    @pytest.mark.parametrize("func,dtype", [
-        (_m.bszstd_csc_u8,  np.uint8),
-        (_m.bszstd_csc_u16, np.uint16),
-        (_m.bszstd_csc_u32, np.uint32),
+    @pytest.mark.parametrize("func,dtype,enc", [
+        (_m.bs_csc_u8,  np.uint8,  3),
+        (_m.bs_csc_u16, np.uint16, 3),
+        (_m.bs_csc_u32, np.uint32, 3),
     ])
-    def test_bszstd_csc(self, func, dtype):
+    def test_bszstd_csc(self, func, dtype, enc):
         compressed = np.zeros(100, dtype=np.uint8)
         mask = np.ones(4, dtype=np.uint8)
         outpx = np.zeros(4, dtype=dtype)
@@ -129,7 +129,7 @@ class TestBslz4Smoke:
         offs = np.array([0], dtype=np.int64)
         lens = np.array([len(compressed)], dtype=np.int32)
         npc  = np.zeros(1, dtype=np.int32)
-        npx = func(compressed, mask, outpx, outP, 0, out, data, indices, indptr,
+        npx = func(compressed, mask, outpx, outP, 0, enc, out, data, indices, indptr,
                    offs, lens, npc)
         assert isinstance(npx, int)
 
@@ -150,8 +150,9 @@ class TestBitPerfectLZ4:
     """Compare bslz4_* output against pure-numpy reference for LZ4 data."""
 
     ENGINES = {
-        "lz4": {"basic": {np.uint8: _m.bslz4_u8, np.uint16: _m.bslz4_u16, np.uint32: _m.bslz4_u32},
-                "csc":   {np.uint8: _m.bslz4_csc_u8, np.uint16: _m.bslz4_csc_u16, np.uint32: _m.bslz4_csc_u32}},
+        "lz4": {"basic": {np.uint8: _m.bs_u8, np.uint16: _m.bs_u16, np.uint32: _m.bs_u32},
+                "csc":   {np.uint8: _m.bs_csc_u8, np.uint16: _m.bs_csc_u16, np.uint32: _m.bs_csc_u32},
+                "encoding": 2},
     }
 
     def _datasets(self):
@@ -166,6 +167,7 @@ class TestBitPerfectLZ4:
         h5py = pytest.importorskip("h5py")
         mask = np.ones(shape[1:], dtype=np.uint8)
         nframes = min(shape[0], 4)
+        encoding = self.ENGINES[engine]["encoding"]
 
         func = self.ENGINES[engine]["basic"][dtype]
         N = mask.size
@@ -180,7 +182,7 @@ class TestBitPerfectLZ4:
                 offs = np.array([0], dtype=np.int64)
                 lens = np.array([len(chunk)], dtype=np.int32)
                 npc  = np.zeros(1, dtype=np.int32)
-                npx = func(chunk, mask.ravel(), vals, inds, cut,
+                npx = func(chunk, mask.ravel(), vals, inds, cut, encoding,
                            offs, lens, npc)
                 assert npx == len(ref_vals), \
                     "npx mismatch: %d vs %d at frame=%d cut=%d" % (npx, len(ref_vals), frame, cut)
@@ -195,6 +197,7 @@ class TestBitPerfectLZ4:
         h5py = pytest.importorskip("h5py")
         mask = np.ones(shape[1:], dtype=np.uint8)
         flat = mask.ravel()
+        encoding = self.ENGINES[engine]["encoding"]
         func = self.ENGINES[engine]["csc"][dtype]
         N = flat.size
 
@@ -215,7 +218,7 @@ class TestBitPerfectLZ4:
                 offs = np.array([0], dtype=np.int64)
                 lens = np.array([len(chunk)], dtype=np.int32)
                 npc  = np.zeros(1, dtype=np.int32)
-                npx = func(chunk, flat, outpx, outP, cut,
+                npx = func(chunk, flat, outpx, outP, cut, encoding,
                           powder, data, indices, indptr,
                           offs, lens, npc)
                 assert npx == len(ref_vals), "CSC npx mismatch frame=%d" % frame
@@ -246,11 +249,12 @@ class TestBitPerfectLZ4:
     reason="run 'python3 tests/make_bs_testdata.py --zstd' first"
 )
 class TestBitPerfectZSTD:
-    """Compare bszstd_* output against pure-numpy reference for ZSTD data."""
+    """Compare bs_* output against pure-numpy reference for ZSTD data."""
 
+    ENCODING = 3
     FUNCS = {
-        "basic": {np.uint8: _m.bszstd_u8, np.uint16: _m.bszstd_u16, np.uint32: _m.bszstd_u32},
-        "csc":   {np.uint8: _m.bszstd_csc_u8, np.uint16: _m.bszstd_csc_u16, np.uint32: _m.bszstd_csc_u32},
+        "basic": {np.uint8: _m.bs_u8, np.uint16: _m.bs_u16, np.uint32: _m.bs_u32},
+        "csc":   {np.uint8: _m.bs_csc_u8, np.uint16: _m.bs_csc_u16, np.uint32: _m.bs_csc_u32},
     }
 
     def _datasets(self):
@@ -278,7 +282,7 @@ class TestBitPerfectZSTD:
                     offs_l = np.array([0], dtype=np.int64)
                     lens_l = np.array([len(chunk)], dtype=np.int32)
                     npc_l  = np.zeros(1, dtype=np.int32)
-                    npx = func(chunk, mask.ravel(), vals, inds, 0,
+                    npx = func(chunk, mask.ravel(), vals, inds, 0, self.ENCODING,
                                offs_l, lens_l, npc_l)
                     assert npx == len(ref_vals)
                     np.testing.assert_array_equal(vals[:npx], ref_vals)
@@ -330,7 +334,7 @@ class TestF2pyEquivalence:
                 offs2 = np.array([0], dtype=np.int64)
                 lens2 = np.array([len(chunk)], dtype=np.int32)
                 npc2  = np.zeros(1, dtype=np.int32)
-                npx2 = _m.bslz4_u16(chunk, mask.ravel(), vals2, inds2, 0,
+                npx2 = _m.bs_u16(chunk, mask.ravel(), vals2, inds2, 0, 2,
                                     offs2, lens2, npc2)
 
                 assert npx1 == npx2, "frame %d: npx mismatch" % i
@@ -379,7 +383,7 @@ class TestF2pyEquivalence:
                 offs2 = np.array([0], dtype=np.int64)
                 lens2 = np.array([len(chunk)], dtype=np.int32)
                 npc2  = np.zeros(1, dtype=np.int32)
-                npx2 = _m.bslz4_csc_u16(chunk, flat, outpx2, outP2, 0,
+                npx2 = _m.bs_csc_u16(chunk, flat, outpx2, outP2, 0, 2,
                                         powder2, data, indices, indptr,
                                         offs2, lens2, npc2)
 
@@ -443,12 +447,13 @@ class TestMultiChunk:
             outP  = np.zeros(nchunks * N, dtype=np.uint32)
 
             func = {
-                np.dtype(np.uint8): _m.bslz4_u8,
-                np.dtype(np.uint16): _m.bslz4_u16,
-                np.dtype(np.uint32): _m.bslz4_u32,
+                np.dtype(np.uint8): (_m.bs_u8, 2),
+                np.dtype(np.uint16): (_m.bs_u16, 2),
+                np.dtype(np.uint32): (_m.bs_u32, 2),
             }[np.dtype(dtype)]
+            fn, enc = func
 
-            total_npx = func(bigbuf, flat, out, outP, 0,
+            total_npx = fn(bigbuf, flat, out, outP, 0, enc,
                              offsets, lengths, npx_pc)
 
             assert total_npx > 0
@@ -461,7 +466,7 @@ class TestMultiChunk:
                 s_npc  = np.zeros(1, dtype=np.int32)
                 s_out  = np.zeros(N, dtype=dtype)
                 s_outP = np.zeros(N, dtype=np.uint32)
-                s_npx = func(chunks[f_idx], flat, s_out, s_outP, 0,
+                s_npx = fn(chunks[f_idx], flat, s_out, s_outP, 0, enc,
                              s_offs, s_lens, s_npc)
                 assert s_npx == npx_pc[f_idx], \
                     "frame %d: npx %d vs single %d" % (f_idx, npx_pc[f_idx], s_npx)
@@ -514,16 +519,17 @@ class TestMultiChunk:
             csc_indptr = np.arange(N + 1, dtype=np.uint32)
 
             func = {
-                np.dtype(np.uint8): _m.bslz4_csc_u8,
-                np.dtype(np.uint16): _m.bslz4_csc_u16,
-                np.dtype(np.uint32): _m.bslz4_csc_u32,
+                np.dtype(np.uint8): (_m.bs_csc_u8, 2),
+                np.dtype(np.uint16): (_m.bs_csc_u16, 2),
+                np.dtype(np.uint32): (_m.bs_csc_u32, 2),
             }[np.dtype(dtype)]
+            fn, enc = func
 
             powder = np.zeros(nchunks * nout, dtype=np.float64)
             outpx  = np.zeros(nchunks * N, dtype=dtype)
             outP   = np.zeros(nchunks * N, dtype=np.uint32)
 
-            total_npx = func(bigbuf, flat, outpx, outP, 0,
+            total_npx = fn(bigbuf, flat, outpx, outP, 0, enc,
                              powder, csc_data, csc_indices, csc_indptr,
                              offsets, lengths, npx_pc)
 
@@ -541,7 +547,7 @@ class TestMultiChunk:
                 s_powder = np.zeros(nout, dtype=np.float64)
                 s_outpx  = np.zeros(N, dtype=dtype)
                 s_outP   = np.zeros(N, dtype=np.uint32)
-                s_npx = func(chunks[f_idx], flat, s_outpx, s_outP, 0,
+                s_npx = fn(chunks[f_idx], flat, s_outpx, s_outP, 0, enc,
                              s_powder, csc_data, csc_indices, csc_indptr,
                              s_offs, s_lens, s_npc)
 

@@ -23,7 +23,7 @@ import h5py
 
 HOME = os.environ.get("HOME", "/home/worker")
 EXDIR = os.path.dirname(os.path.abspath(__file__))
-NREPEAT = 3
+NREPEAT = 1
 
 DATASETS = [
     # (label, h5path, ds_path, nframes, engine)  -- engine='lz4'|'zstd'
@@ -75,7 +75,9 @@ def bench_one(ds_label, h5path, ds_path, nframes, engine):
     oa = np.zeros(max_batch * NIJ, dtype=np.uint32)
 
     print("  warmup ...", end=" "); sys.stdout.flush()
-    _m.bslz4_u16(mm, mask, ox, oa, 0, offs[:1], lens[:1], np.zeros(1, np.int32))
+    enc = 3 if engine == "zstd" else 2
+    _m.bs_u16(mm, mask, ox[:NIJ], oa[:NIJ], 0, enc,
+              offs[:1], lens[:1], np.zeros(1, np.int32))
     print("done"); sys.stdout.flush()
 
     # Results table header
@@ -85,44 +87,48 @@ def bench_one(ds_label, h5path, ds_path, nframes, engine):
 
     rows = []
     VARIANTS = [
-        ("basic", "bslz4", _m.bslz4_u16,      None, None, "lz4"),
-        ("basic", "bszstd", _m.bszstd_u16,     None, None, "zstd"),
-        ("csc",   "bslz4", None, _m.bslz4_csc_u16,   None, "lz4"),
-        ("csc",   "bszstd", None, _m.bszstd_csc_u16,  None, "zstd"),
-        ("csc1d", "bslz4", None, None, _m.bslz4_csc1d_u16, "lz4"),
-        ("csc1d", "bszstd", None, None, _m.bszstd_csc1d_u16, "zstd"),
+        ("basic", "bslz4", _m.bs_u16,      None, None, 2),
+        ("basic", "bszstd", _m.bs_u16,     None, None, 3),
+        ("csc",   "bslz4", None, _m.bs_csc_u16,   None, 2),
+        ("csc",   "bszstd", None, _m.bs_csc_u16,  None, 3),
+        ("csc1d", "bslz4", None, None, _m.bs_csc1d_u16, 2),
+        ("csc1d", "bszstd", None, None, _m.bs_csc1d_u16, 3),
     ]
-    for fun_type, eng_name, fn_basic, fn_csc, fn_csc1d, fn_engine in VARIANTS:
-        if fn_engine != engine:
+    for fun_type, eng_name, fn_basic, fn_csc, fn_csc1d, enc in VARIANTS:
+        if (engine == "lz4" and eng_name != "bslz4") or (engine == "zstd" and eng_name != "bszstd"):
             continue
         for bs in BATCH_SIZES:
             actual = min(bs, nframes)
             npc = np.zeros(actual, dtype=np.int32)
 
+            nerr = 0
             t0 = time.perf_counter()
             for _ in range(NREPEAT):
                 for b in range(0, nframes, actual):
                     bn = min(actual, nframes - b)
                     ob = bn * NIJ
                     if fn_basic is not None:
-                        fn_basic(mm, mask, ox[:ob], oa[:ob], 0,
-                                 offs[b:b+bn], lens[b:b+bn], npc[:bn])
+                        npx = fn_basic(mm, mask, ox[:ob], oa[:ob], 0, enc,
+                                       offs[b:b+bn], lens[b:b+bn], npc[:bn])
                     elif fn_csc is not None:
                         pw = np.zeros(bn * NOUT, dtype=np.float64)
-                        fn_csc(mm, mask, ox[:ob], oa[:ob], 0,
-                               pw, csc_data, csc_idx, csc_ptr,
-                               offs[b:b+bn], lens[b:b+bn], npc[:bn])
+                        npx = fn_csc(mm, mask, ox[:ob], oa[:ob], 0, enc,
+                                     pw, csc_data, csc_idx, csc_ptr,
+                                     offs[b:b+bn], lens[b:b+bn], npc[:bn])
                     else:
                         pw = np.zeros(bn * NOUT, dtype=np.float64)
-                        fn_csc1d(mm, mask, ox[:ob], oa[:ob], 0,
-                                 pw, csc_flat, csc_first, epp,
-                                 offs[b:b+bn], lens[b:b+bn], npc[:bn])
+                        npx = fn_csc1d(mm, mask, ox[:ob], oa[:ob], 0, enc,
+                                       pw, csc_flat, csc_first, epp,
+                                       offs[b:b+bn], lens[b:b+bn], npc[:bn])
+                    if npx < 0:
+                        nerr += 1
 
             elapsed = time.perf_counter() - t0
             fps = nframes * NREPEAT / elapsed
-            rows.append((ds_label, fun_type, eng_name, bs, fps))
-            print("  %-10s %-5s %-6s %2d  %8.0f  %7.2f" %
-                  (ds_label, fun_type, eng_name, bs, fps, 1000.0 / fps))
+            rows.append((ds_label, fun_type, eng_name, bs, fps, nerr))
+            warn = "  ERR=%d" % nerr if nerr else ""
+            print("  %-10s %-5s %-6s %2d  %8.0f  %7.2f%s" %
+                  (ds_label, fun_type, eng_name, bs, fps, 1000.0 / fps, warn))
             sys.stdout.flush()
 
     return rows

@@ -1,13 +1,13 @@
 /* bs_sparse_tmpl.c - basic sparse decompress template.
  *
- * Included from bs_master.c with DATATYPE, NB, KERNEL_FN, BS_DECOMPRESS
+ * Included from bs_master.c with DATATYPE, NB, KERNEL_FN, bs_decompress
  * already defined. Generates one function: KERNEL_FN().
  */
 
 int KERNEL_FN(const uint8_t *restrict compressed, int compressed_length,
               const uint8_t *restrict mask, int NIJ,
               DATATYPE *restrict output, uint32_t *restrict output_adr,
-              int threshold,
+              int threshold, int encoding,
               const int64_t *restrict chunk_offsets,
               const int32_t *restrict chunk_lengths,
               int nchunks,
@@ -16,7 +16,7 @@ int KERNEL_FN(const uint8_t *restrict compressed, int compressed_length,
 int KERNEL_FN(const uint8_t *restrict compressed, int compressed_length,
               const uint8_t *restrict mask, int NIJ,
               DATATYPE *restrict output, uint32_t *restrict output_adr,
-              int threshold,
+              int threshold, int encoding,
               const int64_t *restrict chunk_offsets,
               const int32_t *restrict chunk_lengths,
               int nchunks,
@@ -89,8 +89,8 @@ int KERNEL_FN(const uint8_t *restrict compressed, int compressed_length,
         for (c = 0; c < nchunks; c++) {
             nbytes = READ32BE(&compressed[chunk_offsets[c] + chunk_p[c]]);
 
-            ret = BS_DECOMPRESS(&compressed[chunk_offsets[c] + chunk_p[c] + 4],
-                                nbytes, (char*)tmp1, BLK);
+            ret = bs_decompress(&compressed[chunk_offsets[c] + chunk_p[c] + 4],
+                                nbytes, (char*)tmp1, BLK, encoding);
             chunk_p[c] += nbytes + 4;
             chunk_rem[c] -= BLK;
             if (unlikely(ret != BLK)) {
@@ -126,8 +126,8 @@ int KERNEL_FN(const uint8_t *restrict compressed, int compressed_length,
         blocksize = (8 * NB) * (rem / (8 * NB));
         if (blocksize > 0) {
             nbytes = READ32BE(&compressed[chunk_offsets[c] + chunk_p[c]]);
-            ret = BS_DECOMPRESS(&compressed[chunk_offsets[c] + chunk_p[c] + 4],
-                                nbytes, (char*)tmp1, blocksize);
+            ret = bs_decompress(&compressed[chunk_offsets[c] + chunk_p[c] + 4],
+                                nbytes, (char*)tmp1, blocksize, encoding);
             chunk_p[c] += nbytes + 4;
             if (unlikely(ret != blocksize)) {
                 printf("ret %d blocksize %d\n", ret, blocksize);

@@ -160,19 +160,16 @@ def _compile_simd_variants(build_dir):
 
 
 def _compile_bslz4_variants(build_dir):
-    """Compile bs_master.c with enginexbackendxISA combinations.
+    """Compile bs_master.c with backendxISA combinations.
 
-    Each compilation produces all 6 type-variant functions
-    (u8/u16/u32 x basic/CSC) with names like
-    bslz4_u16_kcb_avx512(), bszstd_u16_bs_sse42(), etc.
+    Each compilation produces all 9 type-variant functions
+    (u8/u16/u32 x basic/CSC/CSC1D) with names like
+    bs_u16_kcb_avx512(), bs_csc_u16_kcb_sse42(), etc.
 
-    Engines:
-       - lz4:  uses LZ4 decompress
-       - zstd: uses ZSTD decompress  (-DUSE_ZSTD)
+    Encoding (LZ4=2, ZSTD=3) is dispatched at runtime via parameter.
 
     Backends:
        - kcb:  uses KCB bitshuffle  (-DUSE_KCB)
-       - bs:   uses bitshuffle-core  (original kiyo-masui)
 
     ISA levels: sse42, avx2, avx512 (on x86-64); sse42 only (otherwise)
     """
@@ -198,35 +195,28 @@ def _compile_bslz4_variants(build_dir):
     for kernel_name, src_file in _BSLZ4_KERNELS:
         src_path_full = os.path.join(REPO_ROOT, src_file)
 
-        # Engine: lz4 (default) or zstd (-DUSE_ZSTD)
-        for engine_suffix, engine_cflags in [
-            ("lz4", []),
-            ("zstd", ["-DUSE_ZSTD"]),
+        for backend_suffix, backend_cflags in [
+            ("kcb", ["-DUSE_KCB"]),
         ]:
-            for backend_suffix, backend_cflags in [
-                ("kcb", ["-DUSE_KCB"]),
-            ]:
-                for variant_name, simd_flag in _SIMD_VARIANTS:
-                    full_suffix = "_{}_{}_{}".format(engine_suffix, backend_suffix, variant_name)
-                    obj_name = "{}{}.o".format(kernel_name, full_suffix)
-                    obj_path = os.path.join(build_dir, obj_name)
+            for variant_name, simd_flag in _SIMD_VARIANTS:
+                fn_suffix = "_{}_{}".format(backend_suffix, variant_name)
+                obj_name = "{}{}.o".format(kernel_name, fn_suffix)
+                obj_path = os.path.join(build_dir, obj_name)
 
-                    cflags = _CFLAGS_BASE[:]
-                    if simd_flag:
-                        cflags.extend(simd_flag)
-                    cflags.extend(backend_cflags)
-                    cflags.extend(engine_cflags)
+                cflags = _CFLAGS_BASE[:]
+                if simd_flag:
+                    cflags.extend(simd_flag)
+                cflags.extend(backend_cflags)
 
-                    fn_suffix = "_{}_{}".format(backend_suffix, variant_name)
-                    cmd = [cc, "-c"] + include_dirs + cflags + [
-                        "-DKERNEL_SUFFIX=" + fn_suffix,
-                        src_path_full, "-o", obj_path,
-                    ]
-                    print("c2ImageD11: BSLZ4 compile {}".format(obj_name))
-                    rc = subprocess.call(cmd)
-                    if rc != 0:
-                        sys.exit(rc)
-                    objects.append(obj_path)
+                cmd = [cc, "-c"] + include_dirs + cflags + [
+                    "-DKERNEL_SUFFIX=" + fn_suffix,
+                    src_path_full, "-o", obj_path,
+                ]
+                print("c2ImageD11: BSLZ4 compile {}".format(obj_name))
+                rc = subprocess.call(cmd)
+                if rc != 0:
+                    sys.exit(rc)
+                objects.append(obj_path)
 
     return objects
 

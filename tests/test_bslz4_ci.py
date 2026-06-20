@@ -68,7 +68,7 @@ def test_data():
 
 # ---- The tests ----
 
-def _check(func, chunks, raw, mask):
+def _check(func, chunks, raw, mask, encoding):
     """Decompress all frames, compare against raw data."""
     N = mask.size
     vals = np.empty(N, dtype=raw.dtype)
@@ -77,7 +77,7 @@ def _check(func, chunks, raw, mask):
     npc  = np.zeros(1, dtype=np.int32)
     for i in range(NFRAMES):
         lens = np.array([len(chunks[i])], dtype=np.int32)
-        npx = func(chunks[i], mask.ravel(), vals, inds, 0,
+        npx = func(chunks[i], mask.ravel(), vals, inds, 0, encoding,
                    offs, lens, npc)
         ref_vals, ref_inds = _pysparse(raw[i], mask, 0)
         assert npx == len(ref_vals), "frame %d: npx %d != %d" % (i, npx, len(ref_vals))
@@ -87,7 +87,7 @@ def _check(func, chunks, raw, mask):
             err_msg="frame %d: indices mismatch" % i)
 
 
-def _check_csc(func, chunks, raw, mask):
+def _check_csc(func, chunks, raw, mask, encoding):
     """Decompress CSC all frames, compare against raw data."""
     N = mask.size
     outpx = np.empty(N, dtype=raw.dtype)
@@ -102,7 +102,7 @@ def _check_csc(func, chunks, raw, mask):
 
     for i in range(NFRAMES):
         lens = np.array([len(chunks[i])], dtype=np.int32)
-        npx = func(chunks[i], mask.ravel(), outpx, outP, 0,
+        npx = func(chunks[i], mask.ravel(), outpx, outP, 0, encoding,
                    powder, data, indices, indptr,
                    offs, lens, npc)
         ref_vals, ref_inds = _pysparse(raw[i], mask, 0)
@@ -127,9 +127,9 @@ def _pysparse(frame, mask, cut):
 # ---- u8 tests ----
 
 DTYPE_MAP = {
-    np.uint8:  (_m.bslz4_u8,  _m.bslz4_csc_u8,  _m.bszstd_u8,  _m.bszstd_csc_u8),
-    np.uint16: (_m.bslz4_u16, _m.bslz4_csc_u16, _m.bszstd_u16, _m.bszstd_csc_u16),
-    np.uint32: (_m.bslz4_u32, _m.bslz4_csc_u32, _m.bszstd_u32, _m.bszstd_csc_u32),
+    np.uint8:  (_m.bs_u8,  _m.bs_csc_u8),
+    np.uint16: (_m.bs_u16, _m.bs_csc_u16),
+    np.uint32: (_m.bs_u32, _m.bs_csc_u32),
 }
 
 
@@ -139,22 +139,22 @@ class TestBslz4CI:
     def test_bslz4_basic(self, dtype_name, dt, test_data):
         func = DTYPE_MAP[dt][0]
         mask = np.ones((ROWS, COLS), dtype=np.uint8)
-        _check(func, test_data["lz4_" + dtype_name], test_data[dtype_name + "_raw"], mask)
+        _check(func, test_data["lz4_" + dtype_name], test_data[dtype_name + "_raw"], mask, 2)
 
     def test_bslz4_csc(self, dtype_name, dt, test_data):
         func = DTYPE_MAP[dt][1]
         mask = np.ones((ROWS, COLS), dtype=np.uint8)
-        _check_csc(func, test_data["lz4_" + dtype_name], test_data[dtype_name + "_raw"], mask)
+        _check_csc(func, test_data["lz4_" + dtype_name], test_data[dtype_name + "_raw"], mask, 2)
 
     def test_bszstd_basic(self, dtype_name, dt, test_data):
-        func = DTYPE_MAP[dt][2]
+        func = DTYPE_MAP[dt][0]
         mask = np.ones((ROWS, COLS), dtype=np.uint8)
-        _check(func, test_data["zstd_" + dtype_name], test_data[dtype_name + "_raw"], mask)
+        _check(func, test_data["zstd_" + dtype_name], test_data[dtype_name + "_raw"], mask, 3)
 
     def test_bszstd_csc(self, dtype_name, dt, test_data):
-        func = DTYPE_MAP[dt][3]
+        func = DTYPE_MAP[dt][1]
         mask = np.ones((ROWS, COLS), dtype=np.uint8)
-        _check_csc(func, test_data["zstd_" + dtype_name], test_data[dtype_name + "_raw"], mask)
+        _check_csc(func, test_data["zstd_" + dtype_name], test_data[dtype_name + "_raw"], mask, 3)
 
 
 # ---- Mask test ----
@@ -165,7 +165,7 @@ def test_bslz4_u16_with_mask(test_data):
     rng = np.random.RandomState(99)
     mask.ravel()[rng.choice(NPIX, NPIX // 10, replace=False)] = 1
 
-    func = _m.bslz4_u16
+    func = _m.bs_u16
     chunks = test_data["lz4_u16"]
     raw = test_data["u16_raw"]
     N = mask.size
@@ -175,7 +175,7 @@ def test_bslz4_u16_with_mask(test_data):
     npc  = np.zeros(1, dtype=np.int32)
     for i in range(NFRAMES):
         lens = np.array([len(chunks[i])], dtype=np.int32)
-        npx = func(chunks[i], mask.ravel(), vals, inds, 0,
+        npx = func(chunks[i], mask.ravel(), vals, inds, 0, 2,
                    offs, lens, npc)
         ref_vals, ref_inds = _pysparse(raw[i], mask, 0)
         assert npx == len(ref_vals)

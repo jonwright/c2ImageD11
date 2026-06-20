@@ -17,64 +17,58 @@ import numpy as np
 
 # Basic decompress functions (used by chunk2sparse and bslz4_to_sparse)
 from c2ImageD11._cImageD11 import (
-    bslz4_u8,
-    bslz4_u16,
-    bslz4_u32,
-    bszstd_u8,
-    bszstd_u16,
-    bszstd_u32,
+    bs_u8,
+    bs_u16,
+    bs_u32,
+    bs_csc_u8,
+    bs_csc_u16,
+    bs_csc_u32,
+    bs_csc1d_u8,
+    bs_csc1d_u16,
+    bs_csc1d_u32,
 )
 
 version = "0.2.0"
 
+# encoding values matching bshuf_h5filter.h
+LZ4  = 2
+ZSTD = 3
+
 # Pixel itemsize -> type suffix lookup
 _PIXEL_SUFFIX = {1: "u8", 2: "u16", 4: "u32"}
 
+# Pixel itemsize -> (basic_func, csc_func, csc1d_func)
+_FUN_MAP = {
+    1: (bs_u8,      bs_csc_u8,      bs_csc1d_u8),
+    2: (bs_u16,     bs_csc_u16,     bs_csc1d_u16),
+    4: (bs_u32,     bs_csc_u32,     bs_csc1d_u32),
+}
+
 
 def _get_csc_function(pixel_dtype):
-    """Return the right bslz4_csc_* function for given pixel type.
+    """Return the right bs_csc_* function for given pixel type.
 
-    Returns function object (powder is always float64).
+    Returns function object (encoding passed separately).
     """
-    import c2ImageD11._cImageD11 as _m
-
     pixel_dt = np.dtype(pixel_dtype)
-    pixel_itemsize = pixel_dt.itemsize
-    if pixel_itemsize not in _PIXEL_SUFFIX:
+    if pixel_dt.itemsize not in _FUN_MAP:
         raise ValueError(
             "Unsupported pixel dtype: %s (need uint8/uint16/uint32)" %
             str(pixel_dt))
-
-    fn_name = "bslz4_csc_%s" % _PIXEL_SUFFIX[pixel_itemsize]
-
-    try:
-        return getattr(_m, fn_name)
-    except AttributeError:
-        raise ValueError(
-            "CSC function %s not found in _cImageD11." % fn_name)
+    return _FUN_MAP[pixel_dt.itemsize][1]
 
 
 def _get_csc_1d_function(pixel_dtype):
-    """Return the right bslz4_csc1d_* function for given pixel type.
+    """Return the right bs_csc1d_* function for given pixel type.
 
-    Returns function object (powder is always float64).
+    Returns function object (encoding passed separately).
     """
-    import c2ImageD11._cImageD11 as _m
-
     pixel_dt = np.dtype(pixel_dtype)
-    pixel_itemsize = pixel_dt.itemsize
-    if pixel_itemsize not in _PIXEL_SUFFIX:
+    if pixel_dt.itemsize not in _FUN_MAP:
         raise ValueError(
             "Unsupported pixel dtype: %s (need uint8/uint16/uint32)" %
             str(pixel_dt))
-
-    fn_name = "bslz4_csc1d_%s" % _PIXEL_SUFFIX[pixel_itemsize]
-
-    try:
-        return getattr(_m, fn_name)
-    except AttributeError:
-        raise ValueError(
-            "CSC1D function %s not found in _cImageD11." % fn_name)
+    return _FUN_MAP[pixel_dt.itemsize][2]
 
 
 class chunk2sparse:
@@ -96,20 +90,17 @@ class chunk2sparse:
         Returns (npixels, row, col, values_copy)
     """
 
-    def __init__(self, mask, dtype=np.uint16):
+    def __init__(self, mask, dtype=np.uint16, encoding=LZ4):
         self.nfast = mask.shape[1]
         self.mask = mask.ravel()
         self.indices = np.empty(mask.size, np.uint32)
         self.values = np.empty(mask.size, dtype)
         self.dtype = dtype
+        self.encoding = encoding
         itemsize = np.dtype(dtype).itemsize
-        self.fun = (
-            None,
-            bslz4_u8,
-            bslz4_u16,
-            None,
-            bslz4_u32,
-        )[itemsize]
+        if itemsize not in _FUN_MAP:
+            raise ValueError("Unsupported dtype: %s" % str(dtype))
+        self.fun = _FUN_MAP[itemsize][0]
         self._offsets  = np.array([0], dtype=np.int64)
         self._lengths  = np.zeros(1, dtype=np.int32)
         self._npx_pc   = np.zeros(1, dtype=np.int32)
@@ -117,7 +108,7 @@ class chunk2sparse:
     def __call__(self, buffer, cut):
         self._lengths[0] = len(buffer)
         npixels = self.fun(buffer, self.mask,
-                           self.values, self.indices, cut,
+                           self.values, self.indices, cut, self.encoding,
                            self._offsets, self._lengths, self._npx_pc)
         return npixels, (self.values, self.indices)
 
@@ -169,17 +160,12 @@ def bslz4_to_sparse(ds, num, cut, mask=None, pixelbuffer=None):
     offs  = np.array([0], dtype=np.int64)
     lens  = np.array([len(buffer)], dtype=np.int32)
     npc   = np.zeros(1, dtype=np.int32)
-    if ds.dtype == np.uint16:
-        npixels = bslz4_u16(buffer, mask, values, indices, cut,
-                            offs, lens, npc)
-    elif ds.dtype == np.uint32:
-        npixels = bslz4_u32(buffer, mask, values, indices, cut,
-                            offs, lens, npc)
-    elif ds.dtype == np.uint8:
-        npixels = bslz4_u8(buffer, mask, values, indices, cut,
-                           offs, lens, npc)
-    else:
-        raise Exception("no decoder for your type")
+    encoding = ZSTD if "zstd" in str(ds.id.get_create_plist()).lower() else LZ4
+    if ds.dtype not in (np.uint8, np.uint16, np.uint32):
+        raise Exception("no decoder for dtype %s" % ds.dtype)
+    fn = _FUN_MAP[np.dtype(ds.dtype).itemsize][0]
+    npixels = fn(buffer, mask, values, indices, cut, encoding,
+                 offs, lens, npc)
     if npixels < 0:
         raise Exception("Error decoding: %d" % (npixels))
     return npixels, (values, indices)
@@ -198,12 +184,13 @@ class chunk2sparseCSC:
         Pixel data type. Default uint16.
     """
 
-    def __init__(self, mask, csc, dtype=np.uint16):
+    def __init__(self, mask, csc, dtype=np.uint16, encoding=LZ4):
         self.nfast = mask.shape[1]
         self.mask = mask.ravel()
         self.cscdata = csc.data
         self.cscindices = csc.indices
         self.cscindptr = csc.indptr
+        self.encoding = encoding
         assert len(csc.indptr) == len(self.mask) + 1, \
             "csc shape must match mask"
 
@@ -238,6 +225,7 @@ class chunk2sparseCSC:
             self.values,
             self.indices,
             cut,
+            self.encoding,
             self.powder,
             self.cscdata,
             self.cscindices,
@@ -287,7 +275,7 @@ class chunk2sparseCSC:
 
         self.fun(
             file_buffer, self.mask,
-            outpx, outadr, cut,
+            outpx, outadr, cut, self.encoding,
             powder, self.cscdata, self.cscindices, self.cscindptr,
             off, le, npx_pc,
         )
@@ -326,12 +314,13 @@ class chunk2sparseCSC_1d(object):
 
     def __init__(self, mask, csc_flat, csc_first_bin,
                  entries_per_pixel,
-                 dtype=np.uint16):
+                 dtype=np.uint16, encoding=LZ4):
         self.nfast = mask.shape[1]
         self.mask = mask.ravel()
         self.csc_flat = csc_flat
         self.csc_first_bin = csc_first_bin
         self.entries_per_pixel = entries_per_pixel
+        self.encoding = encoding
 
         self.indices = np.empty(self.mask.size, np.uint32)
         self.values = np.empty(self.mask.size, dtype)
@@ -358,6 +347,7 @@ class chunk2sparseCSC_1d(object):
             self.values,
             self.indices,
             cut,
+            self.encoding,
             self.powder,
             self.csc_flat,
             self.csc_first_bin,
@@ -397,7 +387,7 @@ class chunk2sparseCSC_1d(object):
 
         self.fun(
             file_buffer, self.mask,
-            outpx, outadr, cut,
+            outpx, outadr, cut, self.encoding,
             powder, self.csc_flat, self.csc_first_bin,
             self.entries_per_pixel,
             off, le, npx_pc,

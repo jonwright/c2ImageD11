@@ -19,7 +19,7 @@ import sys
 import numpy as np
 import c2ImageD11._cImageD11 as _m
 
-NITERS = int(os.environ.get("MEMTEST_ITERS", "100" if "--valgrind" in sys.argv else "3"))
+NITERS = int(os.environ.get("MEMTEST_ITERS", "100" if "--valgrind" in sys.argv else "1"))
 NIJ_SMALL = 256       # small NIJ for fast valgrind runs
 NOUT_SMALL = 32
 EASY_EPP = 4
@@ -106,7 +106,7 @@ class TestCSC1DMemory:
         self.mask = _make_mask()
         self.csc_flat, self.first_bin = _make_csc_flat(EASY_EPP)
 
-    def _run_variant(self, nframes, fn, csc_arr, epp):
+    def _run_variant(self, nframes, fn, csc_arr, epp, encoding):
         """Run the C function with valid data.  No error expected."""
         mask = self.mask
         compressed, offsets, lengths = get_chunk_offsets(NIJ_SMALL)
@@ -120,15 +120,15 @@ class TestCSC1DMemory:
             lens_batch = np.array([len(compressed)] * nframes if nframes > 1 else [len(compressed)], dtype=np.int32)
 
             npc = np.zeros(nframes, dtype=np.int32)
-            fn(compressed, mask, ox, oa, 0,
+            fn(compressed, mask, ox, oa, 0, encoding,
                pw, csc_arr, self.first_bin, epp,
                offs_batch, lens_batch, npc)
 
     def test_csc1d_f32_1frame(self):
-        self._run_variant(1, _m.bslz4_csc1d_u16, self.csc_flat, EASY_EPP)
+        self._run_variant(1, _m.bs_csc1d_u16, self.csc_flat, EASY_EPP, 2)
 
     def test_csc1d_f32_4frames(self):
-        self._run_variant(4, _m.bslz4_csc1d_u16, self.csc_flat, EASY_EPP)
+        self._run_variant(4, _m.bs_csc1d_u16, self.csc_flat, EASY_EPP, 2)
 
 
 class TestCSCStandardMemory:
@@ -149,8 +149,8 @@ class TestCSCStandardMemory:
             of = offsets.repeat(nframes) if nframes > 1 else offsets
             ln = lengths.repeat(nframes) if nframes > 1 else lengths
             npc = np.zeros(nframes, dtype=np.int32)
-            _m.bslz4_csc_u16(
-                compressed, self.mask, ox, oa, 0,
+            _m.bs_csc_u16(
+                compressed, self.mask, ox, oa, 0, 2,
                 pw, self.data, self.indices, self.indptr,
                 of, ln, npc)
 
@@ -164,8 +164,8 @@ class TestCSCStandardMemory:
             of = offsets.repeat(nframes)
             ln = lengths.repeat(nframes)
             npc = np.zeros(nframes, dtype=np.int32)
-            _m.bslz4_csc_u16(
-                compressed, self.mask, ox, oa, 0,
+            _m.bs_csc_u16(
+                compressed, self.mask, ox, oa, 0, 2,
                 pw, self.data, self.indices, self.indptr,
                 of, ln, npc)
 

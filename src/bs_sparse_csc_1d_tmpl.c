@@ -1,7 +1,7 @@
 /* bs_sparse_csc_1d_tmpl.c - 1D padded CSC sparse decompress template.
  *
  * Included from bs_master.c with DATATYPE, NB, KERNEL_CSC1D_FN,
- * CSC_DATA_T, CSC_SUM_T, BS_DECOMPRESS already defined.
+ * CSC_DATA_T, CSC_SUM_T, bs_decompress already defined.
  * Generates one function: KERNEL_CSC1D_FN().
  *
  * Replaces (data, indices, indptr) with (csc_flat, csc_first_bin,
@@ -15,7 +15,7 @@
 int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     const uint8_t *restrict mask, int NIJ,
                     DATATYPE *restrict outpx, uint32_t *restrict output_adr,
-                    int threshold,
+                    int threshold, int encoding,
                     CSC_SUM_T *restrict output, int nout_total,
                     const CSC_DATA_T *restrict csc_flat,
                     const uint32_t *restrict csc_first_bin,
@@ -28,7 +28,7 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
 int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
                     const uint8_t *restrict mask, int NIJ,
                     DATATYPE *restrict outpx, uint32_t *restrict output_adr,
-                    int threshold,
+                    int threshold, int encoding,
                     CSC_SUM_T *restrict output, int nout_total,
                     const CSC_DATA_T *restrict csc_flat,
                     const uint32_t *restrict csc_first_bin,
@@ -111,8 +111,8 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
         for (c = 0; c < nchunks; c++) {
             nbytes = READ32BE(&compressed[chunk_offsets[c] + chunk_p[c]]);
 
-            ret = BS_DECOMPRESS(&compressed[chunk_offsets[c] + chunk_p[c] + 4],
-                                nbytes, (char*)tmp1, BLK);
+            ret = bs_decompress(&compressed[chunk_offsets[c] + chunk_p[c] + 4],
+                                nbytes, (char*)tmp1, BLK, encoding);
             chunk_p[c] += nbytes + 4;
             chunk_rem[c] -= BLK;
             if (unlikely(ret != BLK)) {
@@ -248,8 +248,8 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
         blocksize = (8 * NB) * (rem / (8 * NB));
         if (blocksize > 0) {
             nbytes = READ32BE(&compressed[chunk_offsets[c] + chunk_p[c]]);
-            ret = BS_DECOMPRESS(&compressed[chunk_offsets[c] + chunk_p[c] + 4],
-                                nbytes, (char*)tmp1, blocksize);
+            ret = bs_decompress(&compressed[chunk_offsets[c] + chunk_p[c] + 4],
+                                nbytes, (char*)tmp1, blocksize, encoding);
             chunk_p[c] += nbytes + 4;
             if (unlikely(ret != blocksize)) {
                 printf("ret %d blocksize %d\n", ret, blocksize);
