@@ -159,8 +159,12 @@ _CFLAGS_OMP_MSC = ["/O2", "/openmp", "/W2"]
 
 
 def _compile_simd_variants(build_dir):
-    """Compile each kernel with multiple ISA flags, return list of .o paths."""
-    cc = os.environ.get("CC", "cl" if _IS_WINDOWS else "gcc")
+    """Compile each kernel with multiple ISA flags, return list of .o paths.
+
+    On Linux/macOS: uses gcc/clang via subprocess with exact -m flags.
+    On Windows: uses distutils.ccompiler (MSVC) with /arch: flags via
+    temporary wrapper .c files to get unique output names per variant.
+    """
     objects = []
     obj_ext = ".obj" if _IS_WINDOWS else ".o"
 
@@ -175,7 +179,21 @@ def _compile_simd_variants(build_dir):
         "-I" + os.path.join(SRC_DIR, "wrappers"),
         "-I" + REPO_ROOT,
     ]
-    include_msvc = ["/I" + d[2:] for d in include_gcc]
+    include_dirs_plain = [SRC_DIR,
+                          os.path.join(SRC_DIR, "core"),
+                          os.path.join(SRC_DIR, "geometry"),
+                          os.path.join(SRC_DIR, "geometry", "simd"),
+                          os.path.join(SRC_DIR, "imageproc"),
+                          os.path.join(SRC_DIR, "imageproc", "simd"),
+                          os.path.join(SRC_DIR, "bslz4"),
+                          os.path.join(SRC_DIR, "wrappers"),
+                          REPO_ROOT]
+
+    if _IS_WINDOWS:
+        from setuptools._distutils.ccompiler import new_compiler
+        from setuptools._distutils.log import set_verbosity
+        set_verbosity(1)
+        msvc = new_compiler()
 
     for kernel_name, subpath in _SIMD_KERNELS:
         src_path = os.path.join(SRC_DIR, subpath)
@@ -185,45 +203,68 @@ def _compile_simd_variants(build_dir):
 
         for variant_name, simd_flag in _SIMD_VARIANTS:
             obj_name = "{}_{}{}".format(kernel_name, variant_name, obj_ext)
-            obj_path = os.path.join(build_dir, obj_name)
 
             fn_name = "{}_{}".format(kernel_name, variant_name)
             if kernel_name == "score_and_refine":
                 fn_name = fn_name + "_impl"
 
             if _IS_WINDOWS:
-                cflags = list(_CFLAGS_OMP_MSC) + _ASAN_COMPILE
-                inc_flags = include_msvc
-                define = "/DKERNEL_FN=" + fn_name
-                out = "/Fo" + obj_path
-                cmd = [cc, "/c", "/nologo"] + inc_flags + cflags + [
-                    define, src_path, out]
-                # shell=True needed for MSVC env (vcvars) to apply
-                cmd_str = " ".join(cmd)
+                # Create a temporary wrapper .c that defines KERNEL_FN then includes kernel
+                import tempfile
+                wrapper_c = ('#define KERNEL_FN {}\n'
+                             '#include "{}"\n').format(
+                                 fn_name, os.path.abspath(src_path).replace('\\', '/'))
+                # Write to build_dir with unique name
+                tmp_path = os.path.join(build_dir, obj_name.replace(obj_ext, '.c'))
+                with open(tmp_path, 'w') as f:
+                    f.write(wrapper_c)
+
+                cflags = _CFLAGS_OMP_MSC[:] + _ASAN_COMPILE
+                if simd_flag:
+                    cflags += list(simd_flag)
+                macros = []  # KERNEL_FN is already in the wrapper
+
+                print("c2ImageD11: SIMD compile {} via tmp".format(obj_name))
+                try:
+                    objs = msvc.compile([tmp_path],
+                                        output_dir=build_dir,
+                                        include_dirs=include_dirs_plain,
+                                        macros=macros,
+                                        extra_postargs=cflags,
+                                        debug=False)
+                    # distutils names the obj after the source file;
+                    # rename if it doesn't match our expected name
+                    expected = os.path.join(build_dir, obj_name)
+                    if objs and objs[0] != expected:
+                        if os.path.exists(expected):
+                            os.unlink(expected)
+                        os.rename(objs[0], expected)
+                        objs[0] = expected
+                    objects.extend(objs)
+                    # Clean up temp file
+                    os.unlink(tmp_path)
+                except Exception as e:
+                    print("c2ImageD11: ERROR compiling {}: {}".format(src_path, e))
+                    sys.exit(1)
             else:
                 cflags = list(_CFLAGS_OMP) + _ASAN_COMPILE
-                inc_flags = include_gcc
                 if simd_flag:
                     cflags.extend(simd_flag)
                 define = "-DKERNEL_FN=" + fn_name
-                cmd = [cc, "-c"] + inc_flags + cflags + [
-                    define, src_path, "-o", obj_path]
+                cmd = [os.environ.get("CC", "gcc"), "-c"] + include_gcc + cflags + [
+                    define, src_path, "-o", os.path.join(build_dir, obj_name)]
 
-            print("c2ImageD11: SIMD compile {}: {}".format(
-                obj_name, cmd_str if _IS_WINDOWS else " ".join(cmd)))
-            try:
-                if _IS_WINDOWS:
-                    rc = subprocess.call(cmd_str, shell=True)
-                else:
+                print("c2ImageD11: SIMD compile {}: {}".format(
+                    obj_name, " ".join(cmd)))
+                try:
                     rc = subprocess.call(cmd)
-            except OSError as e:
-                print("c2ImageD11: ERROR running compiler: {}".format(e))
-                sys.exit(1)
-            if rc != 0:
-                print("c2ImageD11: ERROR compiling {} (exit {})".format(
-                    obj_name, rc))
-                sys.exit(rc)
-            objects.append(obj_path)
+                except OSError as e:
+                    print("c2ImageD11: ERROR running compiler: {}".format(e))
+                    sys.exit(1)
+                if rc != 0:
+                    print("c2ImageD11: ERROR compiling {} (exit {})".format(obj_name, rc))
+                    sys.exit(rc)
+                objects.append(os.path.join(build_dir, obj_name))
 
     return objects
 
