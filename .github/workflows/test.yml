@@ -121,14 +121,14 @@ jobs:
 
       - name: Diagnose build environment
         run: |
-          Write-Host "Python location: $(Get-Command python).Source"
+          Write-Host "Python location:"
+          Get-Command python | ForEach-Object { Write-Host "  $($_.Source)" }
           python --version
           python -c "import sys; print('platform:', sys.platform); print('maxsize:', sys.maxsize)"
-          Write-Host "---"
           Write-Host "CC env: $env:CC"
-          Write-Host "PATH directories containing cl:"
-          $env:PATH -split ';' | Where-Object { Test-Path "$_\cl.exe" } | ForEach-Object { Write-Host "  $_" }
-          Write-Host "---"
+          Write-Host "Checking for cl.exe on PATH..."
+          & { where.exe cl.exe 2>$null } | ForEach-Object { Write-Host "  $_" }
+          Write-Host "---done---"
 
       - name: Install c2ImageD11
         env:
