@@ -1,15 +1,16 @@
-"""Setup script for c2ImageD11 - builds C extensions via c2py23.
+"""Setup script for c2ImageD11 - builds C extensions.
 
-The build process:
-1. Compiles src_simd/*.c kernels 3x with -msse4.2/-mavx2/-mavx512f (amd64)
-2. Uses c2py23 parser+generator to produce _cImageD11_wrapper.c
+Build process:
+1. Compiles SIMD kernels 3x with -msse4.2/-mavx2/-mavx512f (amd64)
+2. Uses pre-generated c2py23 wrapper by default; regenerates if c2py23 is
+   available and C2PY23_REBUILD env var is set
 3. Compiles all C sources with setuptools + gcc -fopenmp
 4. Links ISA-specific .o files for variant dispatch
 
 Requirements:
   - gcc with -fopenmp
-  - c2py23 installed
   - dlfcn.h (POSIX; Linux, macOS)
+  - For rebuild: c2py23 installed
 """
 
 from __future__ import print_function
@@ -28,29 +29,38 @@ from setuptools.command.build_ext import build_ext
 
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.join(REPO_ROOT, "src")
-WRAPPER_DIR = os.path.join(REPO_ROOT, "src_wrapper")
-SIMD_DIR = os.path.join(REPO_ROOT, "src_simd")
-LZ4_DIR = os.path.join(REPO_ROOT, "lz4")
-KCB_DIR = os.path.join(REPO_ROOT, "kcb")
-BITSHUFFLE_DIR = os.path.join(REPO_ROOT, "bitshuffle")
-ZSTD_DIR = os.path.join(REPO_ROOT, "zstd")
-# _cImageD11.c2py is assembled from these two files at build time:
-C2PY_BASE_FILE = os.path.join(REPO_ROOT, "_cImageD11_base.c2py")
-C2PY_BSLZ4_FILE = os.path.join(REPO_ROOT, "_cImageD11_bslz4.c2py")
-C2PY_FILE = os.path.join(REPO_ROOT, "_cImageD11.c2py")
+WRAPPER_DIR = os.path.join(SRC_DIR, "wrappers")
+LZ4_DIR = os.path.join(SRC_DIR, "bslz4", "vendor", "lz4")
+KCB_DIR = os.path.join(SRC_DIR, "bslz4", "vendor", "kcb")
+BITSHUFFLE_DIR = os.path.join(SRC_DIR, "bslz4", "vendor", "bitshuffle")
+ZSTD_DIR = os.path.join(SRC_DIR, "bslz4", "vendor", "zstd")
+INTERFACE_DIR = os.path.join(REPO_ROOT, "interface")
+C2PY_BASE_FILE = os.path.join(INTERFACE_DIR, "_cImageD11_base.c2py")
+C2PY_BSLZ4_FILE = os.path.join(INTERFACE_DIR, "_cImageD11_bslz4.c2py")
+C2PY_FILE = os.path.join(INTERFACE_DIR, "_cImageD11.c2py")
 MODULE_NAME = "_cImageD11"
 PACKAGE_NAME = "c2ImageD11"
 
-# Find c2py23 - try import first, then guess sibling directory
-try:
-    import c2py23
-    C2PY23_DIR = os.path.dirname(os.path.abspath(c2py23.__file__))
-except ImportError:
-    C2PY23_DIR = os.path.join(os.path.dirname(REPO_ROOT), "c2py23", "c2py23")
-    sys.path.insert(0, os.path.dirname(C2PY23_DIR))
+# Pre-generated wrapper (shipped in sdist, no c2py23 needed)
+WRAPPER_GENERATED = os.path.join(WRAPPER_DIR, "__cImageD11_wrapper.c")
+RUNTIME_C = os.path.join(WRAPPER_DIR, "c2py_runtime.c")
 
-C2PY_RUNTIME_DIR = os.path.join(C2PY23_DIR, "runtime")
-RUNTIME_C = os.path.join(C2PY_RUNTIME_DIR, "c2py_runtime.c")
+
+# ---------------------------------------------------------------------------
+# c2py23 - optional, only for regeneration
+# ---------------------------------------------------------------------------
+
+_C2PY23_AVAILABLE = False
+_C2PY23_RUNTIME_DIR = None
+
+try:
+    if os.environ.get("C2PY23_REBUILD"):
+        import c2py23
+        _C2PY23_AVAILABLE = True
+        _C2PY23_DIR = os.path.dirname(os.path.abspath(c2py23.__file__))
+        _C2PY23_RUNTIME_DIR = os.path.join(_C2PY23_DIR, "runtime")
+except ImportError:
+    pass
 
 
 # ---------------------------------------------------------------------------
@@ -81,29 +91,28 @@ if os.environ.get("ASAN"):
 # SIMD multi-flag compilation
 # ---------------------------------------------------------------------------
 
-# Kernel names -> source file mapping
+# (kernel_name, subdir_path)
 _SIMD_KERNELS = [
-    ("score", "score_kernel.c"),
-    ("score_and_refine", "score_and_refine_kernel.c"),
-    ("score_and_assign", "score_and_assign_kernel.c"),
-    ("compute_gv", "compute_gv_kernel.c"),
-    ("compute_geometry", "compute_geometry_kernel.c"),
-    ("compute_xlylzl", "compute_xlylzl_kernel.c"),
-    ("compute_xlylzl_xpos", "compute_xlylzl_xpos_kernel.c"),
-    ("put_incr32", "put_incr32_kernel.c"),
-    ("put_incr64", "put_incr64_kernel.c"),
-    ("blobproperties", "blobproperties_kernel.c"),
-    ("uint16_to_float_darksub", "darksub_kernel.c"),
-    ("uint16_to_float_darkflm", "darkflm_kernel.c"),
-    ("reorder_f32_a32", "reorder_f32_a32_kernel.c"),
-    ("reorderlut_f32_a32", "reorderlut_f32_a32_kernel.c"),
-    ("reorder_u16_a32", "reorder_u16_a32_kernel.c"),
-    ("reorderlut_u16_a32", "reorderlut_u16_a32_kernel.c"),
+    ("score", "geometry/simd/score_kernel.c"),
+    ("score_and_refine", "geometry/simd/score_and_refine_kernel.c"),
+    ("score_and_assign", "geometry/simd/score_and_assign_kernel.c"),
+    ("compute_gv", "geometry/simd/compute_gv_kernel.c"),
+    ("compute_geometry", "geometry/simd/compute_geometry_kernel.c"),
+    ("compute_xlylzl", "geometry/simd/compute_xlylzl_kernel.c"),
+    ("compute_xlylzl_xpos", "geometry/simd/compute_xlylzl_xpos_kernel.c"),
+    ("put_incr32", "imageproc/simd/put_incr32_kernel.c"),
+    ("put_incr64", "imageproc/simd/put_incr64_kernel.c"),
+    ("blobproperties", "imageproc/simd/blobproperties_kernel.c"),
+    ("uint16_to_float_darksub", "imageproc/simd/darksub_kernel.c"),
+    ("uint16_to_float_darkflm", "imageproc/simd/darkflm_kernel.c"),
+    ("reorder_f32_a32", "imageproc/simd/reorder_f32_a32_kernel.c"),
+    ("reorderlut_f32_a32", "imageproc/simd/reorderlut_f32_a32_kernel.c"),
+    ("reorder_u16_a32", "imageproc/simd/reorder_u16_a32_kernel.c"),
+    ("reorderlut_u16_a32", "imageproc/simd/reorderlut_u16_a32_kernel.c"),
 ]
 
-# bslz4/bszstd kernel compilation: one source -> 12 ISAxbackendxengine variants
 _BSLZ4_KERNELS = [
-    ("bs_master", "src/bs_master.c"),
+    ("bs_master", "bslz4/bs_master.c"),
 ]
 
 # ISA variants: (variant_suffix, compiler_flag)
@@ -129,10 +138,20 @@ def _compile_simd_variants(build_dir):
     cc = os.environ.get("CC", "gcc")
     objects = []
 
-    include_dirs = ["-I" + SRC_DIR, "-I" + REPO_ROOT]
+    include_dirs = [
+        "-I" + SRC_DIR,
+        "-I" + os.path.join(SRC_DIR, "core"),
+        "-I" + os.path.join(SRC_DIR, "geometry"),
+        "-I" + os.path.join(SRC_DIR, "geometry", "simd"),
+        "-I" + os.path.join(SRC_DIR, "imageproc"),
+        "-I" + os.path.join(SRC_DIR, "imageproc", "simd"),
+        "-I" + os.path.join(SRC_DIR, "bslz4"),
+        "-I" + os.path.join(SRC_DIR, "wrappers"),
+        "-I" + REPO_ROOT,
+    ]
 
-    for kernel_name, src_file in _SIMD_KERNELS:
-        src_path = os.path.join(SIMD_DIR, src_file)
+    for kernel_name, subpath in _SIMD_KERNELS:
+        src_path = os.path.join(SRC_DIR, subpath)
         if not os.path.isfile(src_path):
             print("c2ImageD11: WARNING - SIMD kernel not found: {}".format(src_path))
             continue
@@ -178,22 +197,22 @@ def _compile_bslz4_variants(build_dir):
 
     include_dirs = [
         "-I" + SRC_DIR,
+        "-I" + os.path.join(SRC_DIR, "bslz4"),
+        "-I" + os.path.join(SRC_DIR, "core"),
         "-I" + REPO_ROOT,
-        "-I" + LZ4_DIR + "/lib",
-        "-I" + KCB_DIR + "/src",
-        "-I" + ZSTD_DIR + "/lib",
-        "-I" + ZSTD_DIR + "/lib/common",
-        "-I" + ZSTD_DIR + "/lib/compress",
-        "-I" + ZSTD_DIR + "/lib/decompress",
+        "-I" + os.path.join(LZ4_DIR, "lib"),
+        "-I" + os.path.join(KCB_DIR, "src"),
+        "-I" + os.path.join(ZSTD_DIR, "lib"),
+        "-I" + os.path.join(ZSTD_DIR, "lib", "common"),
+        "-I" + os.path.join(ZSTD_DIR, "lib", "compress"),
+        "-I" + os.path.join(ZSTD_DIR, "lib", "decompress"),
     ]
 
-    src_path = os.path.join(REPO_ROOT, "src", "bs_master.c")
-    if not os.path.isfile(src_path):
-        print("c2ImageD11: WARNING - bslz4 kernel not found: {}".format(src_path))
-        return objects
-
-    for kernel_name, src_file in _BSLZ4_KERNELS:
-        src_path_full = os.path.join(REPO_ROOT, src_file)
+    for kernel_name, subpath in _BSLZ4_KERNELS:
+        src_path = os.path.join(SRC_DIR, subpath)
+        if not os.path.isfile(src_path):
+            print("c2ImageD11: WARNING - bslz4 kernel not found: {}".format(src_path))
+            continue
 
         for backend_suffix, backend_cflags in [
             ("kcb", ["-DUSE_KCB"]),
@@ -210,7 +229,7 @@ def _compile_bslz4_variants(build_dir):
 
                 cmd = [cc, "-c"] + include_dirs + cflags + [
                     "-DKERNEL_SUFFIX=" + fn_suffix,
-                    src_path_full, "-o", obj_path,
+                    src_path, "-o", obj_path,
                 ]
                 print("c2ImageD11: BSLZ4 compile {}".format(obj_name))
                 rc = subprocess.call(cmd)
@@ -221,12 +240,46 @@ def _compile_bslz4_variants(build_dir):
     return objects
 
 
+def _regenerate_wrapper():
+    """Regenerate __cImageD11_wrapper.c using c2py23."""
+    if not _C2PY23_AVAILABLE:
+        return False
+
+    from c2py23.parser import load_c2py
+    from c2py23.generator import generate
+
+    os.makedirs(os.path.dirname(C2PY_FILE), exist_ok=True)
+
+    print("c2ImageD11: assembling {} from {} + {}".format(
+        os.path.basename(C2PY_FILE),
+        os.path.basename(C2PY_BASE_FILE),
+        os.path.basename(C2PY_BSLZ4_FILE)))
+    with open(C2PY_BASE_FILE, "r") as fb:
+        base_content = fb.read()
+    with open(C2PY_BSLZ4_FILE, "r") as fb:
+        bslz4_content = fb.read()
+    with open(C2PY_FILE, "w") as fout:
+        fout.write(base_content)
+        fout.write(bslz4_content)
+
+    print("c2ImageD11: generating c2py23 wrapper...")
+    module_def = load_c2py(C2PY_FILE)
+    wrapper_c = generate(module_def)
+
+    os.makedirs(WRAPPER_DIR, exist_ok=True)
+    wrapper_path = os.path.join(WRAPPER_DIR, "__cImageD11_wrapper.c")
+    with open(wrapper_path, "w") as f:
+        f.write(wrapper_c)
+    print("c2ImageD11: wrapper written to", wrapper_path)
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Build command
 # ---------------------------------------------------------------------------
 
 class c2py23_build_ext(build_ext):
-    """Generate c2py23 wrapper C code, then compile with setuptools."""
+    """Compile C extensions with SIMD and c2py23 wrapper support."""
 
     def build_extensions(self):
         # Step 0: Compile SIMD kernel variants
@@ -260,43 +313,40 @@ class c2py23_build_ext(build_ext):
                 sys.exit(rc)
             bslz4_objects.append(zstd_asm_o)
 
-        # Step 1: Assemble .c2py from base + generated bslz4 fragment
-        print("c2ImageD11: assembling {} from {} + {}".format(
-            os.path.basename(C2PY_FILE),
-            os.path.basename(C2PY_BASE_FILE),
-            os.path.basename(C2PY_BSLZ4_FILE)))
-        with open(C2PY_BASE_FILE, "r") as fb:
-            base_content = fb.read()
-        with open(C2PY_BSLZ4_FILE, "r") as fb:
-            bslz4_content = fb.read()
-        with open(C2PY_FILE, "w") as fout:
-            fout.write(base_content)
-            fout.write(bslz4_content)
+        # Step 1: Regenerate wrapper if requested/needed
+        wrapper_used = None
+        if os.environ.get("C2PY23_REBUILD"):
+            if _regenerate_wrapper():
+                wrapper_used = os.path.join(WRAPPER_DIR, "__cImageD11_wrapper.c")
+            else:
+                print("c2ImageD11: C2PY23_REBUILD set but c2py23 not available; "
+                      "using pre-generated wrapper")
+        elif os.path.isfile(WRAPPER_GENERATED):
+            wrapper_used = WRAPPER_GENERATED
+            print("c2ImageD11: using pre-generated wrapper: {}".format(WRAPPER_GENERATED))
+        else:
+            # No pre-generated wrapper; try regenerating
+            if _regenerate_wrapper():
+                wrapper_used = os.path.join(WRAPPER_DIR, "__cImageD11_wrapper.c")
+            else:
+                print("c2ImageD11: ERROR - no pre-generated wrapper found and "
+                      "c2py23 not available. Generate one with: "
+                      "pip install c2py23 && C2PY23_REBUILD=1 pip install -e .")
+                sys.exit(1)
 
-        # Step 2: Generate wrapper C code
-        from c2py23.parser import load_c2py
-        from c2py23.generator import generate
-
-        print("c2ImageD11: generating c2py23 wrapper...")
-        module_def = load_c2py(C2PY_FILE)
-        wrapper_c = generate(module_def)
-
-        wrapper_rel = "_{}_wrapper.c".format(MODULE_NAME)
-        wrapper_path = os.path.join(REPO_ROOT, wrapper_rel)
-        with open(wrapper_path, "w") as f:
-            f.write(wrapper_c)
-        print("c2ImageD11: wrapper written to", wrapper_path)
-
-        # Add wrapper + runtime to each extension's sources
-        runtime_rel = os.path.relpath(RUNTIME_C, REPO_ROOT)
+        # Step 2: Add wrapper + runtime to each extension's sources
+        wrapper_rel = os.path.relpath(wrapper_used, REPO_ROOT)
         for ext in self.extensions:
             ext.sources.insert(0, wrapper_rel)
-            ext.sources.insert(0, runtime_rel)
-        ext.include_dirs.append(C2PY_RUNTIME_DIR)
+            ext.sources.insert(0, os.path.relpath(RUNTIME_C, REPO_ROOT))
+        ext.include_dirs.append(WRAPPER_DIR)
         ext.include_dirs.append(REPO_ROOT)
         ext.include_dirs.append(SRC_DIR)
-        ext.include_dirs.append(WRAPPER_DIR)
-        ext.include_dirs.append(SIMD_DIR)
+        ext.include_dirs.append(os.path.join(SRC_DIR, "core"))
+        ext.include_dirs.append(os.path.join(SRC_DIR, "geometry"))
+        ext.include_dirs.append(os.path.join(SRC_DIR, "imageproc"))
+        ext.include_dirs.append(os.path.join(SRC_DIR, "bslz4"))
+        ext.include_dirs.append(os.path.join(SRC_DIR, "wrappers"))
         ext.include_dirs.append(os.path.join(LZ4_DIR, "lib"))
         ext.include_dirs.append(os.path.join(KCB_DIR, "src"))
         ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib"))
@@ -322,7 +372,7 @@ class c2py23_build_ext(build_ext):
         print("c2ImageD11: linked {} SIMD + {} BSLZ4 kernel objects".format(
             len(simd_objects), len(bslz4_objects)))
 
-        # Step 2: Standard compilation
+        # Step 3: Standard compilation
         build_ext.build_extensions(self)
 
 
@@ -331,32 +381,32 @@ class c2py23_build_ext(build_ext):
 # ---------------------------------------------------------------------------
 
 SOURCES = [
-    os.path.join("src", "blobs.c"),
-    os.path.join("src", "cdiffraction.c"),
-    os.path.join("src", "cimaged11utils.c"),
-    os.path.join("src", "closest.c"),
-    os.path.join("src", "connectedpixels.c"),
-    os.path.join("src", "darkflat.c"),
-    os.path.join("src", "localmaxlabel.c"),
-    os.path.join("src", "sparse_image.c"),
-    os.path.join("src", "splat.c"),
-    os.path.join("src_wrapper", "_wrappers.c"),
+    os.path.join("src", "core", "cimaged11utils.c"),
+    os.path.join("src", "geometry", "cdiffraction.c"),
+    os.path.join("src", "geometry", "closest.c"),
+    os.path.join("src", "imageproc", "blobs.c"),
+    os.path.join("src", "imageproc", "connectedpixels.c"),
+    os.path.join("src", "imageproc", "darkflat.c"),
+    os.path.join("src", "imageproc", "localmaxlabel.c"),
+    os.path.join("src", "imageproc", "sparse_image.c"),
+    os.path.join("src", "imageproc", "splat.c"),
+    os.path.join("src", "wrappers", "_wrappers.c"),
     # bslz4 dependencies (KCB backend only)
-    os.path.join("lz4", "lib", "lz4.c"),
-    os.path.join("kcb", "src", "bitshuffle.c"),
+    os.path.join("src", "bslz4", "vendor", "lz4", "lib", "lz4.c"),
+    os.path.join("src", "bslz4", "vendor", "kcb", "src", "bitshuffle.c"),
     # zstd decompress engine
-    os.path.join("zstd", "lib", "common", "debug.c"),
-    os.path.join("zstd", "lib", "common", "entropy_common.c"),
-    os.path.join("zstd", "lib", "common", "error_private.c"),
-    os.path.join("zstd", "lib", "common", "fse_decompress.c"),
-    os.path.join("zstd", "lib", "common", "pool.c"),
-    os.path.join("zstd", "lib", "common", "threading.c"),
-    os.path.join("zstd", "lib", "common", "xxhash.c"),
-    os.path.join("zstd", "lib", "common", "zstd_common.c"),
-    os.path.join("zstd", "lib", "decompress", "huf_decompress.c"),
-    os.path.join("zstd", "lib", "decompress", "zstd_ddict.c"),
-    os.path.join("zstd", "lib", "decompress", "zstd_decompress.c"),
-    os.path.join("zstd", "lib", "decompress", "zstd_decompress_block.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "debug.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "entropy_common.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "error_private.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "fse_decompress.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "pool.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "threading.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "xxhash.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "zstd_common.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "huf_decompress.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "zstd_ddict.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "zstd_decompress.c"),
+    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "zstd_decompress_block.c"),
 ]
 
 ext = Extension(
@@ -379,6 +429,6 @@ setup(
     ext_modules=[ext],
     cmdclass={"build_ext": c2py23_build_ext},
     python_requires=">=2.7",
-    install_requires=["c2py23"],
+    install_requires=["numpy"],
     zip_safe=False,
 )

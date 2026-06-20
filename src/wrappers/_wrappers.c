@@ -10,9 +10,9 @@
  * grammar cannot express directly.
  */
 
-#include "src/cImageD11.h"
-#include "src/blobs.h"
-#include "src/cdiffraction.h"
+#include "core/cImageD11.h"
+#include "imageproc/blobs.h"
+#include "geometry/cdiffraction.h"
 
 typedef double vec[3];
 

@@ -28,6 +28,7 @@ log() {
 # Each entry: "SIF_path python_binary"
 # ubuntu20.04: Python 2.7, 3.8
 # ubuntu24.04: Python 3.9-3.14
+# ubuntu26.04: Python 3.15
 VERSIONS=(
     "/home/worker/snakepit/ubuntu20.04.sif python2.7"
     "/home/worker/snakepit/ubuntu20.04.sif python3.8"
@@ -37,6 +38,9 @@ VERSIONS=(
     "/home/worker/snakepit/ubuntu24.04.sif python3.12"
     "/home/worker/snakepit/ubuntu24.04.sif python3.13"
     "/home/worker/snakepit/ubuntu24.04.sif python3.14"
+    "/home/worker/snakepit/ubuntu24.04.sif python3.14t"
+    "/home/worker/snakepit/ubuntu26.04.sif python3.15"
+    "/home/worker/snakepit/ubuntu26.04.sif python3.15t"
 )
 
 PASSED=0

@@ -77,7 +77,17 @@ if [ "$USE_VENV" = "1" ]; then
     blue "Creating clean virtualenv at $VENV_DIR ..."
     rm -rf "$VENV_DIR"
     if "$PYTHON" -c "import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)" 2>/dev/null; then
-        "$PYTHON" -m venv "$VENV_DIR"
+        if "$PYTHON" -m venv "$VENV_DIR" 2>/dev/null; then
+            :
+        elif command -v uv >/dev/null 2>&1; then
+            blue "uv venv fallback for $PYTHON ..."
+            rm -rf "$VENV_DIR"
+            uv venv -p "$PYTHON" "$VENV_DIR" 2>/dev/null
+            uv pip install --python "$VENV_DIR/bin/python" pip setuptools wheel -q
+            ln -sf pip3 "$VENV_DIR/bin/pip" 2>/dev/null || true
+        else
+            fail "venv creation failed for $PYTHON"
+        fi
     else
         virtualenv -p "$PYTHON" "$VENV_DIR"
     fi

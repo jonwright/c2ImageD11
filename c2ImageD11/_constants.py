@@ -1,4 +1,4 @@
-"""Blob property constants from ImageD11/src/blobs.h enum values.
+"""Blob property constants from c2ImageD11/src/imageproc/blobs.h enum values.
 
 These are compile-time C enum values.  c2py23's `constants:` block
 in the .c2py file handles export automatically, but the flat enum

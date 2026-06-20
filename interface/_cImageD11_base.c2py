@@ -5,82 +5,83 @@
 # (int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t,
 #  int64_t, uint64_t), so thin type-adapting wrappers are no
 # longer needed.  Only 2D-array-to-flat-pointer wrappers remain
-# in src_wrapper/_wrappers.c for vec[3] / double[][N] parameters.
+# in src/wrappers/_wrappers.c for vec[3] / double[][N] parameters.
 
 module: _cImageD11
 timing: true
+free_threading: true
 
 source:
-  - src/blobs.c
-  - src/cdiffraction.c
-  - src/cimaged11utils.c
-  - src/closest.c
-  - src/connectedpixels.c
-  - src/darkflat.c
-  - src/localmaxlabel.c
-  - src/sparse_image.c
-  - src/splat.c
-  - src_wrapper/_wrappers.c
-  - src_simd/score_kernel.c
-  - src_simd/score_and_refine_kernel.c
-  - src_simd/score_and_assign_kernel.c
-  - src_simd/compute_gv_kernel.c
-  - src_simd/compute_geometry_kernel.c
-  - src_simd/compute_xlylzl_kernel.c
-  - src_simd/compute_xlylzl_xpos_kernel.c
-  - src_simd/put_incr32_kernel.c
-  - src_simd/put_incr64_kernel.c
-  - src_simd/blobproperties_kernel.c
-  - src_simd/darksub_kernel.c
-  - src_simd/darkflm_kernel.c
-  - src_simd/reorder_f32_a32_kernel.c
-  - src_simd/reorderlut_f32_a32_kernel.c
-  - src_simd/reorder_u16_a32_kernel.c
-  - src_simd/reorderlut_u16_a32_kernel.c
-  - src/bs_master.c
-  - lz4/lib/lz4.c
-  - kcb/src/bitshuffle.c
-  - zstd/lib/common/debug.c
-  - zstd/lib/common/entropy_common.c
-  - zstd/lib/common/error_private.c
-  - zstd/lib/common/fse_decompress.c
-  - zstd/lib/common/pool.c
-  - zstd/lib/common/threading.c
-  - zstd/lib/common/xxhash.c
-  - zstd/lib/common/zstd_common.c
-  - zstd/lib/compress/fse_compress.c
-  - zstd/lib/compress/hist.c
-  - zstd/lib/compress/huf_compress.c
-  - zstd/lib/compress/zstd_compress.c
-  - zstd/lib/compress/zstd_compress_literals.c
-  - zstd/lib/compress/zstd_compress_sequences.c
-  - zstd/lib/compress/zstd_compress_superblock.c
-  - zstd/lib/compress/zstd_double_fast.c
-  - zstd/lib/compress/zstd_fast.c
-  - zstd/lib/compress/zstd_lazy.c
-  - zstd/lib/compress/zstd_ldm.c
-  - zstd/lib/compress/zstdmt_compress.c
-  - zstd/lib/compress/zstd_opt.c
-  - zstd/lib/compress/zstd_preSplit.c
-  - zstd/lib/decompress/huf_decompress.c
-  - zstd/lib/decompress/zstd_ddict.c
-  - zstd/lib/decompress/zstd_decompress_block.c
-  - zstd/lib/decompress/huf_decompress_amd64.S
-  - zstd/lib/decompress/zstd_decompress.c
+  - ../src/imageproc/blobs.c
+  - ../src/geometry/cdiffraction.c
+  - ../src/core/cimaged11utils.c
+  - ../src/geometry/closest.c
+  - ../src/imageproc/connectedpixels.c
+  - ../src/imageproc/darkflat.c
+  - ../src/imageproc/localmaxlabel.c
+  - ../src/imageproc/sparse_image.c
+  - ../src/imageproc/splat.c
+  - ../src/wrappers/_wrappers.c
+  - ../src/geometry/simd/score_kernel.c
+  - ../src/geometry/simd/score_and_refine_kernel.c
+  - ../src/geometry/simd/score_and_assign_kernel.c
+  - ../src/geometry/simd/compute_gv_kernel.c
+  - ../src/geometry/simd/compute_geometry_kernel.c
+  - ../src/geometry/simd/compute_xlylzl_kernel.c
+  - ../src/geometry/simd/compute_xlylzl_xpos_kernel.c
+  - ../src/imageproc/simd/put_incr32_kernel.c
+  - ../src/imageproc/simd/put_incr64_kernel.c
+  - ../src/imageproc/simd/blobproperties_kernel.c
+  - ../src/imageproc/simd/darksub_kernel.c
+  - ../src/imageproc/simd/darkflm_kernel.c
+  - ../src/imageproc/simd/reorder_f32_a32_kernel.c
+  - ../src/imageproc/simd/reorderlut_f32_a32_kernel.c
+  - ../src/imageproc/simd/reorder_u16_a32_kernel.c
+  - ../src/imageproc/simd/reorderlut_u16_a32_kernel.c
+  - ../src/bslz4/bs_master.c
+  - ../src/bslz4/vendor/lz4/lib/lz4.c
+  - ../src/bslz4/vendor/kcb/src/bitshuffle.c
+  - ../src/bslz4/vendor/zstd/lib/common/debug.c
+  - ../src/bslz4/vendor/zstd/lib/common/entropy_common.c
+  - ../src/bslz4/vendor/zstd/lib/common/error_private.c
+  - ../src/bslz4/vendor/zstd/lib/common/fse_decompress.c
+  - ../src/bslz4/vendor/zstd/lib/common/pool.c
+  - ../src/bslz4/vendor/zstd/lib/common/threading.c
+  - ../src/bslz4/vendor/zstd/lib/common/xxhash.c
+  - ../src/bslz4/vendor/zstd/lib/common/zstd_common.c
+  - ../src/bslz4/vendor/zstd/lib/compress/fse_compress.c
+  - ../src/bslz4/vendor/zstd/lib/compress/hist.c
+  - ../src/bslz4/vendor/zstd/lib/compress/huf_compress.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_compress.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_compress_literals.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_compress_sequences.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_compress_superblock.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_double_fast.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_fast.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_lazy.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_ldm.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstdmt_compress.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_opt.c
+  - ../src/bslz4/vendor/zstd/lib/compress/zstd_preSplit.c
+  - ../src/bslz4/vendor/zstd/lib/decompress/huf_decompress.c
+  - ../src/bslz4/vendor/zstd/lib/decompress/zstd_ddict.c
+  - ../src/bslz4/vendor/zstd/lib/decompress/zstd_decompress_block.c
+  - ../src/bslz4/vendor/zstd/lib/decompress/huf_decompress_amd64.S
+  - ../src/bslz4/vendor/zstd/lib/decompress/zstd_decompress.c
 
 headers:
-  - src/cImageD11.h
-  - src/blobs.h
-  - src/cdiffraction.h
-  - src/ImageD11_cmath.h
+  - ../src/core/cImageD11.h
+  - ../src/imageproc/blobs.h
+  - ../src/geometry/cdiffraction.h
+  - ../src/core/ImageD11_cmath.h
   - c2py_amd64.h
-  - src/bs_functions.h
-  - lz4/lib/lz4.h
-  - kcb/src/bitshuffle.h
-  - zstd/lib/zstd.h
-  - zstd/lib/common/zstd_internal.h
-  - zstd/lib/common/mem.h
-  - zstd/lib/decompress/zstd_decompress_internal.h
+  - ../src/bslz4/bs_functions.h
+  - ../src/bslz4/vendor/lz4/lib/lz4.h
+  - ../src/bslz4/vendor/kcb/src/bitshuffle.h
+  - ../src/bslz4/vendor/zstd/lib/zstd.h
+  - ../src/bslz4/vendor/zstd/lib/common/zstd_internal.h
+  - ../src/bslz4/vendor/zstd/lib/common/mem.h
+  - ../src/bslz4/vendor/zstd/lib/decompress/zstd_decompress_internal.h
 
 functions:
 

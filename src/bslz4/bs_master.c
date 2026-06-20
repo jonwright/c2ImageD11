@@ -26,8 +26,8 @@
  * -------------------------------------------------------------------------- */
 
 #define FN_PREFIX bs
-#include "lz4/lib/lz4.h"
-#include "zstd/lib/zstd.h"
+#include "vendor/lz4/lib/lz4.h"
+#include "vendor/zstd/lib/zstd.h"
 
 static inline int bs_decompress(const void *src, int srcSize,
                                 void *dst, int dstSize, int encoding) {
@@ -42,7 +42,7 @@ static inline int bs_decompress(const void *src, int srcSize,
  * -------------------------------------------------------------------------- */
 
 #ifdef USE_KCB
-#include "kcb/src/bitshuffle.h"
+#include "vendor/kcb/src/bitshuffle.h"
 #else
 int64_t bshuf_untrans_bit_elem(const void* in, void* out, const size_t size,
         const size_t elem_size);

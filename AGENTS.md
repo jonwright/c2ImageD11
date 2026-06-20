@@ -23,7 +23,7 @@ importing from `c2ImageD11` first, falling back to `ImageD11._cImageD11`.
 - [x] Phase VIII: SIMD dispatch (SSE/AVX2/AVX-512) for hot-path functions
 - [x] Phase IX: bslz4_to_sparse import with multi-backend SIMD dispatch
 - [x] Phase IXb: Integer CSC data types (exact arithmetic with uint64 output)
-- [ ] Phase X: Project layout refactoring (repo is ~90MB; split into manageable sub-packages)
+- [x] Phase X: Project layout refactoring (repo is ~90MB; split into manageable sub-packages)
 
 ## Remaining Tasks
 
@@ -32,7 +32,7 @@ contain historical context and deferred improvement requests.
 
 | ID | Task | Where | Priority |
 |----|------|-------|----------|
-| T1 | Refactor project layout for manageability (repo too large) | AGENTS.md Phase X | Medium |
+| T1 | [x] Refactor project layout for manageability (repo too large) | AGENTS.md Phase X | Medium |
 | T2 | ImageD11 cImageD11.py: try c2ImageD11 first, fallback to _cImageD11 | PLAN.md | High |
 | T3 | KCB ifunc dispatch: port up one level or keep as-is | AGENTS.md Phase IX | Low |
 | T4 | MSVC / Windows build support | AGENTS.md Phase IX | Low |
@@ -248,7 +248,7 @@ All previously-requested c2py23 extensions have been implemented upstream
   - Per-function performance timing via `timing: true` module flag
   - METH_FASTCALL dispatch on Python 3.12+
 
-The thin wrappers in src_wrapper/_wrappers.c are only needed for adapting
+The thin wrappers in src/wrappers/_wrappers.c are only needed for adapting
 2D arrays (vec[3], double[][3], double[][6]) to flat pointers, since the
 .c2py grammar cannot express multi-dimensional array parameters directly.
 All fixed-width integer types (uint16_t*, int32_t*, etc.) are handled
@@ -259,81 +259,121 @@ natively by c2py23.
 ```
 c2ImageD11/
   AGENTS.md                   # This file
-  c2py23_requests.md          # c2py23 improvement requests (9 items)
-  PLAN.md                     # Migration & refactoring roadmap (some sections superseded)
-  _cImageD11.c2py             # c2py23 interface definition (64 functions)
-  setup.py                    # Build with c2py23 (SIMD + bslz4 multi-flag compilation)
-  pyproject.toml              # Build config (setuptools, numpy dependency)
+  PLAN.md                     # Migration & refactoring roadmap
+  README.md
+  pyproject.toml              # Build config (setuptools)
+  setup.py                    # Build system (optional c2py23 for regeneration)
   MANIFEST.in                 # sdist file list
+  .gitignore
+  .gitmodules
+  pyrightconfig.json
   run_ci.sh                   # Single-version local CI
   run_ci_all.sh               # Multi-version CI via Apptainer containers
-  src/                        # Original C sources from ImageD11/src + bslz4
-    cImageD11.h               # Platform macros, DLL visibility
-    blobs.h                   # Disjoint set, NPROPERTY enums
-    blobs.c                   # Disjoint set, blob moments
-    cdiffraction.h            # Vector/matrix macros
-    cdiffraction.c            # compute_geometry, compute_gv, compute_xlylzl*, quickorient
-    cimaged11utils.c          # omp_set_num_threads, my_get_time
-    closest.c                 # verify_rounding, closest, score, score_and_refine,
-                              #   score_and_assign, refine_assigned, put_incr*, cluster1d,
-                              #   misori_*, count_shared
-    connectedpixels.c         # connectedpixels, blobproperties, bloboverlaps, blob_moments,
-                              #   clean_mask, make_clean_mask
-    darkflat.c                # uint16_to_float_darksub/darkflm, frelon_lines, array_stats,
-                              #   array_histogram, reorder*, bgcalc
-    localmaxlabel.c           # localmaxlabel
-    sparse_image.c            # mask_to_coo, sparse_*, tosparse_*, coverlaps, compress_duplicates
-    splat.c                   # splat
-    ImageD11_cmath.h          # Alternative math macros
-    bs_master.c               # Master compilation unit (includes template files)
-    bs_sparse_tmpl.c          # Basic sparse decompress template
-    bs_sparse_csc_tmpl.c      # CSC sparse decompress template (CSC_DATA_T/CSC_SUM_T)
-    bs_functions.h            # Forward declarations for c2py23 (auto-generated)
-  src_wrapper/
-    _wrappers.c               # 2D-array-to-flat-pointer wrappers (6 functions)
-  src_simd/                   # SIMD kernel files (16 functions, 3x ISA compiled)
-    score_kernel.c
-    score_and_refine_kernel.c
-    score_and_assign_kernel.c
-    compute_gv_kernel.c
-    compute_geometry_kernel.c
-    compute_xlylzl_kernel.c
-    compute_xlylzl_xpos_kernel.c
-    put_incr32_kernel.c
-    put_incr64_kernel.c
-    blobproperties_kernel.c
-    darksub_kernel.c
-    darkflm_kernel.c
-    reorder_f32_a32_kernel.c
-    reorderlut_f32_a32_kernel.c
-    reorder_u16_a32_kernel.c
-    reorderlut_u16_a32_kernel.c
-  lz4/                        # Git submodule: LZ4 compression library
-  kcb/                        # Git submodule: KCB bitshuffle (priority backend)
-  bitshuffle/                 # Git submodule: original bitshuffle (fallback)
-  c2ImageD11/
-    __init__.py               # Pure Python: imports .so, exports constants, bslz4
+
+  tools/                      # Developer scripts & code generators
+    generate_bslz4.py         # Boilerplate generator for bslz4 C + .c2py
+
+  interface/                  # c2py23 interface definitions
+    _cImageD11_base.c2py      # Hand-written: core function signatures
+    _cImageD11_bslz4.c2py     # Auto-generated: bslz4/bszstd signatures
+
+  c2ImageD11/                 # Python package
+    __init__.py               # Imports .so, exports constants, bslz4
     _constants.py             # Blob property enum values (hardcoded)
-    bslz4.py                  # bslz4 Python API: chunk2sparse, chunk2sparseCSC
+    bslz4.py                  # bslz4 API: chunk2sparse, chunk2sparseCSC
+    csc_convert.py            # CSC matrix conversion utilities
+
+  src/                        # All C source code, organized by domain
+    core/                     # Shared utilities
+      cImageD11.h             # Platform macros, DLL visibility
+      cimaged11utils.c        # omp_set_num_threads, my_get_time
+      ImageD11_cmath.h        # Alternative math macros
+
+    geometry/                 # Indexing, diffraction, scoring
+      cdiffraction.c          # compute_geometry, compute_gv, compute_xlylzl*
+      cdiffraction.h          # Vector/matrix macros
+      closest.c               # score, score_and_refine, score_and_assign,
+                              #   put_incr*, cluster1d, misori_*, count_shared
+      simd/                   # SIMD kernels for geometry
+        score_kernel.c
+        score_and_refine_kernel.c
+        score_and_assign_kernel.c
+        compute_gv_kernel.c
+        compute_geometry_kernel.c
+        compute_xlylzl_kernel.c
+        compute_xlylzl_xpos_kernel.c
+
+    imageproc/                # Blobs, peaks, dark/flat, reorder
+      blobs.c                 # Disjoint set, blob moments
+      blobs.h                 # Disjoint set, NPROPERTY enums
+      connectedpixels.c       # connectedpixels, blobproperties, bloboverlaps,
+                              #   clean_mask, make_clean_mask
+      localmaxlabel.c         # localmaxlabel
+      darkflat.c              # darksub/darkflm, frelon_lines, reorder*, bgcalc
+      sparse_image.c          # mask_to_coo, sparse_*, coverlaps, compress_duplicates
+      splat.c                 # splat
+      simd/                   # SIMD kernels for image processing
+        blobproperties_kernel.c
+        darksub_kernel.c
+        darkflm_kernel.c
+        put_incr32_kernel.c
+        put_incr64_kernel.c
+        reorder_f32_a32_kernel.c
+        reorderlut_f32_a32_kernel.c
+        reorder_u16_a32_kernel.c
+        reorderlut_u16_a32_kernel.c
+
+    bslz4/                    # Bitshuffle-LZ4/zstd decompress -> sparse
+      bs_master.c             # Auto-generated master compilation unit
+      bs_functions.h          # Auto-generated forward declarations
+      bs_sparse_tmpl.c        # Template: basic sparse decompress
+      bs_sparse_csc_tmpl.c    # Template: CSC sparse decompress
+      bs_sparse_csc_1d_tmpl.c # Template: 1D padded CSC
+      vendor/                 # Git submodules (consumed by bslz4 only)
+        lz4/                  # LZ4 compression library
+        zstd/                 # Zstandard compression library
+        kcb/                  # KCB bitshuffle (priority backend)
+        bitshuffle/           # Original bitshuffle (fallback)
+
+    wrappers/                 # 2D-array-to-flat-pointer adapters
+      _wrappers.c             # Hand-written (6 functions: misori_*, refine_assigned, splat)
+      c2py_runtime.c          # c2py23 runtime (shipped for c2py23-free builds)
+      c2py_runtime.h
+      c2py_amd64.h
+
   tests/
     test_buffer.py            # Lightweight numpy buffer-interface tests
-    test_equivalence.py       # Equivalence tests vs ImageD11._cImageD11 (53/54 pass)
-    test_bslz4.py             # bslz4 buffer tests + equivalence vs original f2py
+    test_equivalence.py       # Equivalence tests vs ImageD11._cImageD11
+    test_bslz4.py             # bslz4 buffer tests + equivalence
+    test_bslz4_ci.py          # CI-specific bslz4 tests
+    test_bslz4_dot.py         # bslz4 dot product tests
+    test_memory_bslz4.py      # valgrind memory safety tests
     benchmark_timing.py       # c2py23 vs f2py timing comparison
     benchmark_simd.py         # SIMD variant comparison (SSE/AVX2/AVX512)
-    bench_bslz4.py            # bslz4 throughput benchmark (KCB vs BS backends)
+    bench_bslz4.py            # bslz4 throughput benchmark
+    bench1.py                 # Benchmark utility
     test_all.py               # Multi-version orchestrator (Apptainer)
     run_multiversion.sh       # Build + test script for inside containers
-    conftest.py               # Pytest configuration (empty)
+    conftest.py               # Pytest configuration
+    *.h5                      # Test data files
+
+  examples/
+    multi_chunk_bslz4/        # Multi-chunk benchmark experiments
+
   .github/workflows/
     test.yml                  # CI: Python 2.7-3.14, timeout-minutes: 10
+
+  .githooks/                  # Pre-commit / pre-push git hooks
+    pre-commit
+    pre-push
+    check_all_pythons.sh
 ```
 
 ## 2D-Array-to-Flat-Pointer Wrappers
 
 c2py23 handles flat buffers via `.ptr`, but the .c2py grammar cannot express
 multi-dimensional array parameters (vec[3], double[][3], double[][6]).
-src_wrapper/_wrappers.c provides thin adapters that cast flat `double*` to
+src/wrappers/_wrappers.c provides thin adapters that cast flat `double*` to
 `vec*` or `double(*)[N]`:
 
 ```c

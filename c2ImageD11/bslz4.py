@@ -343,3 +343,20 @@ class chunk2sparseCSC_1d(object):
         )
 
         return powder.reshape((nframes, nout))
+
+
+def index_file_2d(h5file, dataset):
+    """Read chunk offsets from an HDF5 dataset (utility for multi-chunk IO).
+
+    Returns (nframes, 3) array of [filter_mask, file_location, size]
+    for each chunk/frame in the dataset.
+    """
+    import h5py
+    with h5py.File(h5file, 'r') as hin:
+        ds = hin[dataset]
+        chunk_infos = np.zeros((3, len(ds)), dtype=np.int64)
+        def callback(storeinfo):
+            logical_offset, filter_mask, file_location, size = storeinfo
+            chunk_infos[:, logical_offset[0]] = filter_mask, file_location, size
+        ds.id.chunk_iter(callback)
+    return chunk_infos

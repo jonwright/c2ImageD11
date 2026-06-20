@@ -1,18 +1,17 @@
-include _cImageD11_base.c2py
-include _cImageD11_bslz4.c2py
-include generate_bslz4.py
+include interface/_cImageD11_base.c2py
+include interface/_cImageD11_bslz4.c2py
+include tools/generate_bslz4.py
 include setup.py
 include pyproject.toml
 include run_ci.sh
 include run_ci_all.sh
 
-# C sources (non-submodule)
-include src/*.c
-include src/*.h
-include src_wrapper/*.c
+# C sources (non-submodule) -- recursive graft simplifies maintenance
+graft src
+global-exclude __pycache__/
+global-exclude *.pyc
 
-# SIMD kernel sources
-include src_simd/*.c
+# SIMD kernels are under src/ now; covered by graft src
 
 # Python package
 include c2ImageD11/*.py
@@ -24,21 +23,28 @@ include tests/run_multiversion.sh
 # CI
 include .github/workflows/*.yml
 
-# Submodule files needed at build time
-include lz4/lib/lz4.h
-include lz4/lib/lz4.c
-include kcb/src/bitshuffle.h
-include kcb/src/bitshuffle.c
-include bitshuffle/src/bitshuffle_core.h
-include bitshuffle/src/bitshuffle_internals.h
-include bitshuffle/src/bitshuffle_core.c
-include bitshuffle/src/iochain.h
-include bitshuffle/src/iochain.c
-include zstd/lib/zstd.h
-include zstd/lib/common/*.c
-include zstd/lib/common/*.h
-include zstd/lib/compress/*.c
-include zstd/lib/compress/*.h
-include zstd/lib/decompress/*.c
-include zstd/lib/decompress/*.h
-include zstd/lib/decompress/*.S
+# Pre-generated wrapper + c2py23 runtime (optional c2py23 build)
+include src/wrappers/__cImageD11_wrapper.c
+include src/wrappers/c2py_runtime.c
+include src/wrappers/c2py_runtime.h
+include src/wrappers/c2py_amd64.h
+
+# Submodule files needed at build time (under src/bslz4/vendor/)
+# Pruned by graft + exclude: only the needed files
+include src/bslz4/vendor/lz4/lib/lz4.h
+include src/bslz4/vendor/lz4/lib/lz4.c
+include src/bslz4/vendor/kcb/src/bitshuffle.h
+include src/bslz4/vendor/kcb/src/bitshuffle.c
+include src/bslz4/vendor/bitshuffle/src/bitshuffle_core.h
+include src/bslz4/vendor/bitshuffle/src/bitshuffle_internals.h
+include src/bslz4/vendor/bitshuffle/src/bitshuffle_core.c
+include src/bslz4/vendor/bitshuffle/src/iochain.h
+include src/bslz4/vendor/bitshuffle/src/iochain.c
+include src/bslz4/vendor/zstd/lib/zstd.h
+include src/bslz4/vendor/zstd/lib/common/*.c
+include src/bslz4/vendor/zstd/lib/common/*.h
+include src/bslz4/vendor/zstd/lib/compress/*.c
+include src/bslz4/vendor/zstd/lib/compress/*.h
+include src/bslz4/vendor/zstd/lib/decompress/*.c
+include src/bslz4/vendor/zstd/lib/decompress/*.h
+include src/bslz4/vendor/zstd/lib/decompress/*.S
