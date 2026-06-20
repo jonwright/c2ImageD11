@@ -1,12 +1,22 @@
-"""bslz4_to_sparse: decompress bitshuffle-lz4 data directly to sparse arrays.
+"""bitshuffle decompress to sparse arrays.
 
 Ported from the standalone bslz4_to_sparse package. Functions import from
 c2ImageD11._cImageD11 (c2py23) instead of the f2py extension.
 
 Provides:
-    chunk2sparse(mask, dtype)   -- callable class for frame-by-frame decoding
-    chunk2sparseCSC(mask, csc)  -- same with CSC powder integration
-    bslz4_to_sparse(ds, num)    -- convenience for HDF5 datasets
+    chunk2sparse(mask, ...)       -- frame-by-frame decoding
+    chunk2sparseCSC(mask, csc, ..) -- CSC powder integration
+    chunk2sparseCSC_1d(...)       -- 1D-padded CSC integration
+
+Usage:
+    mask = np.load("mask.npy")
+    dc = chunk2sparse(mask, dtype=np.uint16, encoding=LZ4)
+    npx, (vals, inds) = dc(chunk_bytes, cut=50)
+
+    # Or from an h5py Dataset (auto-detects dtype and encoding):
+    with h5py.File("data.h5") as f:
+        dc = chunk2sparse(mask, dataset=f["entry/data"])
+    npx, (vals, inds) = dc(chunk_bytes, cut=50)
 """
 
 from __future__ import print_function
@@ -15,27 +25,17 @@ import os
 import sys
 import numpy as np
 
-# Basic decompress functions (used by chunk2sparse and bslz4_to_sparse)
 from c2ImageD11._cImageD11 import (
-    bs_u8,
-    bs_u16,
-    bs_u32,
-    bs_csc_u8,
-    bs_csc_u16,
-    bs_csc_u32,
-    bs_csc1d_u8,
-    bs_csc1d_u16,
-    bs_csc1d_u32,
+    bs_u8, bs_u16, bs_u32,
+    bs_csc_u8, bs_csc_u16, bs_csc_u32,
+    bs_csc1d_u8, bs_csc1d_u16, bs_csc1d_u32,
 )
 
-version = "0.2.0"
+version = "0.3.0"
 
 # encoding values matching bshuf_h5filter.h
 LZ4  = 2
 ZSTD = 3
-
-# Pixel itemsize -> type suffix lookup
-_PIXEL_SUFFIX = {1: "u8", 2: "u16", 4: "u32"}
 
 # Pixel itemsize -> (basic_func, csc_func, csc1d_func)
 _FUN_MAP = {
@@ -45,62 +45,83 @@ _FUN_MAP = {
 }
 
 
-def _get_csc_function(pixel_dtype):
-    """Return the right bs_csc_* function for given pixel type.
-
-    Returns function object (encoding passed separately).
-    """
+def _get_fun_tuple(pixel_dtype):
+    """Return (basic, csc, csc1d) functions for given pixel dtype."""
     pixel_dt = np.dtype(pixel_dtype)
     if pixel_dt.itemsize not in _FUN_MAP:
         raise ValueError(
             "Unsupported pixel dtype: %s (need uint8/uint16/uint32)" %
             str(pixel_dt))
-    return _FUN_MAP[pixel_dt.itemsize][1]
+    return _FUN_MAP[pixel_dt.itemsize]
 
 
-def _get_csc_1d_function(pixel_dtype):
-    """Return the right bs_csc1d_* function for given pixel type.
+def _detect_encoding(ds):
+    """Read encoding (2=LZ4, 3=ZSTD) from h5py Dataset filter 32008.
 
-    Returns function object (encoding passed separately).
+    Filter 32008 params: (block_size, compressor, ...)
+    compressor=2 for LZ4, 3 for ZSTD (bshuf_h5filter.h).
     """
-    pixel_dt = np.dtype(pixel_dtype)
-    if pixel_dt.itemsize not in _FUN_MAP:
-        raise ValueError(
-            "Unsupported pixel dtype: %s (need uint8/uint16/uint32)" %
-            str(pixel_dt))
-    return _FUN_MAP[pixel_dt.itemsize][2]
+    try:
+        plist = ds.id.get_create_plist()
+        nf = plist.get_nfilters()
+        for i in range(nf):
+            _, fid, _, parms, _ = plist.get_filter(i)
+            if fid == 32008 and len(parms) >= 2:
+                return parms[1]
+    except Exception:
+        pass
+    return LZ4  # default
+
+
+def _resolve_dtype_encoding(dtype, encoding, dataset):
+    """Resolve dtype/encoding from args or dataset.
+
+    Returns (dtype, encoding).
+    Raises ValueError if dataset and explicit args conflict.
+    """
+    if dataset is not None:
+        if dtype is not None or encoding is not None:
+            raise ValueError(
+                "cannot specify dtype or encoding when dataset is given")
+        dtype = dataset.dtype
+        encoding = _detect_encoding(dataset)
+    else:
+        if dtype is None or encoding is None:
+            raise ValueError(
+                "must specify either dataset, or both dtype and encoding")
+    return np.dtype(dtype), encoding
 
 
 class chunk2sparse:
-    """Callable object for decompressing bitshuffle-lz4 chunks to sparse.
+    """Callable object for decompressing bitshuffle chunks to sparse.
 
     Parameters
     ----------
     mask : 2D numpy array
         Detector mask. Active pixels > 0.
     dtype : numpy dtype, optional
-        Pixel data type. Default uint16.
-
-    Methods
-    -------
-    __call__(buffer, cut)
-        Returns (npixels, (values, indices))
-
-    coo(buffer, cut)
-        Returns (npixels, row, col, values_copy)
+        Pixel data type. Required if dataset is not given.
+    encoding : int, optional
+        Compression format: LZ4=2, ZSTD=3. Required if dataset not given.
+    dataset : h5py.Dataset, optional
+        HDF5 dataset. If given, dtype and encoding are auto-detected.
+        No reference to the dataset is stored.
     """
 
-    def __init__(self, mask, dtype=np.uint16, encoding=LZ4):
+    def __init__(self, mask, dtype=None, encoding=None, dataset=None):
+        dtype, encoding = _resolve_dtype_encoding(dtype, encoding, dataset)
+        if dataset is not None:
+            if mask.shape != dataset.shape[1:]:
+                raise ValueError(
+                    "mask shape %s does not match dataset frame shape %s" %
+                    (mask.shape, dataset.shape[1:]))
+
         self.nfast = mask.shape[1]
         self.mask = mask.ravel()
         self.indices = np.empty(mask.size, np.uint32)
         self.values = np.empty(mask.size, dtype)
-        self.dtype = dtype
         self.encoding = encoding
-        itemsize = np.dtype(dtype).itemsize
-        if itemsize not in _FUN_MAP:
-            raise ValueError("Unsupported dtype: %s" % str(dtype))
-        self.fun = _FUN_MAP[itemsize][0]
+        self.fun = _get_fun_tuple(dtype)[0]
         self._offsets  = np.array([0], dtype=np.int64)
         self._lengths  = np.zeros(1, dtype=np.int32)
         self._npx_pc   = np.zeros(1, dtype=np.int32)
@@ -121,58 +142,8 @@ class chunk2sparse:
         return npixels, row, col, self.values[:npixels].copy()
 
 
-def bslz4_to_sparse(ds, num, cut, mask=None, pixelbuffer=None):
-    """Read a bitshuffle-lz4 compressed HDF5 dataset and convert to sparse.
-
-    Parameters
-    ----------
-    ds : h5py.Dataset
-        HDF5 dataset containing [nframes, ni, nj] pixels.
-    num : int
-        Frame number to read.
-    cut : int
-        Threshold. Pixels below this value are ignored.
-    mask : ndarray, optional
-        Detector mask. Active pixels > 0. Default: all ones.
-    pixelbuffer : tuple, optional
-        (values, indices) storage space.
-
-    Returns
-    -------
-    npixels : int
-        Number of pixels found.
-    (values, indices) : tuple of ndarrays
-        Pixel values and flat indices.
-    """
-    if sys.version_info[0] < 3:
-        raise RuntimeError(
-            "bslz4_to_sparse is not supported on Python 2.7. "
-            "TODO: debug and fix"
-        )
-    if mask is None:
-        mask = np.ones((ds.shape[1], ds.shape[2]), np.uint8).ravel()
-    if pixelbuffer is None:
-        indices = np.empty((ds.shape[1], ds.shape[2]), np.uint32).ravel()
-        values = np.empty((ds.shape[1], ds.shape[2]), ds.dtype).ravel()
-    else:
-        values, indices = pixelbuffer
-    filtinfo, buffer = ds.id.read_direct_chunk((num, 0, 0))
-    offs  = np.array([0], dtype=np.int64)
-    lens  = np.array([len(buffer)], dtype=np.int32)
-    npc   = np.zeros(1, dtype=np.int32)
-    encoding = ZSTD if "zstd" in str(ds.id.get_create_plist()).lower() else LZ4
-    if ds.dtype not in (np.uint8, np.uint16, np.uint32):
-        raise Exception("no decoder for dtype %s" % ds.dtype)
-    fn = _FUN_MAP[np.dtype(ds.dtype).itemsize][0]
-    npixels = fn(buffer, mask, values, indices, cut, encoding,
-                 offs, lens, npc)
-    if npixels < 0:
-        raise Exception("Error decoding: %d" % (npixels))
-    return npixels, (values, indices)
-
-
 class chunk2sparseCSC:
-    """Callable for decompressing bitshuffle-lz4 chunks with powder integration.
+    """Callable for decompressing bitshuffle chunks with powder integration.
 
     Parameters
     ----------
@@ -181,10 +152,21 @@ class chunk2sparseCSC:
     csc : scipy.sparse.csc_matrix or pyFAI CSCIntegrator
         Sparse matrix in CSC format (data, indices, indptr, shape/bins).
     dtype : numpy dtype, optional
-        Pixel data type. Default uint16.
+        Pixel data type. Required if dataset is not given.
+    encoding : int, optional
+        Compression format: LZ4=2, ZSTD=3. Required if dataset not given.
+    dataset : h5py.Dataset, optional
+        HDF5 dataset. If given, dtype and encoding are auto-detected.
     """
 
-    def __init__(self, mask, csc, dtype=np.uint16, encoding=LZ4):
+    def __init__(self, mask, csc, dtype=None, encoding=None, dataset=None):
+        dtype, encoding = _resolve_dtype_encoding(dtype, encoding, dataset)
+        if dataset is not None:
+            if mask.shape != dataset.shape[1:]:
+                raise ValueError(
+                    "mask shape %s does not match dataset frame shape %s" %
+                    (mask.shape, dataset.shape[1:]))
+
         self.nfast = mask.shape[1]
         self.mask = mask.ravel()
         self.cscdata = csc.data
@@ -202,8 +184,7 @@ class chunk2sparseCSC:
         else:
             raise Exception("csc argument has no shape or bins attribute")
 
-        # Look up CSC function. Powder is always float64.
-        self.fun = _get_csc_function(dtype)
+        self.fun = _get_fun_tuple(dtype)[1]
         self.powder = np.empty(nbins, dtype=np.float64)
 
         self.indices = np.empty(mask.size, np.uint32)
@@ -220,42 +201,17 @@ class chunk2sparseCSC:
         """
         self._lengths[0] = len(buffer)
         npixels = self.fun(
-            buffer,
-            self.mask,
-            self.values,
-            self.indices,
-            cut,
+            buffer, self.mask, self.values, self.indices, cut,
             self.encoding,
-            self.powder,
-            self.cscdata,
-            self.cscindices,
-            self.cscindptr,
-            self._offsets,
-            self._lengths,
-            self._npx_pc,
+            self.powder, self.cscdata, self.cscindices, self.cscindptr,
+            self._offsets, self._lengths, self._npx_pc,
         )
         return npixels, (self.values, self.indices), self.powder
 
     def multi(self, file_buffer, offsets, lengths, cut=0, nframes=None):
         """Process N frames with loop interchange.
 
-        Parameters
-        ----------
-        file_buffer : ndarray
-            Memory-mapped HDF5 file as uint8 flat buffer (from numpy.memmap).
-        offsets : ndarray
-            Byte offsets of each chunk (int64, shape [N]).
-        lengths : ndarray
-            Compressed lengths of each chunk (int32, shape [N]).
-        cut : int
-            Threshold. Default 0.
-        nframes : int, optional
-            Number of frames to process. Default: len(offsets).
-
-        Returns
-        -------
-        powder : ndarray (nframes, nbins)
-            Per-frame powder histograms.
+        Returns powder array (nframes, nbins).
         """
         if nframes is None:
             nframes = len(offsets)
@@ -270,14 +226,11 @@ class chunk2sparseCSC:
         outadr  = np.zeros(nframes * nij, dtype=np.uint32)
         npx_pc  = np.zeros(nframes, dtype=np.int32)
 
-        off = offsets[:nframes]
-        le  = lengths[:nframes]
-
         self.fun(
             file_buffer, self.mask,
             outpx, outadr, cut, self.encoding,
             powder, self.cscdata, self.cscindices, self.cscindptr,
-            off, le, npx_pc,
+            offsets[:nframes], lengths[:nframes], npx_pc,
         )
 
         return powder.reshape((nframes, nout))
@@ -295,9 +248,6 @@ class chunk2sparseCSC:
 class chunk2sparseCSC_1d(object):
     """1D padded CSC integration with uniform padded entries.
 
-    Uses bslz4_csc1d_* functions where each pixel has exactly
-    entries_per_pixel entries (zero-padded if fewer in pyFAI matrix).
-
     Parameters
     ----------
     mask : 2D ndarray
@@ -309,12 +259,23 @@ class chunk2sparseCSC_1d(object):
     entries_per_pixel : int
         Pad width (max entries per pixel).
     dtype : numpy dtype, optional
-        Pixel data type. Default uint16.
+        Pixel data type. Required if dataset is not given.
+    encoding : int, optional
+        Compression format: LZ4=2, ZSTD=3. Required if dataset not given.
+    dataset : h5py.Dataset, optional
+        HDF5 dataset. If given, dtype and encoding are auto-detected.
     """
 
     def __init__(self, mask, csc_flat, csc_first_bin,
                  entries_per_pixel,
-                 dtype=np.uint16, encoding=LZ4):
+                 dtype=None, encoding=None, dataset=None):
+        dtype, encoding = _resolve_dtype_encoding(dtype, encoding, dataset)
+        if dataset is not None:
+            if mask.shape != dataset.shape[1:]:
+                raise ValueError(
+                    "mask shape %s does not match dataset frame shape %s" %
+                    (mask.shape, dataset.shape[1:]))
+
         self.nfast = mask.shape[1]
         self.mask = mask.ravel()
         self.csc_flat = csc_flat
@@ -325,8 +286,7 @@ class chunk2sparseCSC_1d(object):
         self.indices = np.empty(self.mask.size, np.uint32)
         self.values = np.empty(self.mask.size, dtype)
 
-        # Look up CSC1D function. Powder is always float64.
-        self.fun = _get_csc_1d_function(dtype)
+        self.fun = _get_fun_tuple(dtype)[2]
 
         self.powder = np.empty(0, dtype=np.float64)
         self._offsets  = np.array([0], dtype=np.int64)
@@ -342,19 +302,11 @@ class chunk2sparseCSC_1d(object):
             raise RuntimeError("powder not initialized; call set_nout(nbins)")
         self._lengths[0] = len(buffer)
         npixels = self.fun(
-            buffer,
-            self.mask,
-            self.values,
-            self.indices,
-            cut,
+            buffer, self.mask, self.values, self.indices, cut,
             self.encoding,
-            self.powder,
-            self.csc_flat,
-            self.csc_first_bin,
+            self.powder, self.csc_flat, self.csc_first_bin,
             self.entries_per_pixel,
-            self._offsets,
-            self._lengths,
-            self._npx_pc,
+            self._offsets, self._lengths, self._npx_pc,
         )
         return npixels, (self.values, self.indices), self.powder
 
@@ -382,15 +334,12 @@ class chunk2sparseCSC_1d(object):
         outadr = np.zeros(nframes * nij, dtype=np.uint32)
         npx_pc = np.zeros(nframes, dtype=np.int32)
 
-        off = offsets[:nframes]
-        le  = lengths[:nframes]
-
         self.fun(
             file_buffer, self.mask,
             outpx, outadr, cut, self.encoding,
             powder, self.csc_flat, self.csc_first_bin,
             self.entries_per_pixel,
-            off, le, npx_pc,
+            offsets[:nframes], lengths[:nframes], npx_pc,
         )
 
         return powder.reshape((nframes, nout))
