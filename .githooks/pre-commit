@@ -6,7 +6,7 @@ STAGED=$(git diff --cached --name-only --diff-filter=ACM)
 PYTHON_FILES=$(echo "$STAGED" | grep '\.py$' || true)
 
 # ---- Check 1: non-ASCII characters ----
-if echo "$STAGED" | xargs -r -I{} grep -PHn '[^\x00-\x7F]' {} 2>/dev/null; then
+if [ -n "$STAGED" ] && echo "$STAGED" | xargs -r -I{} grep -PHn '[^\x00-\x7F]' {} 2>/dev/null; then
     echo
     echo "ERROR: non-ASCII characters found. Replace with ASCII equivalents:"
     echo "  U+2192 ->  (arrow)       ->  ->"
@@ -22,12 +22,32 @@ if [ -z "$PYTHON_FILES" ]; then
     exit 0
 fi
 
+_resolve_python() {
+    local name="$1"
+    if command -v "$name" >/dev/null 2>&1 && "$name" -c "import sys; sys.exit(0)" 2>/dev/null; then
+        echo "$name"
+        return 0
+    fi
+    # Try pyenv shims
+    for d in "$HOME/.pyenv/shims" "$HOME/.pyenv/versions"/*/bin; do
+        for cand in "$name" "$name".*; do
+            if [ -x "$d/$cand" ] && "$d/$cand" -c "import sys; sys.exit(0)" 2>/dev/null; then
+                echo "$d/$cand"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
 check_python() {
-    local python_bin="$1"
+    local python_bin
+    python_bin=$(_resolve_python "$1")
     local ver_label="$2"
     local errors=0
 
-    if ! command -v "$python_bin" >/dev/null 2>&1; then
+    if [ -z "$python_bin" ]; then
+        echo "c2ImageD11: $ver_label not found, skipping syntax check"
         return 0
     fi
 
