@@ -160,6 +160,8 @@ def _compile_simd_variants(build_dir):
             obj_path = os.path.join(build_dir, obj_name)
 
             fn_name = "{}_{}".format(kernel_name, variant_name)
+            if kernel_name == "score_and_refine":
+                fn_name = fn_name + "_impl"
             cflags = _CFLAGS_OMP[:]
             if simd_flag:
                 cflags.extend(simd_flag)
