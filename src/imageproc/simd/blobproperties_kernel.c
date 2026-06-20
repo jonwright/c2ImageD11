@@ -9,15 +9,17 @@
 #include "cImageD11.h"
 #include <stdio.h>
 #include <math.h>
+#include <stdint.h>
 #include "blobs.h"
 
 void KERNEL_FN(float *data, int32_t *labels, int32_t npk, float omega,
-                    int verbose, int ns, int nf, double *res) {
-    int i, j, bad, ipx;
+                    int verbose, intptr_t ns, intptr_t nf, double *res) {
+    intptr_t i, j, ipx;
+    int bad;
     double fval;
     int32_t ipk;
     if (verbose) {
-        printf("Computing blob moments, ns %d, nf %d, npk %d\n", ns, nf, npk);
+        printf("Computing blob moments, ns %d, nf %d, npk %d\n", (int)ns, (int)nf, npk);
     }
     /* Initialise the results */
     for (i = 0; i < npk; i++) {
@@ -50,7 +52,7 @@ void KERNEL_FN(float *data, int32_t *labels, int32_t npk, float omega,
                     bad++;
                     if (bad < 10) {
                         printf("Found %d in your blob image at i=%d, j=%d\n",
-                               ipk, i, j);
+                               ipk, (int)i, (int)j);
                     }
                 }
             }

@@ -9,13 +9,15 @@
 #include "cImageD11.h"
 #include <stdio.h>
 #include <math.h>
+#include <stdint.h>
 #include "cdiffraction.h"
 #define NOISY 0
 
 void KERNEL_FN(double s[], double f[], double p[4], double r[9],
-                    double dist[3], double xlylzl[][3], int n) {
+                    double dist[3], double xlylzl[][3], intptr_t n) {
     double s_cen, f_cen, s_size, f_size, v[3];
-    int i, j;
+    intptr_t i;
+    int j;
     s_cen = p[0];
     f_cen = p[1];
     s_size = p[2];

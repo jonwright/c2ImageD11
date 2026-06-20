@@ -5,6 +5,7 @@
 #include <stdio.h>  /* printf */
 #include <stdlib.h> /* abs(int) */
 #include <string.h> /* memset */
+#include <stdint.h>
 
 /* F2PY_WRAPPER_START
     function mask_to_coo( msk, ns, nf, i, j, nnz, w )
@@ -28,9 +29,9 @@
         integer :: mask_to_coo
     end function mask_to_coo
 F2PY_WRAPPER_END */
-int mask_to_coo(int8_t msk[], int ns, int nf, uint16_t i[], uint16_t j[],
-                int nnz, int nrow[]) {
-    int mi, mj, idx;
+int mask_to_coo(int8_t msk[], intptr_t ns, intptr_t nf, uint16_t i[], uint16_t j[],
+                intptr_t nnz, int nrow[]) {
+    intptr_t mi, mj; int idx;
     /*  int *nrow;
       nrow = (int*) malloc(ns*sizeof(int)); */
     if ((ns < 1) || (ns > 65535))
@@ -115,8 +116,8 @@ int mask_to_coo(int8_t msk[], int ns, int nf, uint16_t i[], uint16_t j[],
         integer sparse_is_sorted
     end function spare_is_sorted
 F2PY_WRAPPER_END */
-int sparse_is_sorted(uint16_t i[], uint16_t j[], int nnz) {
-    int k, es, ed;
+int sparse_is_sorted(uint16_t i[], uint16_t j[], intptr_t nnz) {
+    intptr_t k; int es, ed;
     es = nnz + 1;
     ed = nnz + 1;
     for (k = 1; k < nnz; k++) {
@@ -162,10 +163,10 @@ int sparse_is_sorted(uint16_t i[], uint16_t j[], int nnz) {
 F2PY_WRAPPER_END */
 #define NOISY 0
 int sparse_connectedpixels(float *restrict v, uint16_t *restrict i,
-                           uint16_t *restrict j, int nnz, float threshold,
+                           uint16_t *restrict j, intptr_t nnz, float threshold,
                            int32_t *restrict labels /* nnz */
 ) {
-    int k, p, pp, ir;
+    intptr_t k, p, pp; int ir;
     int32_t *S, *T, np;
     /* Read k = kurrent
        p = prev */
@@ -268,12 +269,12 @@ int sparse_connectedpixels(float *restrict v, uint16_t *restrict i,
 F2PY_WRAPPER_END */
 #define NOISY 0
 int sparse_connectedpixels_splat(float *restrict v, uint16_t *restrict i,
-                                 uint16_t *restrict j, int nnz, float threshold,
+                                 uint16_t *restrict j, intptr_t nnz, float threshold,
                                  int32_t *restrict labels, /* nnz */
                                  int32_t *restrict Z,
                                  /* workspace, at least (imax+2)*(jmax+2) */
-                                 int imax, int jmax) {
-    int k, p, pp, ir, jdim, ik, jk;
+                                 intptr_t imax, intptr_t jmax) {
+    intptr_t k, p, pp, jdim, ik, jk; int ir;
     int32_t *S, *T, np;
     /* Read k = kurrent
        p = prev */
@@ -403,7 +404,7 @@ int sparse_connectedpixels_splat(float *restrict v, uint16_t *restrict i,
 F2PY_WRAPPER_END */
 /* blob_properties for sparse - in image only... */
 void sparse_blob2Dproperties(float *restrict data, uint16_t *restrict i,
-                             uint16_t *restrict j, int nnz,
+                             uint16_t *restrict j, intptr_t nnz,
                              int32_t *restrict labels, double *restrict res,
                              int32_t npk) {
     int k, kpk, f, s;
@@ -466,7 +467,7 @@ F2PY_WRAPPER_END */
 void sparse_smooth(float *restrict v,    // input image
                    uint16_t *restrict i, // indices
                    uint16_t *restrict j,
-                   int nnz,             // bounds
+                   intptr_t nnz,             // bounds
                    float *restrict s) { // smoothed output
     int k, di, dj, r, prow, p;
     float m;
@@ -521,12 +522,12 @@ F2PY_WRAPPER_END */
 #define CHECKSANITY 0
 #define TRACE 0
 int sparse_localmaxlabel(float *restrict v, uint16_t *restrict i,
-                         uint16_t *restrict j, int nnz,
+                         uint16_t *restrict j, intptr_t nnz,
                          float *restrict MV, // neighbor Max Val (of 3x3 square)
                          int32_t *restrict iMV,   // Which neighbor is higher?
                          int32_t *restrict labels // Which neighbor is higher?
 ) {
-    int k, p, pp, ir, pnext;
+    intptr_t k, p, pp; int ir, pnext;
     float MV_LOW;
     MV_LOW = -1e10;
     /* Read k = kurrent
@@ -682,8 +683,8 @@ int sparse_localmaxlabel(float *restrict v, uint16_t *restrict i,
     end function sparse_overlaps
 F2PY_WRAPPER_END */
 int sparse_overlaps(uint16_t *restrict i1, uint16_t *restrict j1,
-                    int *restrict k1, int nnz1, uint16_t *restrict i2,
-                    uint16_t *restrict j2, int *restrict k2, int nnz2
+                    int *restrict k1, intptr_t nnz1, uint16_t *restrict i2,
+                    uint16_t *restrict j2, int *restrict k2, intptr_t nnz2
 
 ) {
     /*
@@ -742,8 +743,8 @@ int sparse_overlaps(uint16_t *restrict i1, uint16_t *restrict j1,
     end function compress_duplicates
 F2PY_WRAPPER_END */
 int compress_duplicates(int *restrict i, int *restrict j, int *restrict oi,
-                        int *restrict oj, int *restrict tmp, int n, int nt) {
-    int k, vmax, c, t, ik, jk;
+                        int *restrict oj, int *restrict tmp, intptr_t n, intptr_t nt) {
+    intptr_t k; int vmax, c, t, ik, jk;
     /* First sort on j */
     vmax = i[0];
     for (k = 0; k < n; k++) { /* length of histogram */
@@ -845,10 +846,10 @@ int compress_duplicates(int *restrict i, int *restrict j, int *restrict oi,
 F2PY_WRAPPER_END */
 
 int coverlaps(uint16_t *restrict row1, uint16_t *restrict col1,
-              int *restrict labels1, int nnz1, uint16_t *restrict row2,
-              uint16_t *restrict col2, int *restrict labels2, int nnz2,
+              int *restrict labels1, intptr_t nnz1, uint16_t *restrict row2,
+              uint16_t *restrict col2, int *restrict labels2, intptr_t nnz2,
               int *restrict mat, int npk1, int npk2, int *restrict results) {
-    int npk, i1, i2;
+    intptr_t i1, i2; int npk;
     uint32_t p1, p2;
     //    printf("nnz %d %d %d %d\n",nnz1,nnz2,npk1,npk2);
     for (i1 = 0; i1 < npk1 * npk2; i1++) {
@@ -905,8 +906,8 @@ F2PY_WRAPPER_END */
 
 int tosparse_u16(uint16_t *restrict img, uint8_t *restrict msk,
                  uint16_t *restrict row, uint16_t *restrict col,
-                 uint16_t *restrict val, int cut, int ns, int nf) {
-    int k = 0, i, j;
+                 uint16_t *restrict val, int cut, intptr_t ns, intptr_t nf) {
+    intptr_t i, j; int k = 0;
     for (i = 0; i < ns; i++) {
         for (j = 0; j < nf; j++) {
             if ((msk[i * nf + j]) && (img[i * nf + j] > (uint16_t)cut)) {
@@ -942,8 +943,8 @@ F2PY_WRAPPER_END */
 
 int tosparse_u32(uint32_t *restrict img, uint8_t *restrict msk,
                  uint16_t *restrict row, uint16_t *restrict col,
-                 uint32_t *restrict val, float cut, int ns, int nf) {
-    int k, i;
+                 uint32_t *restrict val, float cut, intptr_t ns, intptr_t nf) {
+    intptr_t i; int k;
     uint32_t uicut;
     uicut = cut;
     k = 0;
@@ -979,8 +980,8 @@ F2PY_WRAPPER_END */
 
 int tosparse_f32(float *restrict img, uint8_t *restrict msk,
                  uint16_t *restrict row, uint16_t *restrict col,
-                 float *restrict val, float cut, int ns, int nf) {
-    int k = 0, i, j;
+                 float *restrict val, float cut, intptr_t ns, intptr_t nf) {
+    intptr_t i, j; int k = 0;
     for (i = 0; i < ns; i++) {
         for (j = 0; j < nf; j++) {
             if ((msk[i * nf + j]) && (img[i * nf + j] > cut)) {
@@ -999,8 +1000,8 @@ int tosparse_f32(float *restrict img, uint8_t *restrict msk,
 
 int tosparse_u16_avx512(uint16_t *restrict img, uint8_t *restrict msk,
                         uint16_t *restrict row, uint16_t *restrict col,
-                        uint16_t *restrict val, int cut, int ns, int nf) {
-    int p, bit, npx = 0;
+                        uint16_t *restrict val, int cut, intptr_t ns, intptr_t nf) {
+    intptr_t p, npx = 0; int bit;
     __m256i m0 = _mm256_setzero_si256();
     /* sign. ho hum, need to test that: */
     __m512i mcut = _mm512_set1_epi16((int16_t)((uint16_t)cut));

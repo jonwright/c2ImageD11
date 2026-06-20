@@ -8,10 +8,11 @@
 
 #include "cImageD11.h"
 #include <stdio.h>
+#include <stdint.h>
 
 void KERNEL_FN(const float *restrict data, const uint32_t *restrict adr,
-                     float *restrict out, int N) {
-    int i;
+                     float *restrict out, intptr_t N) {
+    intptr_t i;
     /*  printf("Hello, got N=%d\n",N);*/
 #pragma omp parallel for
     for (i = 0; i < N; i++) {

@@ -1,5 +1,6 @@
 
 #include "cImageD11.h"
+#include <stdint.h>
 #include <stdio.h>
 
 /* F2PY_WRAPPER_START
@@ -21,9 +22,9 @@
     end subroutine splat
 
 F2PY_WRAPPER_END */
-void splat(uint8_t rgba[], int w, int h, double gve[][3], int ng, double u[9],
-           int npx) {
-    int32_t i, j, k, imx, imy, imz, w2, h2;
+void splat(uint8_t rgba[], intptr_t w, intptr_t h, double gve[][3], intptr_t ng, double u[9],
+           intptr_t npx) {
+    intptr_t i, j, k; int32_t imx, imy, imz, w2, h2;
     double s[9];
 
     /* init */

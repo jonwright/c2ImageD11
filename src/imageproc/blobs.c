@@ -19,6 +19,7 @@
 */
 
 #include "blobs.h"
+#include <stdint.h>
 #include <math.h> /* sqrt */
 #include <stdio.h>
 #include <stdlib.h> /* malloc */
@@ -37,9 +38,9 @@ void match(int32_t * new, int32_t * old, int32_t * S)
 }
 */
 
-DLL_LOCAL void compute_moments(double b[], int nb) {
+DLL_LOCAL void compute_moments(double b[], intptr_t nb) {
     /* Convert the blob (summing) representation to a human readable form */
-    int i, off;
+    intptr_t i; int off;
     double ts, to, tf, us, uo, uf, vs, vo, vf, tc;
 
     /* loop over a set of blobs in a flat array */

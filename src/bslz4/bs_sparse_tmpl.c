@@ -4,25 +4,27 @@
  * already defined. Generates one function: KERNEL_FN().
  */
 
-int KERNEL_FN(const uint8_t *restrict compressed, int compressed_length,
-              const uint8_t *restrict mask, int NIJ,
+int KERNEL_FN(const uint8_t *restrict compressed, intptr_t compressed_length,
+              const uint8_t *restrict mask, intptr_t NIJ,
               DATATYPE *restrict output, uint32_t *restrict output_adr,
               int threshold, int encoding,
               const int64_t *restrict chunk_offsets,
               const int32_t *restrict chunk_lengths,
-              int nchunks,
+              intptr_t nchunks,
               int32_t *restrict npx_per_chunk);
 
-int KERNEL_FN(const uint8_t *restrict compressed, int compressed_length,
-              const uint8_t *restrict mask, int NIJ,
+int KERNEL_FN(const uint8_t *restrict compressed, intptr_t compressed_length,
+              const uint8_t *restrict mask, intptr_t NIJ,
               DATATYPE *restrict output, uint32_t *restrict output_adr,
               int threshold, int encoding,
               const int64_t *restrict chunk_offsets,
               const int32_t *restrict chunk_lengths,
-              int nchunks,
+              intptr_t nchunks,
               int32_t *restrict npx_per_chunk)
 {
-    int blocksize, c, j, ret;
+    int blocksize, ret;
+    intptr_t c;
+    int j;
     uint32_t nbytes;
     int *chunk_p, *chunk_rem, *chunk_npx;
     DATATYPE **chunk_wr_out;
@@ -57,7 +59,7 @@ int KERNEL_FN(const uint8_t *restrict compressed, int compressed_length,
         chunk_total = READ64BE(&compressed[chunk_offsets[c]]);
         chunk_rem[c] = (int)chunk_total;
         if (chunk_total / NB > (uint64_t)NIJ) {
-            printf("Not enough output space, %zd %d\n", chunk_total, NIJ);
+            printf("Not enough output space, %zd %td\n", chunk_total, NIJ);
             free(chunk_p); free(chunk_rem); free(chunk_npx);
             free(chunk_wr_out); free(chunk_wr_outadr);
             return -99;

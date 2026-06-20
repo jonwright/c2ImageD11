@@ -8,16 +8,18 @@
 
 #include "cImageD11.h"
 #include <math.h>
+#include <stdint.h>
 static inline double conv_double_to_int_fast(double x) {
     return (x + 6755399441055744.0) - 6755399441055744.0;
 }
 
-int KERNEL_FN(vec ubi[3], vec gv[], double tol, int ng) {
+int KERNEL_FN(vec ubi[3], vec gv[], double tol, intptr_t ng) {
     /*
      * Counts g-vectors indexed by ubi within tol
      */
     double sumsq, h0, h1, h2, atol;
-    int n, k;
+    int n;
+    intptr_t k;
     n = 0;
     atol = tol * tol;
     for (k = 0; k < ng; k++) {

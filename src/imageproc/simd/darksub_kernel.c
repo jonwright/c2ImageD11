@@ -7,10 +7,11 @@
 #endif
 
 #include "cImageD11.h"
+#include <stdint.h>
 
 void KERNEL_FN(float *restrict img, const float *restrict drk,
-                             const uint16_t *restrict data, int npx) {
-    int i;
+                             const uint16_t *restrict data, intptr_t npx) {
+    intptr_t i;
 #ifdef GOT_OMP_SIMD
 #pragma omp parallel for simd
 #else

@@ -1,5 +1,6 @@
 
 #include "cImageD11.h"
+#include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,10 +22,10 @@ DLL_LOCAL
 int neighbormax(const float *restrict im, // input
                 int32_t *restrict lout,   // output
                 uint8_t *restrict l,      // workspace temporary
-                int dim0,                 // Image dimensions
-                int dim1) {
+                intptr_t dim0,                 // Image dimensions
+                intptr_t dim1) {
     // Fill in the first label as npeaks on this row
-    int i, j, p, k0, k1, k2, npks;
+    intptr_t i, j; int p, k0, k1, k2, npks;
     float mx0, mx1, mx2;
 
     npks = 0;
@@ -96,10 +97,10 @@ F2PY_WRAPPER_END */
 int localmaxlabel(const float *restrict im, // input
                   int32_t *restrict lout,   // output
                   uint8_t *restrict l,      // workspace temporary
-                  int dim0,                 // Image dimensions
-                  int dim1) {
+                  intptr_t dim0,                 // Image dimensions
+                  intptr_t dim1) {
     // old msvc for python 2.7 requires ALL variables declared up here.
-    int i, j, p, k, q, npk, t, nt, tid, lo, hi, npks;
+    intptr_t i, j, p, q, nt, lo, hi; int k, npk, t, tid, npks;
     //   int noisy=0;
 #define noisy 0
     double tic, toc;

@@ -8,10 +8,12 @@
 
 #include "cImageD11.h"
 #include <stdio.h>
+#include <stdint.h>
 
 void KERNEL_FN(float data[], int64_t ind[], float vals[], int boundscheck,
-                int n, int m) {
-    int64_t k, ik;
+                intptr_t n, intptr_t m) {
+    intptr_t k;
+    int64_t ik;
     if (boundscheck == 0) {
         for (k = 0; k < n; k++)
             data[ind[k]] += vals[k];

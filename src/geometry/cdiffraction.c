@@ -1,5 +1,6 @@
 
 #include "cdiffraction.h"
+#include <stdint.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,10 +31,10 @@
 F2PY_WRAPPER_END */
 void compute_geometry(double xlylzl[][3], double omega[], double omegasign,
                       double wvln, double wedge, double chi, double t[3],
-                      double out[][6], int n) {
+                      double out[][6], intptr_t n) {
     double sc, cc, sw, cw, wmat[9], cmat[9], mat[9], u[3], d[3], v[3];
     double modyz, o[3], co, so, ds, k[3];
-    int i;
+    intptr_t i;
     // ! Fill in rotation matrix of wedge, chi
     sw = sin(wedge * RAD);
     cw = cos(wedge * RAD);
@@ -111,10 +112,10 @@ void compute_geometry(double xlylzl[][3], double omega[], double omegasign,
 F2PY_WRAPPER_END */
 void compute_gv(double xlylzl[][3], double omega[], double omegasign,
                 double wvln, double wedge, double chi, double t[3],
-                double gv[][3], int n) {
+                double gv[][3], intptr_t n) {
     double sc, cc, sw, cw, wmat[9], cmat[9], mat[9], u[3], d[3], v[3];
     double modyz, o[3], co, so, ds, k[3];
-    int i;
+    intptr_t i;
     // ! Fill in rotation matrix of wedge, chi
     sw = sin(wedge * RAD);
     cw = cos(wedge * RAD);
@@ -188,9 +189,9 @@ void compute_gv(double xlylzl[][3], double omega[], double omegasign,
     end subroutine compute_xlylzl
 F2PY_WRAPPER_END */
 void compute_xlylzl(double s[], double f[], double p[4], double r[9],
-                    double dist[3], double xlylzl[][3], int n) {
+                    double dist[3], double xlylzl[][3], intptr_t n) {
     double s_cen, f_cen, s_size, f_size, v[3];
-    int i, j;
+    intptr_t i; int j;
     s_cen = p[0];
     f_cen = p[1];
     s_size = p[2];
@@ -244,10 +245,10 @@ void compute_xlylzl(double s[], double f[], double p[4], double r[9],
 F2PY_WRAPPER_END */
 void compute_xlylzl_xpos_variable(double s[], double f[], double p[4], double r[9],
     double dist[3], double xpos[],
-    double xlylzl[][3], int n)
+    double xlylzl[][3], intptr_t n)
 {
 double s_cen, f_cen, s_size, f_size, v[3];
-int i, j;
+intptr_t i; int j;
 
 s_cen  = p[0];
 f_cen  = p[1];

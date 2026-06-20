@@ -9,18 +9,20 @@
 #include "cImageD11.h"
 #include <math.h>
 #include <string.h>
+#include <stdint.h>
 int inverse3x3(double A[3][3]);  /* defined in closest.c */
 static inline double conv_double_to_int_fast(double x) {
     return (x + 6755399441055744.0) - 6755399441055744.0;
 }
 
 void KERNEL_FN(vec ubi[3], vec gv[], double tol, int *n_arg,
-                      double *sumdrlv2_arg, int ng) {
+                      double *sumdrlv2_arg, intptr_t ng) {
     /* ng = number of g vectors */
     double h0, h1, h2, t0, t1, t2, ih[3];
     double sumsq, tolsq, sumdrlv2;
     double R[3][3], H[3][3], UB[3][3];
-    int n, k, i, j, l;
+    int n, i, j, l;
+    intptr_t k;
     /* Zero some stuff for refinement */
     for (i = 0; i < 3; i++) {
         ih[i] = 0;

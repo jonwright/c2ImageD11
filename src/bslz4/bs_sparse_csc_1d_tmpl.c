@@ -12,37 +12,39 @@
  * CSC_SUM_T:  type of histogram output (double for float data, uint64_t for int)
  */
 
-int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
-                    const uint8_t *restrict mask, int NIJ,
+int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, intptr_t compressed_length,
+                    const uint8_t *restrict mask, intptr_t NIJ,
                     DATATYPE *restrict outpx, uint32_t *restrict output_adr,
                     int threshold, int encoding,
-                    CSC_SUM_T *restrict output, int nout_total,
+                    CSC_SUM_T *restrict output, intptr_t nout_total,
                     const CSC_DATA_T *restrict csc_flat,
                     const uint32_t *restrict csc_first_bin,
                     int csc_entries_per_pixel,
                     const int64_t *restrict chunk_offsets,
                     const int32_t *restrict chunk_lengths,
-                    int nchunks,
+                    intptr_t nchunks,
                     int32_t *restrict npx_per_chunk);
 
-int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
-                    const uint8_t *restrict mask, int NIJ,
+int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, intptr_t compressed_length,
+                    const uint8_t *restrict mask, intptr_t NIJ,
                     DATATYPE *restrict outpx, uint32_t *restrict output_adr,
                     int threshold, int encoding,
-                    CSC_SUM_T *restrict output, int nout_total,
+                    CSC_SUM_T *restrict output, intptr_t nout_total,
                     const CSC_DATA_T *restrict csc_flat,
                     const uint32_t *restrict csc_first_bin,
                     int csc_entries_per_pixel,
                     const int64_t *restrict chunk_offsets,
                     const int32_t *restrict chunk_lengths,
-                    int nchunks,
+                    intptr_t nchunks,
                     int32_t *restrict npx_per_chunk)
 {
     /* Stride for inner pixel loop, fixed at 64.
      * This spreads consecutive inner-loop pixels across ~64 cache lines
      * of the output histogram, reducing write-after-write serialisation. */
     const int csc1d_stride = 64;
-    int blocksize, c, j, ret;
+    int blocksize, ret;
+    intptr_t c;
+    int j;
     uint32_t nbytes;
     unsigned int k;
     int *chunk_p, *chunk_rem, *chunk_npx;
@@ -57,7 +59,7 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
 
     if (nchunks <= 0) return -1;
     if (nout_total % nchunks != 0) return -103;
-    int nbins = nout_total / nchunks;
+    intptr_t nbins = nout_total / nchunks;
 
     chunk_p   = (int *)malloc((size_t)nchunks * sizeof(int));
     chunk_rem = (int *)malloc((size_t)nchunks * sizeof(int));
@@ -75,7 +77,7 @@ int KERNEL_CSC1D_FN(const uint8_t *restrict compressed, int compressed_length,
         chunk_total = READ64BE(&compressed[chunk_offsets[c]]);
         chunk_rem[c] = (int)chunk_total;
         if (chunk_total / NB > (uint64_t)NIJ) {
-            printf("Not enough output space, %zd %d\n", chunk_total, NIJ);
+            printf("Not enough output space, %zd %td\n", chunk_total, NIJ);
             free(chunk_p); free(chunk_rem); free(chunk_npx);
             free(chunk_wr_outpx); free(chunk_wr_outadr);
             return -99;

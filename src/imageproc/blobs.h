@@ -127,6 +127,6 @@ DLL_LOCAL
 void merge(double blob1[], double blob2[]);
 
 DLL_LOCAL
-void compute_moments(double blobs[], int nblobs);
+void compute_moments(double blobs[], intptr_t nblobs);
 
 #endif /* _blobs_h */

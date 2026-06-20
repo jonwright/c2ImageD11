@@ -1,3 +1,4 @@
+#include <stdint.h>
 #define PI 3.14159265358979323846
 #define RAD PI / 180.0
 #define DEG 180.0 / PI
@@ -29,15 +30,15 @@
     (c)[8] = (a)[2] * (b)[6] + (a)[5] * (b)[7] + (a)[8] * (b)[8];
 
 void assign(double ubi[9], double gv[][3], double tol, double drlv2[],
-            int labels[], int ig, int n);
+            int labels[], int ig, intptr_t n);
 
 void compute_gv(double xlylzl[][3], double omega[], double omegasign,
                 double wvln, double wedge, double chi, double t[3],
-                double gv[][3], int n);
+                double gv[][3], intptr_t n);
 
 void compute_xlylzl(double s[], double f[], double p[4], double r[9],
-                    double dist[3], double xlylzl[][3], int n);
+                    double dist[3], double xlylzl[][3], intptr_t n);
 
 void compute_xlylzl_xpos_variable(double s[], double f[], double p[4], double r[9],
     double dist[3], double xpos[],
-    double xlylzl[][3], int n);
+    double xlylzl[][3], intptr_t n);

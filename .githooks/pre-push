@@ -30,6 +30,14 @@ fi
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
+# Use the project venv if available (per AGENTS.md convention)
+VENV_PYTHON="$REPO_ROOT/venv/py312/x86_64/bin/python3"
+if [ -x "$VENV_PYTHON" ]; then
+    PYTHON="$VENV_PYTHON"
+else
+    PYTHON="python3"
+fi
+
 # Run memory test under valgrind
 MEMTEST_ITERS=3 \
 valgrind \
@@ -38,7 +46,7 @@ valgrind \
     --error-exitcode=1 \
     --errors-for-leak-kinds=definite \
     --track-origins=yes \
-    python3 -m pytest "$REPO_ROOT/tests/test_memory_bslz4.py" -v 2>&1 || {
+    $PYTHON -m pytest "$REPO_ROOT/tests/test_memory_bslz4.py" -v 2>&1 || {
     echo "FAILED: Memory safety check detected errors!"
     echo "Run locally: valgrind --leak-check=full --track-origins=yes"
     echo "  python3 -m pytest tests/test_memory_bslz4.py -v"

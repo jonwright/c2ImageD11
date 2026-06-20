@@ -7,6 +7,8 @@
 #include <float.h>
 #include <math.h>
 
+#include <stdint.h>
+
 #include "cImageD11.h"
 
 /* To compare to numpy (numba ought to do this anyway)
@@ -47,8 +49,8 @@ __m256 _mm256_mul_ps (__m256 a, __m256 b)
     end subroutine uint16_to_float_darksub
 F2PY_WRAPPER_END */
 void uint16_to_float_darksub(float *restrict img, const float *restrict drk,
-                             const uint16_t *restrict data, int npx) {
-    int i;
+                             const uint16_t *restrict data, intptr_t npx) {
+    intptr_t i;
 #ifdef GOT_OMP_SIMD
 #pragma omp parallel for simd
 #else
@@ -73,8 +75,8 @@ void uint16_to_float_darksub(float *restrict img, const float *restrict drk,
 F2PY_WRAPPER_END */
 void uint16_to_float_darkflm(float *restrict img, const float *restrict drk,
                              const float *restrict flm,
-                             const uint16_t *restrict data, int npx) {
-    int i;
+                             const uint16_t *restrict data, intptr_t npx) {
+    intptr_t i;
 #ifdef GOT_OMP_SIMD
 #pragma omp parallel for simd
 #else
@@ -96,8 +98,8 @@ void uint16_to_float_darkflm(float *restrict img, const float *restrict drk,
         real, intent(in) :: cut
     end subroutine frelon_lines
 F2PY_WRAPPER_END */
-void frelon_lines(float *img, int ns, int nf, float cut) {
-    int i, j, p, npx;
+void frelon_lines(float *img, intptr_t ns, intptr_t nf, float cut) {
+    intptr_t i, j, p, npx;
     float rowsum, avg;
     avg = img[0];
 #pragma omp parallel for private(i, j, rowsum, npx, p) firstprivate(avg)
@@ -136,9 +138,9 @@ void frelon_lines(float *img, int ns, int nf, float cut) {
         threadsafe
     end subroutine frelon_lines
 F2PY_WRAPPER_END */
-void frelon_lines_sub(float *restrict img, float *restrict drk, int ns, int nf,
+void frelon_lines_sub(float *restrict img, float *restrict drk, intptr_t ns, intptr_t nf,
                       float cut) {
-    int i, j, p, npx;
+    intptr_t i, j, p, npx;
     float rowsum, avg;
     avg = img[0];
 #pragma omp parallel for private(i, j, rowsum, npx, p) firstprivate(avg)
@@ -180,9 +182,9 @@ void frelon_lines_sub(float *restrict img, float *restrict drk, int ns, int nf,
         real, intent(in,c), optional :: cut = 3.
     end subroutine array_mean_var_cut
 F2PY_WRAPPER_END */
-void array_mean_var_cut(float *restrict img, int npx, float *mean, float *std,
+void array_mean_var_cut(float *restrict img, intptr_t npx, float *mean, float *std,
                         int n, float cut, int verbose) {
-    int i, nactive;
+    intptr_t i; int nactive;
     float t, s1, s2, wt, y0;
     y0 = img[0];
     s1 = 0;
@@ -246,10 +248,10 @@ void array_mean_var_cut(float *restrict img, int npx, float *mean, float *std,
         real, intent(in,c), optional :: cut = 3.
     end subroutine array_mean_var_msk
 F2PY_WRAPPER_END */
-void array_mean_var_msk(float *restrict img, uint8_t *restrict msk, int npx,
+void array_mean_var_msk(float *restrict img, uint8_t *restrict msk, intptr_t npx,
                         float *mean, float *std, int n, float cut,
                         int verbose) {
-    int i, nactive;
+    intptr_t i; int nactive;
     float t, s1, s2, wt, y0;
     y0 = img[0];
     s1 = 0;
@@ -334,9 +336,9 @@ void array_mean_var_msk(float *restrict img, uint8_t *restrict msk, int npx,
         threadsafe
     end subroutine array_stats
 F2PY_WRAPPER_END */
-void array_stats(float img[], int npx, float *minval, float *maxval,
+void array_stats(float img[], intptr_t npx, float *minval, float *maxval,
                  float *mean, float *var) {
-    int i;
+    intptr_t i;
     /* Use double to reduce rounding and subtraction errors */
     double t, s1, s2, y0, ts1, ts2;
     float mini, maxi, tmin, tmax;
@@ -407,9 +409,9 @@ void array_stats(float img[], int npx, float *minval, float *maxval,
         threadsafe
     end subroutine array_histogram
 F2PY_WRAPPER_END */
-void array_histogram(float img[], int npx, float low, float high,
-                     int32_t hist[], int nhist) {
-    int i, ibin;
+void array_histogram(float img[], intptr_t npx, float low, float high,
+                     int32_t hist[], intptr_t nhist) {
+    intptr_t i; int ibin;
     float ostep;
     memset(hist, 0, nhist * sizeof(int32_t));
     /* Compute the multiplier to get the bin numbers */
@@ -445,8 +447,8 @@ void array_histogram(float img[], int npx, float low, float high,
 F2PY_WRAPPER_END */
 void reorder_u16_a32(const uint16_t *restrict data,
                      const uint32_t *restrict adr, uint16_t *restrict out,
-                     int N) {
-    int i;
+                     intptr_t N) {
+    intptr_t i;
     /*  printf("Hello, got N=%d\n",N);*/
 #pragma omp parallel for
     for (i = 0; i < N; i++) {
@@ -468,8 +470,8 @@ void reorder_u16_a32(const uint16_t *restrict data,
     end subroutine reorder_u16_a32
 F2PY_WRAPPER_END */
 void reorder_f32_a32(const float *restrict data, const uint32_t *restrict adr,
-                     float *restrict out, int N) {
-    int i;
+                     float *restrict out, intptr_t N) {
+    intptr_t i;
     /*  printf("Hello, got N=%d\n",N);*/
 #pragma omp parallel for
     for (i = 0; i < N; i++) {
@@ -491,8 +493,8 @@ void reorder_f32_a32(const float *restrict data, const uint32_t *restrict adr,
     end subroutine reorderlut_u16_a32
 F2PY_WRAPPER_END */
 void reorderlut_u16_a32(uint16_t *restrict data, uint32_t *restrict lut,
-                        uint16_t *restrict out, int N) {
-    int i;
+                        uint16_t *restrict out, intptr_t N) {
+    intptr_t i;
     /*  printf("Hello, got N=%d\n",N);*/
 #pragma omp parallel for
     for (i = 0; i < N; i++) {
@@ -514,8 +516,8 @@ void reorderlut_u16_a32(uint16_t *restrict data, uint32_t *restrict lut,
     end subroutine reorderlut_f32_a32
 F2PY_WRAPPER_END */
 void reorderlut_f32_a32(const float *restrict data, uint32_t *restrict lut,
-                        float *restrict out, int N) {
-    int i;
+                        float *restrict out, intptr_t N) {
+    intptr_t i;
 #pragma omp parallel for
     for (i = 0; i < N; i++) {
         out[i] = data[lut[i]];
@@ -539,9 +541,9 @@ void reorderlut_f32_a32(const float *restrict data, uint32_t *restrict lut,
     end subroutine reorder_u16_a32_a16
 F2PY_WRAPPER_END */
 void reorder_u16_a32_a16(uint16_t *restrict data, uint32_t *restrict a0,
-                         int16_t *restrict a1, uint16_t *restrict out, int ns,
-                         int nf) {
-    int i, j, p;
+                         int16_t *restrict a1, uint16_t *restrict out, intptr_t ns,
+                         intptr_t nf) {
+    intptr_t i, j; int p;
     /*  printf("Hello, got ns=%d nf=%d\n",ns, nf);*/
 #pragma omp parallel for private(p, j)
     for (i = 0; i < ns; i++) {
@@ -575,9 +577,9 @@ void reorder_u16_a32_a16(uint16_t *restrict data, uint32_t *restrict a0,
     end subroutine bgcalc
 F2PY_WRAPPER_END */
 void bgcalc(const float *restrict img, float *restrict bg,
-            uint8_t *restrict msk, int ns, int nf, float gain, float sigmap,
+            uint8_t *restrict msk, intptr_t ns, intptr_t nf, float gain, float sigmap,
             float sigmat) {
-    int ir, i;
+    intptr_t ir; int i;
     float b, diff, t;
     /*
     printf("gain %f sigmap %f sigmat %f ns %d nf %d\n",

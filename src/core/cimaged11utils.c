@@ -2,6 +2,7 @@
 /* Various utility things that do not belong elsewhere */
 
 #include "cImageD11.h"
+#include <stdint.h>
 
 #ifdef _OPENMP
 

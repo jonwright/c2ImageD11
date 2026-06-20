@@ -8,16 +8,18 @@
 
 #include "cImageD11.h"
 #include <math.h>
+#include <stdint.h>
 static inline double conv_double_to_int_fast(double x) {
     return (x + 6755399441055744.0) - 6755399441055744.0;
 }
 
 int KERNEL_FN(vec *restrict ubi, vec *restrict gv, double tol,
                      double *restrict drlv2, int *restrict labels, int label,
-                     int ng) {
+                     intptr_t ng) {
 
     double h0, h1, h2, t0, t1, t2, sumsq, tolsq;
-    int k, n;
+    int n;
+    intptr_t k;
     tolsq = tol * tol;
     n = 0;
 #pragma omp parallel for private(h0, h1, h2, t0, t1, t2, sumsq)                \

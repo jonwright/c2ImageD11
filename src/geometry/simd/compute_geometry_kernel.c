@@ -8,14 +8,15 @@
 
 #include "cImageD11.h"
 #include <math.h>
+#include <stdint.h>
 #include "cdiffraction.h"
 
 void KERNEL_FN(double xlylzl[][3], double omega[], double omegasign,
                       double wvln, double wedge, double chi, double t[3],
-                      double out[][6], int n) {
+                      double out[][6], intptr_t n) {
     double sc, cc, sw, cw, wmat[9], cmat[9], mat[9], u[3], d[3], v[3];
     double modyz, o[3], co, so, ds, k[3];
-    int i;
+    intptr_t i;
     // ! Fill in rotation matrix of wedge, chi
     sw = sin(wedge * RAD);
     cw = cos(wedge * RAD);

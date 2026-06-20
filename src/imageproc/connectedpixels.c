@@ -1,5 +1,6 @@
 
 #include "blobs.h" /* Disjoint sets thing for blob finding */
+#include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,9 +64,9 @@ F2PY_WRAPPER_END */
 // Exported function is in the C wrapper, not here!
 DLL_LOCAL
 int connectedpixels(float *data, int32_t *labels, float threshold, int verbose,
-                    int eightconnected, int ns, int nf) {
+                    int eightconnected, intptr_t ns, intptr_t nf) {
 
-    int i, j, irp, ir, ipx;
+    intptr_t i, j, irp, ir, ipx;
     int32_t k, *S, *T, np;
 
     if (verbose) {
@@ -211,8 +212,8 @@ int connectedpixels(float *data, int32_t *labels, float threshold, int verbose,
     end subroutine blobproperties
 F2PY_WRAPPER_END */
 void blobproperties(float *data, int32_t *labels, int32_t npk, float omega,
-                    int verbose, int ns, int nf, double *res) {
-    int i, j, bad, ipx;
+                    int verbose, intptr_t ns, intptr_t nf, double *res) {
+    intptr_t i, j, ipx; int bad;
     double fval;
     int32_t ipk;
     if (verbose) {
@@ -283,9 +284,9 @@ void blobproperties(float *data, int32_t *labels, int32_t npk, float omega,
     end subroutine bloboverlaps
 F2PY_WRAPPER_END */
 int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2,
-                 double *res2, int verbose, int ns, int nf) {
+                 double *res2, int verbose, intptr_t ns, intptr_t nf) {
 
-    int i, j, safelyneed, ipx;
+    intptr_t i, j, ipx; int safelyneed;
     int32_t *link, p1, p2, ipk, jpk, npk, *T;
 
     /* Initialise a disjoint set in link
@@ -457,7 +458,7 @@ int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2,
         threadsafe
     end subroutine blob_moments
 F2PY_WRAPPER_END */
-void blob_moments(double *res, int np) { compute_moments(res, np); }
+void blob_moments(double *res, intptr_t np) { compute_moments(res, np); }
 
 /* F2PY_WRAPPER_START
     function clean_mask( msk, ret, ns, nf )
@@ -473,10 +474,10 @@ void blob_moments(double *res, int np) { compute_moments(res, np); }
         integer :: clean_mask
     end function clean_mask
 F2PY_WRAPPER_END */
-int clean_mask(const int8_t *restrict msk, int8_t *restrict ret, int ns,
-               int nf) {
+int clean_mask(const int8_t *restrict msk, int8_t *restrict ret, intptr_t ns,
+               intptr_t nf) {
     /* cleans pixels with no 4 connected neighbors */
-    int i, j, q, npx;
+    intptr_t i, j, q, npx;
     int8_t t;
     npx = 0;
 #pragma omp parallel for private(i)
@@ -574,9 +575,9 @@ int clean_mask(const int8_t *restrict msk, int8_t *restrict ret, int ns,
     end function make_clean_mask
 F2PY_WRAPPER_END */
 int make_clean_mask(float *restrict img, float cut, int8_t *restrict msk,
-                    int8_t *restrict ret, int ns, int nf) {
+                    int8_t *restrict ret, intptr_t ns, intptr_t nf) {
     /* cleans pixels with no 4 connected neighbors */
-    int i;
+    intptr_t i;
 #pragma omp parallel for
     for (i = 0; i < ns * nf; i++) {
         if (img[i] > cut) {

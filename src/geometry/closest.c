@@ -1,6 +1,7 @@
 
 
 #include "cImageD11.h"
+#include <stdint.h>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -132,12 +133,12 @@ int verify_rounding(int n) {
         integer, intent(inout) :: ic( nv )
     end subroutine closest_vec
 F2PY_WRAPPER_END */
-void closest_vec(double x[], int dim, int nv, int closest[]) {
+void closest_vec(double x[], intptr_t dim, intptr_t nv, int closest[]) {
     /*
      * For each x it finds the closest neighbor
      *   this will grow as n^2, which means it rapidly becomes slow
      */
-    int i, j, k, ib;
+    intptr_t i, j, k; int ib;
     double scor, best, t;
 
 #pragma omp parallel for private(i, j, k, ib, scor, best, t)
@@ -186,12 +187,12 @@ void closest_vec(double x[], int dim, int nv, int closest[]) {
         threadsafe
     end subroutine closest
 F2PY_WRAPPER_END */
-void closest(double x[], double v[], int *ribest, double *rbest, int nx,
-             int nv) {
+void closest(double x[], double v[], int *ribest, double *rbest, intptr_t nx,
+             intptr_t nv) {
     /*
      * Finds value and index in x closest to a value in v
      */
-    int i, j, ibest;
+    intptr_t i, j; int ibest;
     double best;
     best = DBL_MAX;
     ibest = 0;
@@ -225,12 +226,12 @@ void closest(double x[], double v[], int *ribest, double *rbest, int nx,
         ! only reads gvectors
     end function score
 F2PY_WRAPPER_END */
-int score(vec ubi[3], vec gv[], double tol, int ng) {
+int score(vec ubi[3], vec gv[], double tol, intptr_t ng) {
     /*
      * Counts g-vectors indexed by ubi within tol
      */
     double sumsq, h0, h1, h2, atol;
-    int n, k;
+    int n; intptr_t k;
     n = 0;
     atol = tol * tol;
     for (k = 0; k < ng; k++) {
@@ -266,12 +267,12 @@ int score(vec ubi[3], vec gv[], double tol, int ng) {
     end subroutine score_and_refine
 F2PY_WRAPPER_END */
 void score_and_refine(vec ubi[3], vec gv[], double tol, int *n_arg,
-                      double *sumdrlv2_arg, int ng) {
+                      double *sumdrlv2_arg, intptr_t ng) {
     /* ng = number of g vectors */
     double h0, h1, h2, t0, t1, t2, ih[3];
     double sumsq, tolsq, sumdrlv2;
     double R[3][3], H[3][3], UB[3][3];
-    int n, k, i, j, l;
+    int n; intptr_t k; int i, j, l;
     /* Zero some stuff for refinement */
     for (i = 0; i < 3; i++) {
         ih[i] = 0;
@@ -366,10 +367,10 @@ void score_and_refine(vec ubi[3], vec gv[], double tol, int *n_arg,
 F2PY_WRAPPER_END */
 int score_and_assign(vec *restrict ubi, vec *restrict gv, double tol,
                      double *restrict drlv2, int *restrict labels, int label,
-                     int ng) {
+                     intptr_t ng) {
 
     double h0, h1, h2, t0, t1, t2, sumsq, tolsq;
-    int k, n;
+    intptr_t k; int n;
     tolsq = tol * tol;
     n = 0;
 #pragma omp parallel for private(h0, h1, h2, t0, t1, t2, sumsq)                \
@@ -415,11 +416,11 @@ int score_and_assign(vec *restrict ubi, vec *restrict gv, double tol,
     end subroutine refine_assigned
 F2PY_WRAPPER_END */
 void refine_assigned(vec ubi[3], vec gv[], int labels[], int label, int *npk,
-                     double *sumdrlv2, int ng) {
+                     double *sumdrlv2, intptr_t ng) {
     /* Skip the part about weights, not used */
     double sumsqtot, sumsq, h[3], t[3], ih[3];
     double R[3][3], H[3][3], UB[3][3];
-    int i, j, n, k, l;
+    int i, j, n; intptr_t k; int l;
     n = 0;
     sumsqtot = 0;
     for ( i = 0; i < 3; i++ ){
@@ -491,7 +492,7 @@ void refine_assigned(vec ubi[3], vec gv[], int labels[], int label, int *npk,
     end subroutine put_incr
 F2PY_WRAPPER_END */
 void put_incr64(float data[], int64_t ind[], float vals[], int boundscheck,
-                int n, int m) {
+                intptr_t n, intptr_t m) {
     int64_t k, ik;
     if (boundscheck == 0) {
         for (k = 0; k < n; k++)
@@ -528,7 +529,7 @@ void put_incr64(float data[], int64_t ind[], float vals[], int boundscheck,
 
 F2PY_WRAPPER_END */
 void put_incr32(float data[], int32_t ind[], float vals[], int boundscheck,
-                int n, int m) {
+                intptr_t n, intptr_t m) {
     int32_t k, ik;
     if (boundscheck == 0) {
         for (k = 0; k < n; k++)
@@ -562,10 +563,10 @@ void put_incr32(float data[], int32_t ind[], float vals[], int boundscheck,
         ! NOT threadsafe since ids may be shared
     end subroutine cluster1d
 F2PY_WRAPPER_END */
-void cluster1d(double ar[], int n, int order[], double tol, // IN
+void cluster1d(double ar[], intptr_t n, int order[], double tol, // IN
                int *nclusters, int ids[], double avgs[]) {  // OUT
     // Used in sandbox/friedel.py
-    int i, ncl;
+    intptr_t i; int ncl;
     double dv;
     // order is the order of the peaks to get them sorted
     avgs[0] = ar[order[0]];
@@ -627,14 +628,14 @@ void score_gvec_z(vec ubi[3],    // in
                   vec g2[],      // inout  normed(axis x (axis x g))
                   vec e[],       // inout
                   int recompute, // in
-                  int n) {
+                   intptr_t n) {
     /*  Axis is z and we hard wire it here
      *     Compute errors in a co-ordinate system given by:
      *         parallel to gv  (gv*imodg)
      *         parallel to cross( axis, gv )
      *         parallel to cross( axis, cross( axis, gv ) )
      */
-    int i;
+    intptr_t i;
     double t, txy;
     vec g, h, d;
 #pragma omp parallel for private(i, t, txy, g, h, d)
@@ -897,11 +898,11 @@ double misori_monoclinic(vec u1[3], vec u2[3]) {
         threadsafe
     end function count_shared
 F2PY_WRAPPER_END */
-int count_shared(int pi[], int ni, int pj[], int nj) {
+int count_shared(int pi[], intptr_t ni, int pj[], intptr_t nj) {
     /* Given two sorted arrays compute how many collisions
      * For comparing list of grain - peak indices for overlap
      */
-    int i, j, c;
+    intptr_t i, j; int c;
     i = 0;
     j = 0;
     c = 0;

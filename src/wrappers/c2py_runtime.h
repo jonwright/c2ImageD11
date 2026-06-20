@@ -18,10 +18,32 @@
 #include <stdint.h>
 #include <limits.h>
 #include <stdio.h>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#else
 #include <time.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/* MSVC C mode does not recognise the inline keyword (C++ only).
+ * __inline is the MSVC equivalent (also recognised by MinGW). */
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
+/* DLL export attribute for module init functions.
+ * On Windows the PyInit_<name> symbol must be in the .pyd export
+ * table or Python cannot load the module. */
+#ifdef _WIN32
+#define C2PY_EXPORT __declspec(dllexport)
+#else
+#define C2PY_EXPORT
 #endif
 
 /* ------------------------------------------------------------------ */
@@ -259,6 +281,7 @@ typedef struct {
 
     /* Scalar conversion from objects */
     long (*Long_AsLong)(PyObject*);
+    long long (*Long_AsLongLong)(PyObject*);
     double (*Float_AsDouble)(PyObject*);
 
     /* Exception objects (pointers to the actual exception types) */
@@ -304,19 +327,31 @@ extern c2py_api_t C2PY;
 
 #define PyObject_GetBuffer(o, b, f)    C2PY.GetBuffer((PyObject*)(o), (b), (f))
 #define PyBuffer_Release(b)            C2PY.ReleaseBuffer(b)
+
+/* MSVC traditional preprocessor auto-removes the comma before an empty
+ * __VA_ARGS__; GCC/Clang require the ## token-paste to do so. */
+#ifdef _MSC_VER
+#define PyArg_ParseTuple(a, f, ...)    C2PY.ParseTuple((PyObject*)(a), (f), __VA_ARGS__)
+#define PyArg_ParseTupleAndKeywords(a, k, f, kw, ...) \
+    C2PY.ParseTupleAndKeywords((PyObject*)(a), (PyObject*)(k), (f), (char**)(kw), __VA_ARGS__)
+#define PyErr_Format(e, f, ...)        C2PY.Err_Format((PyObject*)(e), (f), __VA_ARGS__)
+#else
 #define PyArg_ParseTuple(a, f, ...)    C2PY.ParseTuple((PyObject*)(a), (f), ##__VA_ARGS__)
 #define PyArg_ParseTupleAndKeywords(a, k, f, kw, ...) \
     C2PY.ParseTupleAndKeywords((PyObject*)(a), (PyObject*)(k), (f), (char**)(kw), ##__VA_ARGS__)
+#define PyErr_Format(e, f, ...)        C2PY.Err_Format((PyObject*)(e), (f), ##__VA_ARGS__)
+#endif
+
 #define PyLong_FromLong(v)             C2PY.Long_FromLong(v)
 #define PyLong_FromLongLong(v)         C2PY.Long_FromLongLong(v)
 #define PyLong_FromUnsignedLongLong(v) C2PY.Long_FromUnsignedLongLong(v)
 #define PyFloat_FromDouble(v)          C2PY.Float_FromDouble(v)
 #define PyLong_AsLong(o)               C2PY.Long_AsLong((PyObject*)(o))
+#define PyLong_AsLongLong(o)           C2PY.Long_AsLongLong((PyObject*)(o))
 #define PyFloat_AsDouble(o)            C2PY.Float_AsDouble((PyObject*)(o))
 #define PyErr_SetString(e, m)          C2PY.Err_SetString((PyObject*)(e), (m))
 #define PyErr_Clear()                  C2PY.Err_Clear()
 #define PyErr_Occurred()               C2PY.Err_Occurred()
-#define PyErr_Format(e, f, ...)        C2PY.Err_Format((PyObject*)(e), (f), ##__VA_ARGS__)
 #define Py_RETURN_NONE                 do { C2PY.IncRef(C2PY.none_obj); return C2PY.none_obj; } while(0)
 #define Py_INCREF(o)                   C2PY.IncRef((PyObject*)(o))
 #define Py_DECREF(o)                   C2PY.DecRef((PyObject*)(o))
@@ -475,7 +510,11 @@ typedef struct {
  * when --timing is not enabled in the .c2py interface.
  */
 #if defined(C2PY_USE_CYCLE_COUNTER)
-#if defined(__x86_64__) || defined(__i386__)
+#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
+static inline uint64_t c2py_ticks(void) {
+    return __rdtsc();
+}
+#elif defined(__x86_64__) || defined(__i386__)
 static inline uint64_t c2py_ticks(void) {
     unsigned int lo, hi;
     __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
@@ -497,6 +536,13 @@ static inline uint64_t c2py_ticks(void) {
     return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
 #endif
 }
+#elif defined(_WIN32)
+static inline uint64_t c2py_ticks(void) {
+    LARGE_INTEGER freq, counter;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&counter);
+    return (uint64_t)(counter.QuadPart * 1000000000ULL / freq.QuadPart);
+}
 #else
 /* Unsupported arch: fall back to clock_gettime even with C2PY_USE_CYCLE_COUNTER */
 static inline uint64_t c2py_ticks(void) {
@@ -505,6 +551,14 @@ static inline uint64_t c2py_ticks(void) {
     return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
 }
 #endif
+#else /* !C2PY_USE_CYCLE_COUNTER */
+#ifdef _WIN32
+static inline uint64_t c2py_ticks(void) {
+    LARGE_INTEGER freq, counter;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&counter);
+    return (uint64_t)(counter.QuadPart * 1000000000ULL / freq.QuadPart);
+}
 #else
 static inline uint64_t c2py_ticks(void) {
     struct timespec ts;
@@ -512,6 +566,7 @@ static inline uint64_t c2py_ticks(void) {
     return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
 }
 #endif
+#endif /* C2PY_USE_CYCLE_COUNTER */
 
 /* Convert cycle counter ticks to nanoseconds given the counter frequency
  * in Hz.  Returns ticks * 1e9 / freq_hz.
@@ -597,6 +652,19 @@ static inline void c2py_perf_record_call(c2py_perf_t *p,
 /* ------------------------------------------------------------------ */
 
 #ifdef __x86_64__
+#if defined(_MSC_VER)
+#include <intrin.h>
+static inline unsigned int c2py_cpuid_reg(int leaf, int subleaf, int reg) {
+    int info[4];
+    __cpuidex(info, leaf, subleaf);
+    switch (reg & 3) {
+    case 0: return (unsigned int)info[0];
+    case 1: return (unsigned int)info[1];
+    case 2: return (unsigned int)info[2];
+    default: return (unsigned int)info[3];
+    }
+}
+#else
 static inline unsigned int c2py_cpuid_reg(int leaf, int subleaf, int reg) {
     unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
     __asm__ __volatile__(
@@ -610,6 +678,7 @@ static inline unsigned int c2py_cpuid_reg(int leaf, int subleaf, int reg) {
     default: return edx;
     }
 }
+#endif
 
 static inline int c2py_cpuid_bit(int leaf, int subleaf, int reg, int bit) {
     return (c2py_cpuid_reg(leaf, subleaf, reg) >> bit) & 1;

@@ -7,10 +7,11 @@
 #endif
 
 #include "cImageD11.h"
+#include <stdint.h>
 
 void KERNEL_FN(const float *restrict data, uint32_t *restrict lut,
-                        float *restrict out, int N) {
-    int i;
+                        float *restrict out, intptr_t N) {
+    intptr_t i;
 #pragma omp parallel for
     for (i = 0; i < N; i++) {
         out[i] = data[lut[i]];
