@@ -67,7 +67,6 @@ int KERNEL_CSC_FN(const uint8_t *restrict compressed, intptr_t compressed_length
         chunk_total = READ64BE(&compressed[chunk_offsets[c]]);
         chunk_rem[c] = (int)chunk_total;
         if (chunk_total / NB > (uint64_t)NIJ) {
-            printf("Not enough output space, %zd %td\n", chunk_total, NIJ);
             free(chunk_p); free(chunk_rem); free(chunk_npx);
             free(chunk_wr_outpx); free(chunk_wr_outadr);
             return -99;

@@ -119,11 +119,17 @@ jobs:
         run: |
           pip install -e ${{ github.workspace }}/c2py23
 
+      - name: Pre-flight checks
+        run: |
+          python -c "import yaml; print('yaml OK')"
+          python -c "import c2py23; print('c2py23 OK:', c2py23.__file__)"
+          python -c "import sys; print('platform:', sys.platform)"
+
       - name: Install c2ImageD11
         env:
           CC: cl
         run: |
-          pip install -e ${{ github.workspace }}/c2ImageD11
+          pip install -v -e ${{ github.workspace }}/c2ImageD11
 
       - name: Install ImageD11 (--no-deps, only C code needed)
         run: |
