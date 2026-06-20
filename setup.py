@@ -1,15 +1,18 @@
 """Setup script for c2ImageD11 - builds C extensions.
 
 Build process:
-1. Compiles SIMD kernels 3x with -msse4.2/-mavx2/-mavx512f (amd64)
+1. Compiles SIMD kernels 3x with -msse4.2/-mavx2/-mavx512f (amd64, gcc/clang)
+   or with MSVC /arch: flags (amd64, Windows)
 2. Uses pre-generated c2py23 wrapper by default; regenerates if c2py23 is
    available and C2PY23_REBUILD env var is set
-3. Compiles all C sources with setuptools + gcc -fopenmp
+3. Compiles all C sources with setuptools + platform-appropriate flags
 4. Links ISA-specific .o files for variant dispatch
+5. On Windows: bslz4 blocksize/vendor/zstd sources are excluded;
+   SIMD dispatch uses sse42-only variants compiled with MSVC
 
 Requirements:
-  - gcc with -fopenmp
-  - dlfcn.h (POSIX; Linux, macOS)
+  - Linux/macOS: gcc/clang with -fopenmp, dlfcn.h
+  - Windows: MSVC with /openmp, c2py23 installed at build time
   - For rebuild: c2py23 installed
 """
 
@@ -66,10 +69,13 @@ except ImportError:
 # Compiler options (mirrors ImageD11/setup.py)
 # ---------------------------------------------------------------------------
 
+_IS_WINDOWS = sys.platform == "win32"
+
 COPT = {
     "linux": ["-fopenmp", "-fPIC"],
     "unix": ["-fopenmp", "-fPIC"],
     "mingw32": ["-fopenmp", "-fPIC"],
+    "win32": ["/openmp"],
     "msvc": ["/openmp"],
 }
 
@@ -79,7 +85,8 @@ if sys.platform == "darwin":
             COPT[key].remove("-fopenmp")
 
 _EXTRA_COMPILE_ARGS = COPT.get(sys.platform, ["-fopenmp", "-fPIC"])
-_EXTRA_LINK_ARGS = COPT.get(sys.platform, ["-fopenmp", "-fPIC"])
+# On Windows, setuptools uses MSVC; linker flags are handled by the compiler
+_EXTRA_LINK_ARGS = [] if _IS_WINDOWS else COPT.get(sys.platform, ["-fopenmp", "-fPIC"])
 
 if os.environ.get("ASAN"):
     _ASAN_COMPILE = ["-fsanitize=address", "-fno-omit-frame-pointer"]
@@ -119,15 +126,26 @@ _BSLZ4_KERNELS = [
     ("bs_master", "bslz4/bs_master.c"),
 ]
 
-# ISA variants: (variant_suffix, compiler_flag)
-_IS_AMD64 = sys.maxsize > 2**32 and hasattr(os, 'uname') and os.uname()[4] == 'x86_64'
+# ISA detection: amd64 with Linux 'x86_64' or Windows 'AMD64' return value
+_IS_AMD64 = False
+if sys.maxsize > 2**32 and hasattr(os, 'uname'):
+    machine = os.uname()[4]
+    _IS_AMD64 = machine in ('x86_64', 'AMD64', 'amd64')
 
 if _IS_AMD64:
-    _SIMD_VARIANTS = [
-        ("avx512", ["-mavx512f"]),
-        ("avx2",   ["-mavx2", "-mfma"]),
-        ("sse42",  ["-msse4.2"]),
-    ]
+    if _IS_WINDOWS:
+        # MSVC arch flags: /arch:AVX512 requires VS2017+, /arch:AVX2 VS2013+
+        _SIMD_VARIANTS = [
+            ("avx512", ["/arch:AVX512"]),
+            ("avx2",   ["/arch:AVX2"]),
+            ("sse42",  []),  # SSE4.2 implied by /O2 on x64
+        ]
+    else:
+        _SIMD_VARIANTS = [
+            ("avx512", ["-mavx512f"]),
+            ("avx2",   ["-mavx2", "-mfma"]),
+            ("sse42",  ["-msse4.2"]),
+        ]
 else:
     _SIMD_VARIANTS = [
         ("sse42", None),  # generic -O3, no x86 flag
@@ -135,12 +153,16 @@ else:
 
 _CFLAGS_BASE = ["-O3", "-fPIC", "-Wall"]
 _CFLAGS_OMP = ["-O3", "-fPIC", "-fopenmp", "-Wall"]
+# MSVC equivalents
+_CFLAGS_BASE_MSC = ["/O2", "/W2"]
+_CFLAGS_OMP_MSC = ["/O2", "/openmp", "/W2"]
 
 
 def _compile_simd_variants(build_dir):
     """Compile each kernel with multiple ISA flags, return list of .o paths."""
-    cc = os.environ.get("CC", "gcc")
+    cc = os.environ.get("CC", "cl" if _IS_WINDOWS else "gcc")
     objects = []
+    obj_ext = ".obj" if _IS_WINDOWS else ".o"
 
     include_dirs = [
         "-I" + SRC_DIR,
@@ -153,6 +175,8 @@ def _compile_simd_variants(build_dir):
         "-I" + os.path.join(SRC_DIR, "wrappers"),
         "-I" + REPO_ROOT,
     ]
+    if _IS_WINDOWS:
+        include_dirs = ["/I" + d[2:] for d in include_dirs]
 
     for kernel_name, subpath in _SIMD_KERNELS:
         src_path = os.path.join(SRC_DIR, subpath)
@@ -161,20 +185,31 @@ def _compile_simd_variants(build_dir):
             continue
 
         for variant_name, simd_flag in _SIMD_VARIANTS:
-            obj_name = "{}_{}.o".format(kernel_name, variant_name)
+            obj_name = "{}_{}{}".format(kernel_name, variant_name, obj_ext)
             obj_path = os.path.join(build_dir, obj_name)
 
             fn_name = "{}_{}".format(kernel_name, variant_name)
             if kernel_name == "score_and_refine":
                 fn_name = fn_name + "_impl"
-            cflags = _CFLAGS_OMP[:] + _ASAN_COMPILE
+            if _IS_WINDOWS:
+                cflags = _CFLAGS_OMP_MSC[:] + _ASAN_COMPILE
+            else:
+                cflags = _CFLAGS_OMP[:] + _ASAN_COMPILE
             if simd_flag:
                 cflags.extend(simd_flag)
 
-            cmd = [cc, "-c"] + include_dirs + cflags + [
-                "-DKERNEL_FN=" + fn_name,
-                src_path, "-o", obj_path,
-            ]
+            if _IS_WINDOWS:
+                define_flag = "/D"
+                out_flag = "/Fo"
+                cmd = [cc, "/c"] + include_dirs + cflags + [
+                    define_flag + "KERNEL_FN=" + fn_name,
+                    src_path, out_flag + obj_path,
+                ]
+            else:
+                cmd = [cc, "-c"] + include_dirs + cflags + [
+                    "-DKERNEL_FN=" + fn_name,
+                    src_path, "-o", obj_path,
+                ]
             print("c2ImageD11: SIMD compile {}".format(obj_name))
             rc = subprocess.call(cmd)
             if rc != 0:
@@ -197,7 +232,12 @@ def _compile_bslz4_variants(build_dir):
        - kcb:  uses KCB bitshuffle  (-DUSE_KCB)
 
     ISA levels: sse42, avx2, avx512 (on x86-64); sse42 only (otherwise)
+
+    On Windows, bslz4 is skipped (KCB ifunc + zstd asm not MSVC-compatible).
     """
+    if _IS_WINDOWS:
+        print("c2ImageD11: BSLZ4 skipped on Windows (KCB ifunc/zstd asm)")
+        return []
     cc = os.environ.get("CC", "gcc")
     objects = []
 
@@ -259,17 +299,38 @@ def _regenerate_wrapper():
     except OSError:
         pass
 
-    print("c2ImageD11: assembling {} from {} + {}".format(
-        os.path.basename(C2PY_FILE),
-        os.path.basename(C2PY_BASE_FILE),
-        os.path.basename(C2PY_BSLZ4_FILE)))
     with open(C2PY_BASE_FILE, "r") as fb:
         base_content = fb.read()
-    with open(C2PY_BSLZ4_FILE, "r") as fb:
-        bslz4_content = fb.read()
-    with open(C2PY_FILE, "w") as fout:
-        fout.write(base_content)
-        fout.write(bslz4_content)
+
+    if _IS_WINDOWS:
+        # Filter out bslz4 sources, headers, and zstd asm from base content
+        filtered_lines = []
+        for line in base_content.splitlines():
+            stripped = line.strip()
+            # Skip bslz4 vendor source lines
+            if stripped.startswith("- ../src/bslz4/"):
+                continue
+            # Skip huf_decompress_amd64.S
+            if "huf_decompress_amd64.S" in stripped:
+                continue
+            filtered_lines.append(line)
+        base_content = "\n".join(filtered_lines)
+
+        print("c2ImageD11: assembling {} from {} (Windows: bslz4 excluded)".format(
+            os.path.basename(C2PY_FILE),
+            os.path.basename(C2PY_BASE_FILE)))
+        with open(C2PY_FILE, "w") as fout:
+            fout.write(base_content)
+    else:
+        print("c2ImageD11: assembling {} from {} + {}".format(
+            os.path.basename(C2PY_FILE),
+            os.path.basename(C2PY_BASE_FILE),
+            os.path.basename(C2PY_BSLZ4_FILE)))
+        with open(C2PY_BSLZ4_FILE, "r") as fb:
+            bslz4_content = fb.read()
+        with open(C2PY_FILE, "w") as fout:
+            fout.write(base_content)
+            fout.write(bslz4_content)
 
     print("c2ImageD11: generating c2py23 wrapper...")
     module_def = load_c2py(C2PY_FILE)
@@ -331,34 +392,39 @@ class c2py23_build_ext(build_ext):
         simd_objects = _compile_simd_variants(build_dir)
 
         # Step 0b: Compile bslz4 kernel variants (backend x ISA)
+        # Returns empty list on Windows (KCB ifunc + zstd asm incompatible)
         print("c2ImageD11: compiling BSLZ4 kernel variants...")
         bslz4_objects = _compile_bslz4_variants(build_dir)
 
         # Step 0c: Compile zstd assembly file (setuptools doesn't handle .S)
-        zstd_asm = os.path.join(ZSTD_DIR, "lib", "decompress",
-                                "huf_decompress_amd64.S")
-        zstd_asm_o = os.path.join(build_dir, "huf_decompress_amd64.o")
-        if os.path.isfile(zstd_asm):
-            cc = os.environ.get("CC", "gcc")
-            cmd = [cc, "-c", "-O3", "-fPIC", "-Wall",
-                   "-I", os.path.join(ZSTD_DIR, "lib"),
-                   "-I", os.path.join(ZSTD_DIR, "lib", "common"),
-                   "-I", os.path.join(ZSTD_DIR, "lib", "decompress"),
-                   zstd_asm, "-o", zstd_asm_o]
-            print("c2ImageD11: compiling zstd asm")
-            rc = subprocess.call(cmd)
-            if rc != 0:
-                sys.exit(rc)
-            bslz4_objects.append(zstd_asm_o)
+        if not _IS_WINDOWS:
+            zstd_asm = os.path.join(ZSTD_DIR, "lib", "decompress",
+                                    "huf_decompress_amd64.S")
+            zstd_asm_o = os.path.join(build_dir, "huf_decompress_amd64.o")
+            if os.path.isfile(zstd_asm):
+                cc = os.environ.get("CC", "gcc")
+                cmd = [cc, "-c", "-O3", "-fPIC", "-Wall",
+                       "-I", os.path.join(ZSTD_DIR, "lib"),
+                       "-I", os.path.join(ZSTD_DIR, "lib", "common"),
+                       "-I", os.path.join(ZSTD_DIR, "lib", "decompress"),
+                       zstd_asm, "-o", zstd_asm_o]
+                print("c2ImageD11: compiling zstd asm")
+                rc = subprocess.call(cmd)
+                if rc != 0:
+                    sys.exit(rc)
+                bslz4_objects.append(zstd_asm_o)
 
         # Step 1: Regenerate wrapper if requested/needed
+        # On Windows, regeneration is always required (no pre-generated wrapper
+        # matches the bslz4-free configuration)
         wrapper_used = None
-        if os.environ.get("C2PY23_REBUILD"):
+        if _IS_WINDOWS or os.environ.get("C2PY23_REBUILD"):
             if _regenerate_wrapper():
                 wrapper_used = os.path.join(WRAPPER_DIR, "__cImageD11_wrapper.c")
             else:
-                print("c2ImageD11: C2PY23_REBUILD set but c2py23 not available; "
-                      "using pre-generated wrapper")
+                print("c2ImageD11: ERROR - c2py23 regeneration required but "
+                      "c2py23 not available.")
+                sys.exit(1)
         elif os.path.isfile(WRAPPER_GENERATED):
             wrapper_used = WRAPPER_GENERATED
             print("c2ImageD11: using pre-generated wrapper: {}".format(WRAPPER_GENERATED))
@@ -386,21 +452,28 @@ class c2py23_build_ext(build_ext):
         ext.include_dirs.append(os.path.join(SRC_DIR, "core"))
         ext.include_dirs.append(os.path.join(SRC_DIR, "geometry"))
         ext.include_dirs.append(os.path.join(SRC_DIR, "imageproc"))
-        ext.include_dirs.append(os.path.join(SRC_DIR, "bslz4"))
         ext.include_dirs.append(os.path.join(SRC_DIR, "wrappers"))
-        ext.include_dirs.append(os.path.join(LZ4_DIR, "lib"))
-        ext.include_dirs.append(os.path.join(KCB_DIR, "src"))
-        ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib"))
-        ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "common"))
-        ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "compress"))
-        ext.include_dirs.append(os.path.join(ZSTD_DIR, "lib", "decompress"))
+        # bslz4 include dirs (needed for SIMD kernel includes of bs_functions.h)
+        # On Windows these dirs may not exist if submodules weren't checked out
+        for inc_dir in [
+            os.path.join(SRC_DIR, "bslz4"),
+            os.path.join(LZ4_DIR, "lib"),
+            os.path.join(KCB_DIR, "src"),
+            os.path.join(ZSTD_DIR, "lib"),
+            os.path.join(ZSTD_DIR, "lib", "common"),
+            os.path.join(ZSTD_DIR, "lib", "compress"),
+            os.path.join(ZSTD_DIR, "lib", "decompress"),
+        ]:
+            if os.path.isdir(inc_dir):
+                ext.include_dirs.append(inc_dir)
         for flag in _EXTRA_COMPILE_ARGS:
             if flag not in ext.extra_compile_args:
                 ext.extra_compile_args.append(flag)
         for flag in _EXTRA_LINK_ARGS:
             if flag not in ext.extra_link_args:
                 ext.extra_link_args.append(flag)
-        ext.libraries.extend(['dl', 'm'])
+        if not _IS_WINDOWS:
+            ext.libraries.extend(['dl', 'm'])
 
         # Link SIMD kernel objects
         if simd_objects:
@@ -432,23 +505,26 @@ SOURCES = [
     os.path.join("src", "imageproc", "sparse_image.c"),
     os.path.join("src", "imageproc", "splat.c"),
     os.path.join("src", "wrappers", "_wrappers.c"),
-    # bslz4 dependencies (KCB backend only)
-    os.path.join("src", "bslz4", "vendor", "lz4", "lib", "lz4.c"),
-    os.path.join("src", "bslz4", "vendor", "kcb", "src", "bitshuffle.c"),
-    # zstd decompress engine
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "debug.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "entropy_common.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "error_private.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "fse_decompress.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "pool.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "threading.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "xxhash.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "zstd_common.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "huf_decompress.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "zstd_ddict.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "zstd_decompress.c"),
-    os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "zstd_decompress_block.c"),
 ]
+
+# bslz4 + zstd vendor sources (excluded on Windows)
+if not _IS_WINDOWS:
+    SOURCES += [
+        os.path.join("src", "bslz4", "vendor", "lz4", "lib", "lz4.c"),
+        os.path.join("src", "bslz4", "vendor", "kcb", "src", "bitshuffle.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "debug.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "entropy_common.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "error_private.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "fse_decompress.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "pool.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "threading.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "xxhash.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "common", "zstd_common.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "huf_decompress.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "zstd_ddict.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "zstd_decompress.c"),
+        os.path.join("src", "bslz4", "vendor", "zstd", "lib", "decompress", "zstd_decompress_block.c"),
+    ]
 
 ext = Extension(
     PACKAGE_NAME + "." + MODULE_NAME,
