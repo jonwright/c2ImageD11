@@ -111,24 +111,13 @@ jobs:
       - name: Install test dependencies
         run: |
           pip install setuptools wheel
-          pip install numpy pytest
+          pip install numpy pytest pyyaml
           pip install h5py 2>$null; if ($LASTEXITCODE) { Write-Host "h5py skipped" }
           pip install hdf5plugin 2>$null; if ($LASTEXITCODE) { Write-Host "hdf5plugin skipped" }
 
       - name: Install c2py23
         run: |
-          pip install --no-build-isolation -e ${{ github.workspace }}/c2py23
-
-      - name: Diagnose build environment
-        run: |
-          Write-Host "Python location:"
-          Get-Command python | ForEach-Object { Write-Host "  $($_.Source)" }
-          python --version
-          python -c "import sys; print('platform:', sys.platform); print('maxsize:', sys.maxsize)"
-          Write-Host "CC env: $env:CC"
-          Write-Host "Checking for cl.exe on PATH..."
-          & { where.exe cl.exe 2>$null } | ForEach-Object { Write-Host "  $_" }
-          Write-Host "---done---"
+          pip install -e ${{ github.workspace }}/c2py23
 
       - name: Install c2ImageD11
         env:
