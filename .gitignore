@@ -18,3 +18,4 @@ interface/_cImageD11.c2py
 *.lprof
 multi_bslz4.md
 examples/multi_chunk_bslz4/*.h5
+*.npz

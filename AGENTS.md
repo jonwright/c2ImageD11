@@ -42,6 +42,44 @@ contain historical context and deferred improvement requests.
 | T8 | Generate ZSTD test data and verify bit-perfect ZSTD decompress | tests/ | Medium |
 | T9 | Debug and fix bslz4 / hdf5 chunk reading on Python 2.7 | bslz4.py, tests/ | High |
 | T10 | [x] Integer CSC exact arithmetic (Phase IXb complete) | src/, c2ImageD11/, tests/ | High |
+| T11 | [ ] Two-tier build (meson .a + setuptools .so) with yaml-in-C-comments | branch: new_build_system | High |
+
+## T11: Two-Tier Build + YAML-in-C-Comments
+
+Plan documented in STATUS_20260622.md.  Branch: `new_build_system`.
+
+Phases:
+  P1 - Clean layout (lib/meson.build, interface/manifest.c2py)
+  P2 - yaml_harvester.py (extracts @c2py blocks, assembles .c2py)
+  P3 - @c2py comment convention (three block types: function, variant, manifest)
+  P4 - Move 58 yaml function defs into C sources, one commit each
+  P5 - meson build for libc2ImageD11.a + setuptools for .so
+  P6 - Apply c2py23 v0.2.0 convention updates (names, fast_axis, default:false)
+  P7 - (deferred) Score kernel optimizations from explorations/score_bench/
+
+Reference: build_system_explore branch has working examples (explorations/score_bench/)
+
+## Anti-Hallucination Guardrails
+
+During LLM-assisted refactoring (T11), these guardrails prevent code rewrites:
+
+1. **verify_identity.py** (to write: tools/verify_identity.py)
+   - Strips comments and normalizes C code to canonical form
+   - Compares preprocessed output before and after each change
+   - Flags any non-comment diff as potential hallucination
+
+2. **Function-by-function commits** — commit after each yaml block move,
+   name the function in the message.  Easier bisection.
+
+3. **Equivalence tests after each batch** — `tests/test_equivalence.py`
+   must continue to pass 53/54.
+
+4. **Preprocessor output comparison** — `gcc -E -P -C file.c | diff -`
+   before/after each yaml block move.
+
+5. **Comment-only diffs** — git diff against reference should show only
+   added /* @c2py */ comments and removed yaml lines.  Any non-comment
+   change is a red flag and must be justified.
 
 ## Phase VIII: amd64 SIMD Dispatch (SSE, AVX2, AVX-512)
 
