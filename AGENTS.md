@@ -42,7 +42,7 @@ contain historical context and deferred improvement requests.
 | T8 | Generate ZSTD test data and verify bit-perfect ZSTD decompress | tests/ | Medium |
 | T9 | Debug and fix bslz4 / hdf5 chunk reading on Python 2.7 | bslz4.py, tests/ | High |
 | T10 | [x] Integer CSC exact arithmetic (Phase IXb complete) | src/, c2ImageD11/, tests/ | High |
-| T11 | [ ] Two-tier build (meson .a + setuptools .so) with yaml-in-C-comments | branch: new_build_system | High |
+| T11 | [ ] Two-tier build (meson .a + setuptools .so) with yaml-in-C-comments | branch: new_build_system | High -- **NEXT, blocks all other tasks** |
 
 ## T11: Two-Tier Build + YAML-in-C-Comments
 
@@ -68,16 +68,16 @@ During LLM-assisted refactoring (T11), these guardrails prevent code rewrites:
    - Compares preprocessed output before and after each change
    - Flags any non-comment diff as potential hallucination
 
-2. **Function-by-function commits** — commit after each yaml block move,
+2. **Function-by-function commits** -- commit after each yaml block move,
    name the function in the message.  Easier bisection.
 
-3. **Equivalence tests after each batch** — `tests/test_equivalence.py`
+3. **Equivalence tests after each batch** -- `tests/test_equivalence.py`
    must continue to pass 53/54.
 
-4. **Preprocessor output comparison** — `gcc -E -P -C file.c | diff -`
+4. **Preprocessor output comparison** -- `gcc -E -P -C file.c | diff -`
    before/after each yaml block move.
 
-5. **Comment-only diffs** — git diff against reference should show only
+5. **Comment-only diffs** -- git diff against reference should show only
    added /* @c2py */ comments and removed yaml lines.  Any non-comment
    change is a red flag and must be justified.
 
@@ -771,15 +771,15 @@ Legacy float CSC functions (`bslz4_csc_u16`, etc.) are unchanged.
 
 `c2ImageD11/bslz4.py:chunk2sparseCSC` inspects `csc.data.dtype` at
 construction time:
-- `np.issubdtype(csc.data.dtype, np.integer)` → integer path: u64 powder
-- Otherwise → legacy float path: f64 powder
+- `np.issubdtype(csc.data.dtype, np.integer)` -> integer path: u64 powder
+- Otherwise -> legacy float path: f64 powder
 
 ```python
 self.fun, powder_dtype = _get_csc_function(dtype, csc.data.dtype)
 self.powder = np.empty(nbins, dtype=powder_dtype)
 ```
 
-All function lookup is via `getattr(_m, fn_name)` — no manual import list.
+All function lookup is via `getattr(_m, fn_name)` -- no manual import list.
 
 ### Code Generator
 
@@ -794,8 +794,8 @@ All function lookup is via `getattr(_m, fn_name)` — no manual import list.
 Run `python3 generate_bslz4.py` to regenerate. `_cImageD11.c2py` is then
 built by concatenating: `head -n 1415 _cImageD11.c2py + _cImageD11_bslz4.c2py`.
 
-Generator configuration: 3 pixel types × 4 CSC data types × 2 engines ×
-2 backends × 3 ISAs. All loops are data-driven; adding a new CSC data type
+Generator configuration: 3 pixel types x 4 CSC data types x 2 engines x
+2 backends x 3 ISAs. All loops are data-driven; adding a new CSC data type
 requires one line in the `CSC_TYPES` table.
 
 ### Tests
