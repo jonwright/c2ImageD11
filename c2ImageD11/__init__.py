@@ -29,12 +29,11 @@ from c2ImageD11._cImageD11 import *
 from c2ImageD11._constants import *
 
 # Save C function references before Python wrappers override them
-_closest_c = closest
-_score_and_refine_c = score_and_refine
 _blobproperties_c = blobproperties
 _splat_c = splat
 _array_stats_c = array_stats
 _array_mean_var_cut_c = array_mean_var_cut
+_array_mean_var_msk_c = array_mean_var_msk
 _localmaxlabel_c = localmaxlabel
 _compute_geometry_c = compute_geometry
 _compute_xlylzl_c = compute_xlylzl
@@ -50,26 +49,16 @@ def _compat_deprecated(name):
 
 # ---------------------------------------------------------------------------
 # f2py-compatibility wrappers (with DeprecationWarning)
+#
+# Functions that now use c2py23 `outputs:` return tuples natively
+# matching the f2py convention, so they need no wrapper:
+#   closest(x, v)        -> (ibest, best)
+#   score_and_refine(u,gv,tol) -> (npk, drlv2)
+#   array_stats(img)     -> (min, max, mean, var)
+#   array_mean_var_cut(img) -> (mean, var)
+#   array_mean_var_msk(img, msk) -> (mean, var)
+#   refine_assigned(ubi,gv,labels,label) -> (npk, drlv2)
 # ---------------------------------------------------------------------------
-
-def closest(x, v):
-    """Closest match: returns (index, value) tuple (f2py-compatible)."""
-    _compat_deprecated('closest')
-    import numpy as np
-    ibest = np.zeros(1, dtype=np.int32)
-    best = np.zeros(1, dtype=np.float64)
-    _closest_c(x, v, ibest, best)
-    return int(ibest[0]), best[0]
-
-
-def score_and_refine(ubi, gv, tol):
-    """Score and refine: returns (npk, drlv2) tuple (f2py-compatible)."""
-    _compat_deprecated('score_and_refine')
-    import numpy as np
-    sumdrlv2 = np.zeros(1, dtype=np.float64)
-    npk = _score_and_refine_c(ubi, gv, tol, sumdrlv2)
-    return int(npk), sumdrlv2[0]
-
 
 def blobproperties(data, labels, npk, omega=0.0, verbose=0):
     """Blob properties: allocates and returns results array (f2py-compatible)."""
@@ -95,30 +84,45 @@ def splat(*args):
     return _splat_c(*args)
 
 
-def array_stats(*args):
+def array_stats(img, minval=None, maxval=None, mean=None, var=None):
     """Compute min/max/mean/var.
     f2py: array_stats(img) -> (min, max, mean, var) tuple
     c2py23: array_stats(img, minval, maxval, mean, var) -> void"""
-    if len(args) != 1:
-        return _array_stats_c(*args)
-    _compat_deprecated('array_stats')
-    import numpy as np
-    mn = np.zeros(1, dtype=np.float32)
-    mx = np.zeros(1, dtype=np.float32)
-    me = np.zeros(1, dtype=np.float32)
-    va = np.zeros(1, dtype=np.float32)
-    _array_stats_c(args[0], mn, mx, me, va)
-    return float(mn[0]), float(mx[0]), float(me[0]), float(va[0])
+    if minval is None:
+        import numpy as np
+        minval = np.zeros(1, dtype=np.float32)
+        maxval = np.zeros(1, dtype=np.float32)
+        mean = np.zeros(1, dtype=np.float32)
+        var = np.zeros(1, dtype=np.float32)
+        _array_stats_c(img, minval, maxval, mean, var)
+        return float(minval[0]), float(maxval[0]), float(mean[0]), float(var[0])
+    return _array_stats_c(img, minval, maxval, mean, var)
 
 
-def array_mean_var_cut(img, n=3, cut=3.0, verbose=0):
-    """Sigma-clipped mean/var. Returns (mean, var) tuple (f2py-compatible)."""
-    _compat_deprecated('array_mean_var_cut')
+def array_mean_var_cut(img, mean=None, var=None, n=3, cut=3.0, verbose=0):
+    """Sigma-clipped mean/var.
+    f2py: array_mean_var_cut(img, n=3, cut=3.0, verbose=0) -> (mean, var)
+    c2py23: array_mean_var_cut(img, mean, var, n, cut, verbose) -> void"""
     import numpy as np
-    me = np.zeros(1, dtype=np.float32)
-    va = np.zeros(1, dtype=np.float32)
-    _array_mean_var_cut_c(img, me, va, n, cut, verbose)
-    return float(me[0]), float(va[0])
+    if mean is None:
+        mean = np.zeros(1, dtype=np.float32)
+        var_alloc = np.zeros(1, dtype=np.float32)
+        _array_mean_var_cut_c(img, mean, var_alloc, n, cut, verbose)
+        return float(mean[0]), float(var_alloc[0])
+    return _array_mean_var_cut_c(img, mean, var, n, cut, verbose)
+
+
+def array_mean_var_msk(img, msk, mean=None, var=None, n=3, cut=3.0, verbose=0):
+    """Sigma-clipped mean/var with mask.
+    f2py: array_mean_var_msk(img, msk, n=3, cut=3.0, verbose=0) -> (mean, var)
+    c2py23: array_mean_var_msk(img, msk, mean, var, n, cut, verbose) -> void"""
+    import numpy as np
+    if mean is None:
+        mean = np.zeros(1, dtype=np.float32)
+        var_alloc = np.zeros(1, dtype=np.float32)
+        _array_mean_var_msk_c(img, msk, mean, var_alloc, n, cut, verbose)
+        return float(mean[0]), float(var_alloc[0])
+    return _array_mean_var_msk_c(img, msk, mean, var, n, cut, verbose)
 
 
 def localmaxlabel(data, labels, wrk):

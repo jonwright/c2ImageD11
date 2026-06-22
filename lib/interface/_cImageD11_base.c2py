@@ -139,7 +139,7 @@ functions:
           nv: "x.shape[0]"
           ic: "ic.ptr"
 
-  - py_sig: "closest(x: buffer, v: buffer, ibest: buffer, best: buffer) -> void"
+  - py_sig: "closest(x: buffer, v: buffer) -> void"
     doc: >-
       closest finds the value and index in x closest to a value in v.
       e.g. x = cosine of angles between pairs of peaks
@@ -148,23 +148,16 @@ functions:
     params:
       x: "Array of candidate values to search (e.g. ideal cosines from hkl geometry)."
       v: "Array of values to search for (e.g. experimental cosines)."
-      ibest: "Output scalar. Index into x of the closest match."
-      best: "Output scalar. Minimum absolute difference |x[i] - v[j]| found."
     checks:
       - "x.format == 'd'"
       - "v.format == 'd'"
-      - "ibest.format == 'i'"
-      - "ibest.n == 1"
-      - "best.format == 'd'"
-      - "best.n == 1"
     c_overloads:
       - sig: "void closest(double *x, double *v, int *ribest, double *rbest, intptr_t nx, intptr_t nv)"
+        outputs: {ribest: int, rbest: double}
         doc: "Standard O(nx*nv) scan-find-closest."
         map:
           x: "x.ptr"
           v: "v.ptr"
-          ribest: "ibest.ptr"
-          rbest: "best.ptr"
           nx: "x.n"
           nv: "v.n"
 
@@ -188,9 +181,10 @@ functions:
     c_overloads:
       - when: "ubi.format == 'd' and gv.format == 'd'"
         map: {ubi: "ubi.ptr", gv: "gv.ptr", tol: tol, ng: "gv.shape[0]"}
+        outputs: {n_arg: int, sumdrlv2_arg: double}
         group: score
         sig: "int score(double ubi[3][3], double gv[][3], double tol, intptr_t ng) -> int"
-  - py_sig: "score_and_refine(ubi: buffer, gv: buffer, tol: float, sumdrlv2: buffer) -> int"
+  - py_sig: "score_and_refine(ubi: buffer, gv: buffer, tol: float) -> int"
     doc: >-
       score_and_refine is very similar to score but it also refines the UB
       matrix using the assigned peaks and overwrite the argument.
@@ -199,20 +193,18 @@ functions:
       ubi: "Orientation matrix UBI (9-element flattened double). Overwritten with the refined best fit."
       gv: "G-vectors array, shape (ng, 3) flattened."
       tol: "Matching tolerance on |h - round(h)|."
-      sumdrlv2: "Output scalar (1-element buffer). Sum of squared residuals for the matched peaks."
     checks:
       - "ubi.format == 'd'"
       - "ubi.n == 9"
       - "gv.format == 'd'"
       - "gv.ndim >= 1"
-      - "sumdrlv2.format == 'd'"
-      - "sumdrlv2.n == 1"
     gil_release: true
     c_overloads:
       - when: "ubi.format == 'd' and gv.format == 'd'"
-        map: {ubi: "ubi.ptr", gv: "gv.ptr", tol: tol, sumdrlv2_arg: "sumdrlv2.ptr", ng: "gv.shape[0]"}
+        map: {ubi: "ubi.ptr", gv: "gv.ptr", tol: tol, ng: "gv.shape[0]"}
+        outputs: {n_arg: int, sumdrlv2_arg: double}
         group: score_and_refine
-        sig: "int score_and_refine(double ubi[3][3], double gv[][3], double tol, double *sumdrlv2_arg, intptr_t ng) -> int"
+        sig: "void score_and_refine(double ubi[3][3], double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)"
   - py_sig: "score_and_assign(ubi: buffer, gv: buffer, tol: float, drlv2: buffer, labels: buffer, label: int) -> int"
     doc: >-
       score_and_assign is similar to score but it assigns peaks to this
@@ -239,7 +231,7 @@ functions:
         map: {ubi: "ubi.ptr", gv: "gv.ptr", tol: tol, drlv2: "drlv2.ptr", labels: "labels.ptr", label: label, ng: "gv.shape[0]"}
         group: score_and_assign
         sig: "int score_and_assign(double ubi[3][3], double gv[][3], double tol, double *drlv2, int *labels, int label, intptr_t ng) -> int"
-  - py_sig: "refine_assigned(ubi: buffer, gv: buffer, labels: buffer, label: int, npk: buffer, drlv2: buffer) -> void"
+  - py_sig: "refine_assigned(ubi: buffer, gv: buffer, labels: buffer, label: int) -> void"
     doc: >-
       refine_assigned fits a ubi matrix to a set of g-vectors and assignments
       in labels. e.g. where(labels==label) it uses the peaks.
@@ -248,28 +240,21 @@ functions:
       gv: "G-vectors array, shape (ng, 3) flattened."
       labels: "Peak-to-grain assignments (ng ints). Peaks with labels[i]==label are used."
       label: "Grain label to refine. Only peaks assigned to this grain are included."
-      npk: "Output scalar (1-element buffer). Number of peaks assigned to this grain."
-      drlv2: "Output scalar (1-element buffer). Sum of squared residuals after refinement."
     checks:
       - "ubi.format == 'd'"
       - "ubi.n == 9"
       - "gv.format == 'd'"
       - "labels.format == 'i'"
       - "labels.n == gv.shape[0]"
-      - "npk.format == 'i'"
-      - "npk.n == 1"
-      - "drlv2.format == 'd'"
-      - "drlv2.n == 1"
     c_overloads:
       - sig: "void refine_assigned_wrapper(double *ubi, const double *gv, int *labels, int label, int *npk, double *drlv2, intptr_t ng)"
+        outputs: {npk: int, drlv2: double}
         doc: "Wrapper that casts flat double* to vec[3] for the original refine_assigned()."
         map:
           ubi: "ubi.ptr"
           gv: "gv.ptr"
           labels: "labels.ptr"
           label: label
-          npk: "npk.ptr"
-          drlv2: "drlv2.ptr"
           ng: "gv.shape[0]"
 
   - py_sig: "put_incr32(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void"
