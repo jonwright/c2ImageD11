@@ -51,10 +51,9 @@ class TestScoreAndRefineKernel:
             gv = rng.randn(30, 3)
             tol = 0.15
             n_o, s_o = OLD.score_and_refine(ubi_o, gv, tol)
-            s_n = np.zeros(1, dtype=np.float64)
-            n_n = NEW.score_and_refine(ubi_n, gv, tol, s_n)
+            n_n, s_n = NEW.score_and_refine(ubi_n, gv, tol)
             assert n_o == n_n
-            close(s_o, s_n[0])
+            close(s_o, s_n)
             close(ubi_o, ubi_n)
 
 

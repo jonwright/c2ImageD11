@@ -73,14 +73,12 @@ class TestClosest:
         for _ in range(3):
             x = np.sort(np.random.random(100))
             v = np.random.random(20)
-            # f2py returns (ibest, best) as tuple
+            # f2py returns (ibest, best) tuple
             ib_o, best_o = OLD.closest(x, v)
-            # c2py23 takes 1-element buffers
-            ib_n = np.zeros(1, dtype=np.int32)
-            best_n = np.zeros(1, dtype=np.float64)
-            NEW.closest(x, v, ib_n, best_n)
-            assert ib_o == ib_n[0]
-            close(best_o, best_n[0])
+            # c2py23 returns tuple directly via outputs
+            ib_n, best_n = NEW.closest(x, v)
+            assert ib_o == ib_n
+            close(best_o, best_n)
 
 
 class TestCountShared:
@@ -115,11 +113,10 @@ class TestScoreAndRefine:
             tol = 0.15
             # f2py returns (n, sumdrlv2)
             n_o, s_o = OLD.score_and_refine(ubi_o, gv, tol)
-            # c2py23: n is return value, sumdrlv2 is buffer
-            s_n = np.zeros(1, dtype=np.float64)
-            n_n = NEW.score_and_refine(ubi_n, gv, tol, s_n)
+            # c2py23 returns tuple directly via outputs
+            n_n, s_n = NEW.score_and_refine(ubi_n, gv, tol)
             assert n_o == n_n
-            close(s_o, s_n[0])
+            close(s_o, s_n)
             close(ubi_o, ubi_n)
 
 
@@ -151,11 +148,10 @@ class TestRefineAssigned:
         label = 1
         # f2py returns (npk, drlv2)
         npk_o, drlv2_o = OLD.refine_assigned(ubi_o, gv, labels, label)
-        npk_n = np.zeros(1, dtype=np.int32)
-        drlv2_n = np.zeros(1, dtype=np.float64)
-        NEW.refine_assigned(ubi_n, gv, labels, label, npk_n, drlv2_n)
-        assert npk_o == npk_n[0]
-        close(drlv2_o, drlv2_n[0])
+        # c2py23 returns tuple directly via outputs
+        npk_n, drlv2_n = NEW.refine_assigned(ubi_n, gv, labels, label)
+        assert npk_o == npk_n
+        close(drlv2_o, drlv2_n)
         if npk_o > 0:
             close(ubi_o, ubi_n)
 

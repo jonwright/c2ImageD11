@@ -31,6 +31,8 @@ typedef double vec[3];
 
 /* inline double conv_double_to_int_fast(double); */
 
+double conv_double_to_int_safe(double x);
+
 double conv_double_to_int_safe(double);
 
 int inverse3x3(double A[3][3]);
@@ -82,9 +84,13 @@ double conv_double_to_int_safe(double x) { return floor(x + 0.5); }
 
 /* See
  * https://stackoverflow.com/questions/59632005/why-does-this-code-beat-rint-and-how-to-i-protect-it-from-ffast-math-and-frie
+ *
+ * Replaced magic-constant trick with C99 nearbyint() because
+ * -ffast-math optimizes the (x + MAGIC) - MAGIC expression to x,
+ * making all peaks count as indexed regardless of tolerance.
+ * nearbyint() maps to ROUNDPD/VRNDSCALEPD hardware on SSE4.1/AVX-512.
  */
-#define MAGIC 6755399441055744.0
-#define conv_double_to_int_fast(x) ((x + MAGIC) - MAGIC)
+#define conv_double_to_int_fast(x) nearbyint(x)
 
 /* DLL_LOCAL
 inline double conv_double_to_int_fast(double x) {
