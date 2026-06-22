@@ -138,43 +138,4 @@ splat_wrapper(uint8_t *rgba_buf, intptr_t w, intptr_t h, const double *gve_ptr,
     splat(rgba_buf, w, h, (double(*)[3])gve_ptr, ng, (double*)u_ptr, npx);
 }
 
-/* ================================================================
- * SIMD kernel bridge wrappers
- *
- * The score_and_refine kernels were mechanically extracted from
- * ImageD11 source, changing their signature from int fn(..., int ng)
- * to void fn(..., int *n_arg, double *sumdrlv2_arg, int ng).
- * These wrappers bridge the .c2py variant sig (int return, flat ptrs)
- * to the new kernel signatures (void return, vec types, extra n_arg).
- * ================================================================ */
 
-extern void score_and_refine_avx512_impl(vec ubi[3], vec gv[], double tol,
-    int *n_arg, double *sumdrlv2_arg, intptr_t ng);
-extern void score_and_refine_avx2_impl(vec ubi[3], vec gv[], double tol,
-    int *n_arg, double *sumdrlv2_arg, intptr_t ng);
-extern void score_and_refine_sse42_impl(vec ubi[3], vec gv[], double tol,
-    int *n_arg, double *sumdrlv2_arg, intptr_t ng);
-
-int score_and_refine_avx512(const double *ubi, const double *gv, double tol,
-    double *sumdrlv2_arg, intptr_t ng)
-{
-    int n;
-    score_and_refine_avx512_impl((vec*)ubi, (vec*)gv, tol, &n, sumdrlv2_arg, ng);
-    return n;
-}
-
-int score_and_refine_avx2(const double *ubi, const double *gv, double tol,
-    double *sumdrlv2_arg, intptr_t ng)
-{
-    int n;
-    score_and_refine_avx2_impl((vec*)ubi, (vec*)gv, tol, &n, sumdrlv2_arg, ng);
-    return n;
-}
-
-int score_and_refine_sse42(const double *ubi, const double *gv, double tol,
-    double *sumdrlv2_arg, intptr_t ng)
-{
-    int n;
-    score_and_refine_sse42_impl((vec*)ubi, (vec*)gv, tol, &n, sumdrlv2_arg, ng);
-    return n;
-}
