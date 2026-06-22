@@ -31,10 +31,8 @@ c2_sources = files(
 )
 
 c2_c_args = cc.get_supported_arguments(
-  '-fPIC', '-O3', '-ffast-math', '-msse4.2', '-D_DEFAULT_SOURCE',
+  '-fPIC', '-O2', '-fopenmp', '-D_DEFAULT_SOURCE',
   '-Wno-format', '-Wno-incompatible-pointer-types')
-
-omp_c_args = cc.get_supported_arguments('-fopenmp')
 
 m_dep = cc.find_library('m', required: false)
 
@@ -44,7 +42,7 @@ c2_inc = include_directories(
 shared_module('_cImageD11',
   c2_sources,
   files('interface/c2py_runtime.c', 'interface/_cImageD11_wrapper.c'),
-  c_args: c2_c_args + omp_c_args,
+  c_args: c2_c_args,
   include_directories: [c2_inc],
   dependencies: [m_dep],
   link_args: ['-lgomp'],

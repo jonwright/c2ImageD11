@@ -1,12 +1,8 @@
 """
 c2ImageD11 - compiled C extensions for ImageD11, built with c2py23.
 
-Import chain:
-  c2ImageD11/__init__.py (this file)
-    -> c2ImageD11._cImageD11 (compiled .so via c2py23)
-
 Provides:
-  - All C functions re-exported from _cImageD11
+  - All C functions re-exported from the arch-named .so
   - Blob property constants (s_1, s_I, NPROPERTY, etc.)
   - OpenMP / multiprocessing safety
 """
@@ -14,9 +10,48 @@ Provides:
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
+import platform
+import sys
 import warnings
 
-from c2ImageD11._cImageD11 import *
+# ---------------------------------------------------------------------------
+# Arch-aware .so loader
+#
+# The .so files in this directory follow the naming convention:
+#   _cImageD11_{arch}.so   (Linux)
+#   _cImageD11_{arch}.pyd  (Windows)
+#
+# Where {arch} matches platform.machine() output:
+#   x86_64, aarch64, ppc64le, AMD64 (Windows), arm64 (Windows)
+#
+# The same binary works across Python 2.7-3.14 because c2py23 emits both
+# init_cImageD11 (Py2) and PyInit__cImageD11 (Py3) entry points.
+# ---------------------------------------------------------------------------
+
+_here = os.path.dirname(__file__)
+_arch = platform.machine()
+_ext = ".pyd" if sys.platform == "win32" else ".so"
+_lib_name = "_cImageD11_{}{}".format(_arch, _ext)
+_lib_path = os.path.join(_here, _lib_name)
+
+if not os.path.exists(_lib_path):
+    raise ImportError("c2ImageD11: no binary at {} for arch {}".format(
+        _lib_path, _arch))
+
+if sys.version_info[0] >= 3:
+    import importlib.util
+    _spec = importlib.util.spec_from_file_location(
+        "c2ImageD11._cImageD11", _lib_path)
+    _mod = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+else:
+    import imp
+    _mod = imp.load_dynamic("c2ImageD11._cImageD11", _lib_path)
+
+# Re-export all non-private names from the loaded module
+for _k in dir(_mod):
+    if not _k.startswith("_"):
+        globals()[_k] = getattr(_mod, _k)
 
 
 # ---------------------------------------------------------------------------

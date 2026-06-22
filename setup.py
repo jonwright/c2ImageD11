@@ -4,15 +4,15 @@ Build the .so with meson first, then pip install:
 
    pip install .
 
-Force a rebuild even if .so exists:
+Force a rebuild:
 
    C2IMAGED11_REBUILD=1 pip install .
-   python setup.py --force-rebuild install
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
+import platform
 import sys
 
 from setuptools import setup
@@ -20,7 +20,9 @@ from setuptools.command.build_py import build_py
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PKG_DIR = os.path.join(HERE, "c2ImageD11")
-SO_NAME = "_cImageD11.so"
+ARCH = platform.machine()
+EXT = ".pyd" if sys.platform == "win32" else ".so"
+SO_NAME = "_cImageD11_{}{}".format(ARCH, EXT)
 SO_PATH = os.path.join(PKG_DIR, SO_NAME)
 
 
@@ -37,7 +39,8 @@ def _build_so(force=False):
         import subprocess
         subprocess.check_call(["meson", "setup", lib_dir], cwd=build_dir)
         subprocess.check_call(["ninja"], cwd=build_dir)
-        shutil.copy(os.path.join(build_dir, SO_NAME), SO_PATH)
+        shutil.copy(
+            os.path.join(build_dir, "_cImageD11.so"), SO_PATH)
     except Exception as exc:
         print("meson build failed: %s" % exc, file=sys.stderr)
         print("Build manually: see lib/meson.build for instructions",
@@ -57,6 +60,41 @@ if "--force-rebuild" in sys.argv:
     sys.argv.remove("--force-rebuild")
     os.environ["C2IMAGED11_REBUILD"] = "1"
 
+
+if "bdist_wheel" in sys.argv:
+    try:
+        from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+
+        MANYLINUX_TAG = {
+            "x86_64": "manylinux2014_x86_64",
+            "i686": "manylinux2014_i686",
+            "aarch64": "manylinux2014_aarch64",
+            "ppc64le": "manylinux2014_ppc64le",
+            "s390x": "manylinux2014_s390x",
+            "AMD64": "win_amd64",
+        }.get(ARCH, "linux_" + ARCH)
+
+        python_tag = "py2.py3" if ARCH in ("AMD64",) else "py3"
+
+        class bdist_wheel_override(_bdist_wheel):
+            def finalize_options(self):
+                _bdist_wheel.finalize_options(self)
+                self.root_is_pure = False
+
+            def get_tag(self):
+                impl, abi, plat = _bdist_wheel.get_tag(self)
+                return python_tag, "none", MANYLINUX_TAG
+
+        bdist_wheel_cmd = bdist_wheel_override
+    except ImportError:
+        bdist_wheel_cmd = None
+else:
+    bdist_wheel_cmd = None
+
+cmdclass = {"build_py": build_cmodule}
+if bdist_wheel_cmd:
+    cmdclass["bdist_wheel"] = bdist_wheel_cmd
+
 setup(
     name="c2ImageD11",
     version="0.2.0",
@@ -64,6 +102,6 @@ setup(
     packages=["c2ImageD11"],
     package_data={"c2ImageD11": [SO_NAME]},
     include_package_data=True,
-    cmdclass={"build_py": build_cmodule},
+    cmdclass=cmdclass,
     zip_safe=False,
 )
