@@ -29,6 +29,17 @@
         integer :: mask_to_coo
     end function mask_to_coo
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "mask_to_coo(msk: buffer, i: buffer, j: buffer, w: buffer) -> int",
+ *  "doc": "Convert mask to sparse COO coordinates.",
+ *  "params": {"msk": "Input int8 2D mask.", "i": "Output row indices (uint16).",
+ *      "j": "Output col indices (uint16).", "w": "Output per-row counts (int32)."},
+ *  "checks": ["msk.format == 'b' or msk.format == 'B'", "msk.ndim == 2",
+ *      "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2", "j.n == i.n",
+ *      "w.format == 'i'", "w.n == msk.shape[0]"],
+ *  "c_overloads": [{"sig": "int mask_to_coo(int8_t *msk, intptr_t ns, intptr_t nf, uint16_t *i, uint16_t *j, intptr_t nnz, int *nrow) -> int",
+ *      "map": {"msk": "msk.ptr", "ns": "msk.shape[0]", "nf": "msk.shape[1]", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "nrow": "w.ptr"}}]}
+C2PY_END */
 int mask_to_coo(int8_t msk[], intptr_t ns, intptr_t nf, uint16_t i[], uint16_t j[],
                 intptr_t nnz, int nrow[]) {
     intptr_t mi, mj; int idx;
@@ -116,6 +127,14 @@ int mask_to_coo(int8_t msk[], intptr_t ns, intptr_t nf, uint16_t i[], uint16_t j
         integer sparse_is_sorted
     end function spare_is_sorted
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "sparse_is_sorted(i: buffer, j: buffer) -> int",
+ *  "doc": "Check if sparse COO indices are in row-major order.",
+ *  "params": {"i": "Row indices (uint16).", "j": "Col indices (uint16)."},
+ *  "checks": ["i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2", "j.n == i.n"],
+ *  "c_overloads": [{"sig": "int sparse_is_sorted(uint16_t *i, uint16_t *j, intptr_t nnz) -> int",
+ *      "map": {"i": "i.ptr", "j": "j.ptr", "nnz": "i.n"}}]}
+C2PY_END */
 int sparse_is_sorted(uint16_t i[], uint16_t j[], intptr_t nnz) {
     intptr_t k; int es, ed;
     es = nnz + 1;
@@ -162,6 +181,15 @@ int sparse_is_sorted(uint16_t i[], uint16_t j[], intptr_t nnz) {
     end function sparse_connectedpixels
 F2PY_WRAPPER_END */
 #define NOISY 0
+/* C2PY_BEGIN
+ * {"py_sig": "sparse_connectedpixels(v: buffer, i: buffer, j: buffer, threshold: float, labels: buffer) -> int",
+ *  "doc": "Connected-component labeling on sparse image.",
+ *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).", "threshold": "Threshold.", "labels": "Output labels (int32)."},
+ *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
+ *      "j.n == i.n", "v.n == i.n", "labels.format == 'i'", "labels.n == i.n"],
+ *  "c_overloads": [{"sig": "int sparse_connectedpixels(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) -> int",
+ *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "threshold": "threshold", "labels": "labels.ptr"}}]}
+C2PY_END */
 int sparse_connectedpixels(float *restrict v, uint16_t *restrict i,
                            uint16_t *restrict j, intptr_t nnz, float threshold,
                            int32_t *restrict labels /* nnz */
@@ -268,6 +296,16 @@ int sparse_connectedpixels(float *restrict v, uint16_t *restrict i,
     end function sparse_connectedpixels_splat
 F2PY_WRAPPER_END */
 #define NOISY 0
+/* C2PY_BEGIN
+ * {"py_sig": "sparse_connectedpixels_splat(v: buffer, i: buffer, j: buffer, th: float, lbl: buffer, Z: buffer, ni: int, nj: int) -> int",
+ *  "doc": "Splat sparse to dense then run connectedpixels.",
+ *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).",
+ *      "th": "Threshold.", "lbl": "Output labels.", "Z": "Temp buffer.", "ni": "Rows.", "nj": "Cols."},
+ *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
+ *      "j.n == i.n", "v.n == i.n", "lbl.format == 'i'", "lbl.n == i.n", "Z.format == 'i'"],
+ *  "c_overloads": [{"sig": "int sparse_connectedpixels_splat(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float threshold, int32_t *labels, int32_t *Z, intptr_t imax, intptr_t jmax) -> int",
+ *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "threshold": "th", "labels": "lbl.ptr", "Z": "Z.ptr", "imax": "ni", "jmax": "nj"}}]}
+C2PY_END */
 int sparse_connectedpixels_splat(float *restrict v, uint16_t *restrict i,
                                  uint16_t *restrict j, intptr_t nnz, float threshold,
                                  int32_t *restrict labels, /* nnz */
@@ -403,6 +441,17 @@ int sparse_connectedpixels_splat(float *restrict v, uint16_t *restrict i,
     end subroutine sparse_blob2Dproperties
 F2PY_WRAPPER_END */
 /* blob_properties for sparse - in image only... */
+/* C2PY_BEGIN
+ * {"py_sig": "sparse_blob2Dproperties(v: buffer, i: buffer, j: buffer, labels: buffer, npk: int, results: buffer) -> void",
+ *  "doc": "Compute blob properties for sparse labels.",
+ *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).",
+ *      "labels": "Labels (int32).", "npk": "Number of objects.", "results": "Output (npk, 11)."},
+ *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
+ *      "j.n == i.n", "v.n == i.n", "labels.format == 'i'", "labels.n == i.n",
+ *      "results.format == 'd'", "results.shape[0] == npk", "results.shape[1] == 11"],
+ *  "c_overloads": [{"sig": "void sparse_blob2Dproperties(float *data, uint16_t *i, uint16_t *j, intptr_t nnz, int32_t *labels, double *res, int32_t npk)",
+ *      "map": {"data": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "labels": "labels.ptr", "res": "results.ptr", "npk": "npk"}}]}
+C2PY_END */
 void sparse_blob2Dproperties(float *restrict data, uint16_t *restrict i,
                              uint16_t *restrict j, intptr_t nnz,
                              int32_t *restrict labels, double *restrict res,
@@ -464,6 +513,15 @@ void sparse_blob2Dproperties(float *restrict data, uint16_t *restrict i,
     end subroutine sparse_smooth
 F2PY_WRAPPER_END */
 #define CHECKSANITY 0
+/* C2PY_BEGIN
+ * {"py_sig": "sparse_smooth(v: buffer, i: buffer, j: buffer, s: buffer) -> void",
+ *  "doc": "Smooth sparse image (avoid equal-pixel tails in peak detection).",
+ *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).", "s": "Output smoothed (float32)."},
+ *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
+ *      "j.n == i.n", "v.n == i.n", "s.format == 'f'", "s.n == i.n"],
+ *  "c_overloads": [{"sig": "void sparse_smooth(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float *s)",
+ *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "s": "s.ptr"}}]}
+C2PY_END */
 void sparse_smooth(float *restrict v,    // input image
                    uint16_t *restrict i, // indices
                    uint16_t *restrict j,
@@ -521,6 +579,17 @@ void sparse_smooth(float *restrict v,    // input image
 F2PY_WRAPPER_END */
 #define CHECKSANITY 0
 #define TRACE 0
+/* C2PY_BEGIN
+ * {"py_sig": "sparse_localmaxlabel(v: buffer, i: buffer, j: buffer, MV: buffer, iMV: buffer, labels: buffer) -> int",
+ *  "doc": "Label sparse COO pixels to local maximum.",
+ *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).",
+ *      "MV": "Temp float32.", "iMV": "Temp int32.", "labels": "Output labels (int32)."},
+ *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
+ *      "j.n == i.n", "v.n == i.n", "MV.format == 'f'", "MV.n == i.n",
+ *      "iMV.format == 'i'", "iMV.n == i.n", "labels.format == 'i'", "labels.n == i.n"],
+ *  "c_overloads": [{"sig": "int sparse_localmaxlabel(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV, int32_t *labels) -> int",
+ *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "MV": "MV.ptr", "iMV": "iMV.ptr", "labels": "labels.ptr"}}]}
+C2PY_END */
 int sparse_localmaxlabel(float *restrict v, uint16_t *restrict i,
                          uint16_t *restrict j, intptr_t nnz,
                          float *restrict MV, // neighbor Max Val (of 3x3 square)
@@ -682,6 +751,18 @@ int sparse_localmaxlabel(float *restrict v, uint16_t *restrict i,
         threadsafe
     end function sparse_overlaps
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "sparse_overlaps(i1: buffer, j1: buffer, k1: buffer, i2: buffer, j2: buffer, k2: buffer) -> int",
+ *  "doc": "Find overlapping pixels between two sparse arrays.",
+ *  "params": {"i1": "Rows 1 (uint16).", "j1": "Cols 1 (uint16).", "k1": "Output indices into 1.",
+ *      "i2": "Rows 2 (uint16).", "j2": "Cols 2 (uint16).", "k2": "Output indices into 2."},
+ *  "checks": ["i1.format == 'H' or i1.itemsize == 2", "j1.format == 'H' or j1.itemsize == 2", "j1.n == i1.n",
+ *      "k1.format == 'i'", "k1.n == i1.n",
+ *      "i2.format == 'H' or i2.itemsize == 2", "j2.format == 'H' or j2.itemsize == 2", "j2.n == i2.n",
+ *      "k2.format == 'i'", "k2.n == i2.n"],
+ *  "c_overloads": [{"sig": "int sparse_overlaps(uint16_t *i1, uint16_t *j1, int *k1, intptr_t nnz1, uint16_t *i2, uint16_t *j2, int *k2, intptr_t nnz2) -> int",
+ *      "map": {"i1": "i1.ptr", "j1": "j1.ptr", "k1": "k1.ptr", "nnz1": "i1.n", "i2": "i2.ptr", "j2": "j2.ptr", "k2": "k2.ptr", "nnz2": "i2.n"}}]}
+C2PY_END */
 int sparse_overlaps(uint16_t *restrict i1, uint16_t *restrict j1,
                     int *restrict k1, intptr_t nnz1, uint16_t *restrict i2,
                     uint16_t *restrict j2, int *restrict k2, intptr_t nnz2
@@ -742,6 +823,15 @@ int sparse_overlaps(uint16_t *restrict i1, uint16_t *restrict j1,
         threadsafe
     end function compress_duplicates
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "compress_duplicates(i: buffer, j: buffer, oi: buffer, oj: buffer, tmp: buffer) -> int",
+ *  "doc": "Remove duplicate (i,j) pairs via counting sort.",
+ *  "params": {"i": "I/O int32 col 0.", "j": "I/O int32 col 1.", "oi": "Output counts.", "oj": "Temp.", "tmp": "Temp."},
+ *  "checks": ["i.format == 'i'", "j.format == 'i'", "j.n == i.n",
+ *      "oi.format == 'i'", "oi.n == i.n", "oj.format == 'i'", "oj.n == i.n", "tmp.format == 'i'"],
+ *  "c_overloads": [{"sig": "int compress_duplicates(int *i, int *j, int *oi, int *oj, int *tmp, intptr_t n, intptr_t nt) -> int",
+ *      "map": {"i": "i.ptr", "j": "j.ptr", "oi": "oi.ptr", "oj": "oj.ptr", "tmp": "tmp.ptr", "n": "i.n", "nt": "tmp.n"}}]}
+C2PY_END */
 int compress_duplicates(int *restrict i, int *restrict j, int *restrict oi,
                         int *restrict oj, int *restrict tmp, intptr_t n, intptr_t nt) {
     intptr_t k; int vmax, c, t, ik, jk;
@@ -845,6 +935,22 @@ int compress_duplicates(int *restrict i, int *restrict j, int *restrict oi,
     end function coverlaps
 F2PY_WRAPPER_END */
 
+/* C2PY_BEGIN
+ * {"py_sig": "coverlaps(row1: buffer, col1: buffer, labels1: buffer, row2: buffer, col2: buffer, labels2: buffer, mat: buffer, results: buffer) -> int",
+ *  "doc": "Determine overlapping labels between two sparse frames.",
+ *  "params": {"row1": "Rows 1 (uint16).", "col1": "Cols 1 (uint16).", "labels1": "Labels 1 (int32).",
+ *      "row2": "Rows 2 (uint16).", "col2": "Cols 2 (uint16).", "labels2": "Labels 2 (int32).",
+ *      "mat": "Output overlap matrix (int32).", "results": "Output triples (int32)."},
+ *  "checks": ["row1.format == 'H' or row1.itemsize == 2", "col1.format == 'H' or col1.itemsize == 2", "col1.n == row1.n",
+ *      "labels1.format == 'i'", "labels1.n == row1.n",
+ *      "row2.format == 'H' or row2.itemsize == 2", "col2.format == 'H' or col2.itemsize == 2", "col2.n == row2.n",
+ *      "labels2.format == 'i'", "labels2.n == row2.n",
+ *      "mat.format == 'i'", "mat.ndim == 2", "results.format == 'i'"],
+ *  "c_overloads": [{"sig": "int coverlaps(uint16_t *row1, uint16_t *col1, int *labels1, intptr_t nnz1, uint16_t *row2, uint16_t *col2, int *labels2, intptr_t nnz2, int *mat, intptr_t npk1, intptr_t npk2, int *results) -> int",
+ *      "map": {"row1": "row1.ptr", "col1": "col1.ptr", "labels1": "labels1.ptr", "nnz1": "row1.n",
+ *          "row2": "row2.ptr", "col2": "col2.ptr", "labels2": "labels2.ptr", "nnz2": "row2.n",
+ *          "mat": "mat.ptr", "npk1": "mat.shape[0]", "npk2": "mat.shape[1]", "results": "results.ptr"}}]}
+C2PY_END */
 int coverlaps(uint16_t *restrict row1, uint16_t *restrict col1,
               int *restrict labels1, intptr_t nnz1, uint16_t *restrict row2,
               uint16_t *restrict col2, int *restrict labels2, intptr_t nnz2,
@@ -904,6 +1010,17 @@ int coverlaps(uint16_t *restrict row1, uint16_t *restrict col1,
     end function tosparse_u16
 F2PY_WRAPPER_END */
 
+/* C2PY_BEGIN
+ * {"py_sig": "tosparse_u16(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: int) -> int",
+ *  "doc": "Convert dense uint16 image to sparse COO.",
+ *  "params": {"img": "Input uint16 2D.", "msk": "Mask (uint8, 0=include).", "row": "Output rows.", "col": "Output cols.", "val": "Output values.", "cut": "Threshold."},
+ *  "checks": ["img.format == 'H' or img.itemsize == 2", "img.ndim == 2",
+ *      "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n",
+ *      "row.format == 'H' or row.itemsize == 2", "col.format == 'H' or col.itemsize == 2",
+ *      "val.format == 'H' or val.itemsize == 2"],
+ *  "c_overloads": [{"sig": "int tosparse_u16(uint16_t *img, uint8_t *msk, uint16_t *row, uint16_t *col, uint16_t *val, int cut, intptr_t ns, intptr_t nf) -> int",
+ *      "map": {"img": "img.ptr", "msk": "msk.ptr", "row": "row.ptr", "col": "col.ptr", "val": "val.ptr", "cut": "cut", "ns": "img.shape[0]", "nf": "img.shape[1]"}}]}
+C2PY_END */
 int tosparse_u16(uint16_t *restrict img, uint8_t *restrict msk,
                  uint16_t *restrict row, uint16_t *restrict col,
                  uint16_t *restrict val, int cut, intptr_t ns, intptr_t nf) {
@@ -941,6 +1058,17 @@ int tosparse_u16(uint16_t *restrict img, uint8_t *restrict msk,
     end function tosparse_u32
 F2PY_WRAPPER_END */
 
+/* C2PY_BEGIN
+ * {"py_sig": "tosparse_u32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int",
+ *  "doc": "Convert dense uint32 image to sparse COO.",
+ *  "params": {"img": "Input uint32 2D.", "msk": "Mask (uint8).", "row": "Output rows.", "col": "Output cols.", "val": "Output values.", "cut": "Threshold (float)."},
+ *  "checks": ["img.format == 'I' or img.itemsize == 4", "img.ndim == 2",
+ *      "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n",
+ *      "row.format == 'H' or row.itemsize == 2", "col.format == 'H' or col.itemsize == 2",
+ *      "val.format == 'I' or val.itemsize == 4"],
+ *  "c_overloads": [{"sig": "int tosparse_u32(uint32_t *img, uint8_t *msk, uint16_t *row, uint16_t *col, uint32_t *val, float cut, intptr_t ns, intptr_t nf) -> int",
+ *      "map": {"img": "img.ptr", "msk": "msk.ptr", "row": "row.ptr", "col": "col.ptr", "val": "val.ptr", "cut": "cut", "ns": "img.shape[0]", "nf": "img.shape[1]"}}]}
+C2PY_END */
 int tosparse_u32(uint32_t *restrict img, uint8_t *restrict msk,
                  uint16_t *restrict row, uint16_t *restrict col,
                  uint32_t *restrict val, float cut, intptr_t ns, intptr_t nf) {
@@ -978,6 +1106,17 @@ int tosparse_u32(uint32_t *restrict img, uint8_t *restrict msk,
     end function tosparse_f32
 F2PY_WRAPPER_END */
 
+/* C2PY_BEGIN
+ * {"py_sig": "tosparse_f32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int",
+ *  "doc": "Convert dense float32 image to sparse COO.",
+ *  "params": {"img": "Input float32 2D.", "msk": "Mask (uint8).", "row": "Output rows.", "col": "Output cols.", "val": "Output values.", "cut": "Threshold."},
+ *  "checks": ["img.format == 'f'", "img.ndim == 2",
+ *      "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n",
+ *      "row.format == 'H' or row.itemsize == 2", "col.format == 'H' or col.itemsize == 2",
+ *      "val.format == 'f'"],
+ *  "c_overloads": [{"sig": "int tosparse_f32(float *img, uint8_t *msk, uint16_t *row, uint16_t *col, float *val, float cut, intptr_t ns, intptr_t nf) -> int",
+ *      "map": {"img": "img.ptr", "msk": "msk.ptr", "row": "row.ptr", "col": "col.ptr", "val": "val.ptr", "cut": "cut", "ns": "img.shape[0]", "nf": "img.shape[1]"}}]}
+C2PY_END */
 int tosparse_f32(float *restrict img, uint8_t *restrict msk,
                  uint16_t *restrict row, uint16_t *restrict col,
                  float *restrict val, float cut, intptr_t ns, intptr_t nf) {

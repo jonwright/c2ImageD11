@@ -105,6 +105,19 @@ inline double conv_double_to_int_fast(double x) {
         integer :: verify_rounding, n
     end function verify_rounding
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "verify_rounding(n: int) -> int",
+ *     "doc": "checks the round to nearest int code is correct",
+ *     "params": {
+ *         "n": "ask jon about this parameter",
+ *     },
+ *     "c_overloads": [{
+ *         "sig": "int verify_rounding(int n)",
+ *         "map": {"n": "n"},
+ *     }],
+ * }
+C2PY_END */
 int verify_rounding(int n) {
     int i, hfast, hslow, bad = 0;
     double v;
@@ -139,6 +152,28 @@ int verify_rounding(int n) {
         integer, intent(inout) :: ic( nv )
     end subroutine closest_vec
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "closest_vec(x: buffer, ic: buffer) -> void",
+ *     "doc": "closest_vec finds the closest neighbors for each row of X ignoring the self.",
+ *     "params": {
+ *         "x": "2D array of feature vectors, shape (nv, dim). Each row is a vector.",
+ *         "ic": "Output array of shape (nv,). For each row i, ic[i] = index j of the nearest neighbor (j != i).",
+ *     },
+ *     "checks": [
+ *         "x.format == 'd'",
+ *         "x.ndim == 2",
+ *         "x.shape[1] >= 1",
+ *         "ic.format == 'i'",
+ *         "ic.n == x.shape[0]",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "void closest_vec(double *x, intptr_t dim, intptr_t nv, int *ic)",
+ *         "map": {"x": "x.ptr", "dim": "x.shape[1]", "nv": "x.shape[0]", "ic": "ic.ptr"},
+ *     }],
+ * }
+C2PY_END */
 void closest_vec(double x[], intptr_t dim, intptr_t nv, int closest[]) {
     /*
      * For each x it finds the closest neighbor
@@ -193,6 +228,26 @@ void closest_vec(double x[], intptr_t dim, intptr_t nv, int closest[]) {
         threadsafe
     end subroutine closest
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "closest(x: buffer, v: buffer) -> void",
+ *     "doc": "closest finds the value and index in x closest to a value in v.",
+ *     "params": {
+ *         "x": "Array of candidate values to search (e.g. ideal cosines from hkl geometry).",
+ *         "v": "Array of values to search for (e.g. experimental cosines).",
+ *     },
+ *     "checks": [
+ *         "x.format == 'd'",
+ *         "v.format == 'd'",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "void closest(double *x, double *v, int *ribest, double *rbest, intptr_t nx, intptr_t nv)",
+ *         "outputs": {"ribest": "int", "rbest": "double"},
+ *         "doc": "Standard O(nx*nv) scan-find-closest.",
+ *         "map": {"x": "x.ptr", "v": "v.ptr", "nx": "x.n", "nv": "v.n"},
+ *     }],
+ * }
+C2PY_END */
 void closest(double x[], double v[], int *ribest, double *rbest, intptr_t nx,
              intptr_t nv) {
     /*
@@ -232,6 +287,30 @@ void closest(double x[], double v[], int *ribest, double *rbest, intptr_t nx,
         ! only reads gvectors
     end function score
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "score(ubi: buffer, gv: buffer, tol: float) -> int",
+ *     "doc": "Count g-vectors indexed by ubi matrix within tol.",
+ *     "params": {
+ *         "ubi": "Orientation matrix UBI (UB inverse), shape (9,) flattened double.",
+ *         "gv": "G-vectors array, shape (ng, 3) flattened.",
+ *         "tol": "Tolerance on |h - round(h)|.",
+ *     },
+ *     "checks": [
+ *         "ubi.format == 'd'",
+ *         "ubi.n == 9",
+ *         "gv.format == 'd'",
+ *         "gv.ndim >= 1",
+ *     ],
+ *     "gil_release": true,
+ *     "c_overloads": [{
+ *         "when": "ubi.format == 'd' and gv.format == 'd'",
+ *         "sig": "int score(double ubi[3][3], double gv[][3], double tol, intptr_t ng) -> int",
+ *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
+ *     }],
+ * }
+C2PY_END */
 int score(vec ubi[3], vec gv[], double tol, intptr_t ng) {
     /*
      * Counts g-vectors indexed by ubi within tol
@@ -272,6 +351,30 @@ int score(vec ubi[3], vec gv[], double tol, intptr_t ng) {
         threadsafe
     end subroutine score_and_refine
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "score_and_refine(ubi: buffer, gv: buffer, tol: float) -> int",
+ *     "doc": "score_and_refine also refines the UB matrix using the assigned peaks.",
+ *     "params": {
+ *         "ubi": "Orientation matrix UBI (9-element flattened double).",
+ *         "gv": "G-vectors array, shape (ng, 3) flattened.",
+ *         "tol": "Matching tolerance on |h - round(h)|.",
+ *     },
+ *     "checks": [
+ *         "ubi.format == 'd'",
+ *         "ubi.n == 9",
+ *         "gv.format == 'd'",
+ *         "gv.ndim >= 1",
+ *     ],
+ *     "gil_release": true,
+ *     "c_overloads": [{
+ *         "when": "ubi.format == 'd' and gv.format == 'd'",
+ *         "sig": "void score_and_refine(double ubi[3][3], double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+ *         "outputs": {"n_arg": "int", "sumdrlv2_arg": "double"},
+ *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
+ *     }],
+ * }
+C2PY_END */
 void score_and_refine(vec ubi[3], vec gv[], double tol, int *n_arg,
                       double *sumdrlv2_arg, intptr_t ng) {
     /* ng = number of g vectors */
@@ -371,6 +474,36 @@ void score_and_refine(vec ubi[3], vec gv[], double tol, int *n_arg,
         ! NOT threadsafe - labels will be shared
     end function score_and_assign
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "score_and_assign(ubi: buffer, gv: buffer, tol: float, drlv2: buffer, labels: buffer, label: int) -> int",
+ *     "doc": "score_and_assign assigns peaks to this ubi only if they fit the data better.",
+ *     "params": {
+ *         "ubi": "Orientation matrix (9-element flattened double).",
+ *         "gv": "G-vectors array, shape (ng, 3) flattened.",
+ *         "tol": "Matching tolerance.",
+ *         "drlv2": "Input/output array (ng). Current best squared residuals per peak.",
+ *         "labels": "Input/output array (ng). Current grain labels per peak.",
+ *         "label": "Grain label assigned to peaks that match this UBI.",
+ *     },
+ *     "checks": [
+ *         "ubi.format == 'd'",
+ *         "ubi.n == 9",
+ *         "gv.format == 'd'",
+ *         "drlv2.format == 'd'",
+ *         "drlv2.n == gv.shape[0]",
+ *         "labels.format == 'i'",
+ *         "labels.n == gv.shape[0]",
+ *     ],
+ *     "gil_release": true,
+ *     "c_overloads": [{
+ *         "when": "ubi.format == 'd' and gv.format == 'd'",
+ *         "sig": "int score_and_assign(double ubi[3][3], double gv[][3], double tol, double *drlv2, int *labels, int label, intptr_t ng) -> int",
+ *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "drlv2": "drlv2.ptr", "labels": "labels.ptr", "label": "label", "ng": "gv.shape[0]"},
+ *     }],
+ * }
+C2PY_END */
 int score_and_assign(vec *restrict ubi, vec *restrict gv, double tol,
                      double *restrict drlv2, int *restrict labels, int label,
                      intptr_t ng) {
@@ -421,6 +554,31 @@ int score_and_assign(vec *restrict ubi, vec *restrict gv, double tol,
         threadsafe
     end subroutine refine_assigned
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "refine_assigned(ubi: buffer, gv: buffer, labels: buffer, label: int) -> void",
+ *     "doc": "refine_assigned fits a ubi matrix to a set of g-vectors and assignments in labels.",
+ *     "params": {
+ *         "ubi": "Orientation matrix (9-element flattened double).",
+ *         "gv": "G-vectors array, shape (ng, 3) flattened.",
+ *         "labels": "Peak-to-grain assignments (ng ints).",
+ *         "label": "Grain label to refine.",
+ *     },
+ *     "checks": [
+ *         "ubi.format == 'd'",
+ *         "ubi.n == 9",
+ *         "gv.format == 'd'",
+ *         "labels.format == 'i'",
+ *         "labels.n == gv.shape[0]",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "void refine_assigned(double ubi[3][3], double gv[][3], int *labels, int label, int *npk, double *drlv2, intptr_t ng)",
+ *         "outputs": {"npk": "int", "drlv2": "double"},
+ *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "labels": "labels.ptr", "label": "label", "ng": "gv.shape[0]"},
+ *     }],
+ * }
+C2PY_END */
 void refine_assigned(vec ubi[3], vec gv[], int labels[], int label, int *npk,
                      double *sumdrlv2, intptr_t ng) {
     /* Skip the part about weights, not used */
@@ -497,6 +655,31 @@ void refine_assigned(vec ubi[3], vec gv[], int labels[], int label, int *npk,
         ! NOT threadsafe? meant for updating data with increments
     end subroutine put_incr
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "put_incr64(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void",
+ *     "doc": "put_incr64 does the simple loop: data[ind] += vals, 64 bit addressing",
+ *     "params": {
+ *         "data": "Destination array (float32). Updated in place with scatter-add.",
+ *         "ind": "Indices array (int64).",
+ *         "vals": "Values array (float32) to add.",
+ *         "boundscheck": "If non-zero, enables bounds checking on ind. Default 0 (no check).",
+ *     },
+ *     "checks": [
+ *         "data.format == 'f'",
+ *         "ind.format == 'q' or ind.itemsize == 8",
+ *         "ind.n == vals.n",
+ *         "vals.format == 'f'",
+ *     ],
+ *     "gil_release": true,
+ *     "c_overloads": [{
+ *         "when": "data.format == 'f' and vals.format == 'f'",
+ *         "sig": "void put_incr64(float *data, const int64_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m)",
+ *         "map": {"data": "data.ptr", "ind": "ind.ptr", "vals": "vals.ptr", "boundscheck": "boundscheck", "n": "ind.n", "m": "data.n"},
+ *     }],
+ * }
+C2PY_END */
 void put_incr64(float data[], int64_t ind[], float vals[], int boundscheck,
                 intptr_t n, intptr_t m) {
     int64_t k, ik;
@@ -534,6 +717,31 @@ void put_incr64(float data[], int64_t ind[], float vals[], int boundscheck,
     end subroutine put_incr
 
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "put_incr32(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void",
+ *     "doc": "put_incr32 does the simple loop: data[ind] += vals, 32 bit addressing",
+ *     "params": {
+ *         "data": "Destination array (float32).",
+ *         "ind": "Indices array (int32).",
+ *         "vals": "Values array (float32) to add.",
+ *         "boundscheck": "If non-zero, enables bounds checking on ind.",
+ *     },
+ *     "checks": [
+ *         "data.format == 'f'",
+ *         "ind.format == 'i'",
+ *         "ind.n == vals.n",
+ *         "vals.format == 'f'",
+ *     ],
+ *     "gil_release": true,
+ *     "c_overloads": [{
+ *         "when": "data.format == 'f' and vals.format == 'f' and ind.format == 'i'",
+ *         "sig": "void put_incr32(float *data, const int32_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m)",
+ *         "map": {"data": "data.ptr", "ind": "ind.ptr", "vals": "vals.ptr", "boundscheck": "boundscheck", "n": "ind.n", "m": "data.n"},
+ *     }],
+ * }
+C2PY_END */
 void put_incr32(float data[], int32_t ind[], float vals[], int boundscheck,
                 intptr_t n, intptr_t m) {
     int32_t k, ik;
@@ -569,6 +777,36 @@ void put_incr32(float data[], int32_t ind[], float vals[], int boundscheck,
         ! NOT threadsafe since ids may be shared
     end subroutine cluster1d
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "cluster1d(ar: buffer, order: buffer, tol: float, nclusters: buffer, ids: buffer, avgs: buffer) -> void",
+ *     "doc": "cluster1d is used to find clusters of peaks.",
+ *     "params": {
+ *         "ar": "Array of values to cluster.",
+ *         "order": "Permutation that sorts ar ascending.",
+ *         "tol": "Distance tolerance for cluster membership.",
+ *         "nclusters": "Output: number of clusters found.",
+ *         "ids": "Output: cluster id for each element.",
+ *         "avgs": "Output: average value of each cluster.",
+ *     },
+ *     "checks": [
+ *         "ar.format == 'd'",
+ *         "order.format == 'i'",
+ *         "order.n == ar.n",
+ *         "nclusters.format == 'i'",
+ *         "nclusters.n == 1",
+ *         "ids.format == 'i'",
+ *         "ids.n == ar.n",
+ *         "avgs.format == 'd'",
+ *         "avgs.n == ar.n",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "void cluster1d(double *ar, intptr_t n, int *order, double tol, int *nclusters, int *ids, double *avgs)",
+ *         "map": {"ar": "ar.ptr", "n": "ar.n", "order": "order.ptr", "tol": "tol", "nclusters": "nclusters.ptr", "ids": "ids.ptr", "avgs": "avgs.ptr"},
+ *     }],
+ * }
+C2PY_END */
 void cluster1d(double ar[], intptr_t n, int order[], double tol, // IN
                int *nclusters, int ids[], double avgs[]) {  // OUT
     // Used in sandbox/friedel.py
@@ -626,6 +864,39 @@ void cluster1d(double ar[], intptr_t n, int order[], double tol, // IN
         ! NOT threadsafe since gi may be shared
     end subroutine score_gvec_z
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "score_gvec_z(ubi: buffer, ub: buffer, gv: buffer, g0: buffer, g1: buffer, g2: buffer, e: buffer, recompute: int) -> void",
+ *     "doc": "score_gvec_z computes error projections for g-vectors.",
+ *     "params": {
+ *         "ubi": "UBI matrix (9-element flattened double).",
+ *         "ub": "UB matrix (9-element flattened double).",
+ *         "gv": "Experimental g-vectors, shape (ng, 3) flattened.",
+ *         "g0": "Error along g component.",
+ *         "g1": "Error along z component.",
+ *         "g2": "Error along rhs component.",
+ *         "e": "Output error array.",
+ *         "recompute": "If non-zero, recompute gcalc from ub.",
+ *     },
+ *     "checks": [
+ *         "ubi.format == 'd'",
+ *         "ubi.n == 9",
+ *         "ub.format == 'd'",
+ *         "ub.n == 9",
+ *         "gv.format == 'd'",
+ *         "gv.ndim >= 1",
+ *         "g0.format == 'd'",
+ *         "g1.format == 'd'",
+ *         "g2.format == 'd'",
+ *         "e.format == 'd'",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "void score_gvec_z(double ubi[3][3], double ub[3][3], double gv[][3], double g0[], double g1[], double g2[], double e[], int recompute, intptr_t n)",
+ *         "map": {"ubi": "ubi.ptr", "ub": "ub.ptr", "gv": "gv.ptr", "g0": "g0.ptr", "g1": "g1.ptr", "g2": "g2.ptr", "e": "e.ptr", "recompute": "recompute", "n": "gv.shape[0]"},
+ *     }],
+ * }
+C2PY_END */
 void score_gvec_z(vec ubi[3],    // in
                   vec ub[3],     // in
                   vec gv[],      // in
@@ -713,6 +984,27 @@ void score_gvec_z(vec ubi[3],    // in
         threadsafe
     end function misori_cubic
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "misori_cubic(u1: buffer, u2: buffer) -> float",
+ *     "doc": "misori_cubic computes the smallest misorientation for cubic symmetry.",
+ *     "params": {
+ *         "u1": "Orientation matrix U (9-element flattened double).",
+ *         "u2": "Orientation matrix U (9-element flattened double).",
+ *     },
+ *     "checks": [
+ *         "u1.format == 'd'",
+ *         "u1.n == 9",
+ *         "u2.format == 'd'",
+ *         "u2.n == 9",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "double misori_cubic(double u1[3][3], double u2[3][3]) -> double",
+ *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
+ *     }],
+ * }
+C2PY_END */
 double misori_cubic(vec u1[3], vec u2[3]) {
     /* Compute the trace of the smallest misorientation
      * for cubic symmetry
@@ -775,6 +1067,27 @@ double misori_cubic(vec u1[3], vec u2[3]) {
         threadsafe
     end function misori_orthorhombic
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "misori_orthorhombic(u1: buffer, u2: buffer) -> float",
+ *     "doc": "misori_orthorhombic computes the smallest misorientation for orthorhombic symmetry.",
+ *     "params": {
+ *         "u1": "Orientation matrix U (9-element flattened double).",
+ *         "u2": "Orientation matrix U (9-element flattened double).",
+ *     },
+ *     "checks": [
+ *         "u1.format == 'd'",
+ *         "u1.n == 9",
+ *         "u2.format == 'd'",
+ *         "u2.n == 9",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "double misori_orthorhombic(double u1[3][3], double u2[3][3]) -> double",
+ *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
+ *     }],
+ * }
+C2PY_END */
 double misori_orthorhombic(vec u1[3], vec u2[3]) {
     /* Compute the trace of the smallest misorientation
      * for orthorhombic symmetry
@@ -813,6 +1126,27 @@ double misori_orthorhombic(vec u1[3], vec u2[3]) {
         threadsafe
     end function misori_tetragonal
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "misori_tetragonal(u1: buffer, u2: buffer) -> float",
+ *     "doc": "misori_tetragonal computes the smallest misorientation for tetragonal symmetry.",
+ *     "params": {
+ *         "u1": "Orientation matrix U (9-element flattened double).",
+ *         "u2": "Orientation matrix U (9-element flattened double).",
+ *     },
+ *     "checks": [
+ *         "u1.format == 'd'",
+ *         "u1.n == 9",
+ *         "u2.format == 'd'",
+ *         "u2.n == 9",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "double misori_tetragonal(double u1[3][3], double u2[3][3]) -> double",
+ *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
+ *     }],
+ * }
+C2PY_END */
 double misori_tetragonal(vec u1[3], vec u2[3]) {
     /* Compute the trace of the smallest misorientation
      * for orthorhombic symmetry
@@ -863,6 +1197,27 @@ double misori_tetragonal(vec u1[3], vec u2[3]) {
         threadsafe
     end function misori_monoclinic
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "misori_monoclinic(u1: buffer, u2: buffer) -> float",
+ *     "doc": "misori_monoclinic assumes a unique b axis and only checks the flip of b -> -b.",
+ *     "params": {
+ *         "u1": "Orientation matrix U (9-element flattened double).",
+ *         "u2": "Orientation matrix U (9-element flattened double).",
+ *     },
+ *     "checks": [
+ *         "u1.format == 'd'",
+ *         "u1.n == 9",
+ *         "u2.format == 'd'",
+ *         "u2.n == 9",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "double misori_monoclinic(double u1[3][3], double u2[3][3]) -> double",
+ *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
+ *     }],
+ * }
+C2PY_END */
 double misori_monoclinic(vec u1[3], vec u2[3]) {
     /* Compute the trace of the smallest misorientation
      * for orthorhombic symmetry
@@ -904,6 +1259,25 @@ double misori_monoclinic(vec u1[3], vec u2[3]) {
         threadsafe
     end function count_shared
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "count_shared(pi: buffer, pj: buffer) -> int",
+ *     "doc": "count_shared takes two sorted arrays and counts collisions.",
+ *     "params": {
+ *         "pi": "First sorted array of integer labels.",
+ *         "pj": "Second sorted array of integer labels.",
+ *     },
+ *     "checks": [
+ *         "pi.format == 'i'",
+ *         "pj.format == 'i'",
+ *     ],
+ *     "c_overloads": [{
+ *         "sig": "int count_shared(int *pi, intptr_t ni, int *pj, intptr_t nj) -> int",
+ *         "map": {"pi": "pi.ptr", "ni": "pi.n", "pj": "pj.ptr", "nj": "pj.n"},
+ *     }],
+ * }
+C2PY_END */
 int count_shared(int pi[], intptr_t ni, int pj[], intptr_t nj) {
     /* Given two sorted arrays compute how many collisions
      * For comparing list of grain - peak indices for overlap

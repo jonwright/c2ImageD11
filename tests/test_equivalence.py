@@ -7,7 +7,7 @@ Handles calling convention differences:
 Skips entirely if ImageD11 is not installed.
 """
 
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import numpy as np
 import ctypes
@@ -178,14 +178,31 @@ class TestCluster1D:
 # misori (same convention: double in, double out)
 # ============================================================
 
+class TestPutIncr:
+    def test_put_incr32(self):
+        data = np.zeros(5, dtype=np.float32)
+        ind = np.array([1, 1, 1, 1, 1], dtype=np.int32)
+        vals = np.ones(5, dtype=np.float32)
+        NEW.put_incr32(data, ind, vals)
+        assert data[1] == 5.0
+
+    def test_put_incr64(self):
+        data = np.zeros(5, dtype=np.float32)
+        ind = np.array([1, 1, 1, 1, 1], dtype=np.int64)
+        vals = np.ones(5, dtype=np.float32)
+        NEW.put_incr64(data, ind, vals)
+        assert data[1] == 5.0
+
+
 class TestMisori:
     @pytest.mark.parametrize("func", [
         "misori_cubic", "misori_orthorhombic",
         "misori_tetragonal", "misori_monoclinic"
     ])
     def test_identity(self, func):
-        u = np.eye(3)
-        close(getattr(OLD, func)(u, u), getattr(NEW, func)(u, u))
+        u1 = np.eye(3)
+        u2 = np.eye(3)
+        close(getattr(OLD, func)(u1, u2), getattr(NEW, func)(u1, u2))
 
     @pytest.mark.parametrize("func", [
         "misori_cubic", "misori_orthorhombic",

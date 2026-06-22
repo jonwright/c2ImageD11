@@ -4,6 +4,31 @@
 #include "cImageD11.h"
 #include <stdint.h>
 
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "cimaged11_omp_set_num_threads(n: int) -> void",
+ *     "doc": "Set the number of OpenMP threads used by all subsequent C calls.",
+ *     "params": {
+ *         "n": "Number of OpenMP threads. Pass 1 for single-threaded execution.",
+ *     },
+ *     "c_overloads": [{
+ *         "sig": "void cimaged11_omp_set_num_threads(int n)",
+ *         "map": {"n": "n"},
+ *     }],
+ * }
+C2PY_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "cimaged11_omp_get_max_threads() -> int",
+ *     "doc": "Return the maximum number of OpenMP threads available.",
+ *     "c_overloads": [{
+ *         "sig": "int cimaged11_omp_get_max_threads()",
+ *         "map": {},
+ *     }],
+ * }
+C2PY_END */
+
 #ifdef _OPENMP
 
 #include <omp.h>

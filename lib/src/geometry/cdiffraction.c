@@ -29,6 +29,33 @@
         threadsafe
     end subroutine compute_geometry
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "compute_geometry(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, out: buffer) -> void",
+ *     "doc": "compute_geometry is for the updateGeometry method of columnfiles. From xlylzl it will compute tth, eta, ds, gve into out.",
+ *     "params": {
+ *         "xlylzl": "Spot positions in laboratory frame, shape (n, 3).",
+ *         "omega": "Omega rotation per spot (radians), shape (n,).",
+ *         "omegasign": "Omega rotation sign (+1 or -1).",
+ *         "wvln": "Wavelength (angstroms).",
+ *         "wedge": "Wedge angle (detector tilt, radians).",
+ *         "chi": "Chi angle (radians).",
+ *         "t": "Translation vector (3 elements).",
+ *         "out": "Output array shape (n, 6): tth, eta, ds, gx, gy, gz.",
+ *     },
+ *     "checks": ["xlylzl.format == 'd'", "xlylzl.ndim == 2", "xlylzl.shape[1] == 3",
+ *         "omega.format == 'd'", "omega.n == xlylzl.shape[0]",
+ *         "t.format == 'd'", "t.n == 3",
+ *         "out.format == 'd'", "out.ndim == 2", "out.shape[0] == xlylzl.shape[0]", "out.shape[1] == 6"],
+ *     "gil_release": true,
+ *     "c_overloads": [{
+ *         "when": "xlylzl.format == 'd' and omega.format == 'd' and out.format == 'd'",
+ *         "sig": "void compute_geometry(double xlylzl[][3], double omega[], double omegasign, double wvln, double wedge, double chi, double t[3], double out[][6], intptr_t n)",
+ *         "map": {"xlylzl": "xlylzl.ptr", "omega": "omega.ptr", "omegasign": "omegasign", "wvln": "wvln", "wedge": "wedge", "chi": "chi", "t": "t.ptr", "out": "out.ptr", "n": "xlylzl.shape[0]"},
+ *     }],
+ * }
+C2PY_END */
 void compute_geometry(double xlylzl[][3], double omega[], double omegasign,
                       double wvln, double wedge, double chi, double t[3],
                       double out[][6], intptr_t n) {
@@ -110,6 +137,33 @@ void compute_geometry(double xlylzl[][3], double omega[], double omegasign,
         ! NOT threadsafe since gv may be shared
     end subroutine compute_gv
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "compute_gv(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, gv: buffer) -> void",
+ *     "doc": "compute_gv computes scattering vectors given spot positions in the laboratory frame.",
+ *     "params": {
+ *         "xlylzl": "Spot positions in laboratory frame, shape (n, 3).",
+ *         "omega": "Omega rotation per spot (radians), shape (n,).",
+ *         "omegasign": "Omega rotation sign.",
+ *         "wvln": "Wavelength (angstroms).",
+ *         "wedge": "Wedge angle (radians).",
+ *         "chi": "Chi angle (radians).",
+ *         "t": "Translation vector (3 elements).",
+ *         "gv": "Output g-vectors array, shape (n, 3).",
+ *     },
+ *     "checks": ["xlylzl.format == 'd'", "xlylzl.ndim == 2", "xlylzl.shape[1] == 3",
+ *         "omega.format == 'd'", "omega.n == xlylzl.shape[0]",
+ *         "t.format == 'd'", "t.n == 3",
+ *         "gv.format == 'd'", "gv.ndim == 2", "gv.shape[0] == xlylzl.shape[0]", "gv.shape[1] == 3"],
+ *     "gil_release": true,
+ *     "c_overloads": [{
+ *         "when": "xlylzl.format == 'd' and omega.format == 'd' and gv.format == 'd'",
+ *         "sig": "void compute_gv(double xlylzl[][3], double omega[], double omegasign, double wvln, double wedge, double chi, double t[3], double gv[][3], intptr_t n)",
+ *         "map": {"xlylzl": "xlylzl.ptr", "omega": "omega.ptr", "omegasign": "omegasign", "wvln": "wvln", "wedge": "wedge", "chi": "chi", "t": "t.ptr", "gv": "gv.ptr", "n": "xlylzl.shape[0]"},
+ *     }],
+ * }
+C2PY_END */
 void compute_gv(double xlylzl[][3], double omega[], double omegasign,
                 double wvln, double wedge, double chi, double t[3],
                 double gv[][3], intptr_t n) {
@@ -188,6 +242,32 @@ void compute_gv(double xlylzl[][3], double omega[], double omegasign,
         ! NOT threadsafe since xl may be shared
     end subroutine compute_xlylzl
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "compute_xlylzl(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xlylzl: buffer) -> void",
+ *     "doc": "compute_xlylzl finds spot positions in the laboratory frame using packed parameters.",
+ *     "params": {
+ *         "s": "Slow-scan pixel positions (double).",
+ *         "f": "Fast-scan pixel positions (double, same size as s).",
+ *         "p": "Detector params (4): [s_cen, f_cen, s_size, f_size].",
+ *         "r": "Rotation matrix (9): det(rotation)*flip.",
+ *         "dist": "Detector distance (3): [dx, dy, dz].",
+ *         "xlylzl": "Output spot positions (n, 3).",
+ *     },
+ *     "checks": ["s.format == 'd'", "f.format == 'd'", "f.n == s.n",
+ *         "p.format == 'd'", "p.n == 4",
+ *         "r.format == 'd'", "r.n == 9",
+ *         "dist.format == 'd'", "dist.n == 3",
+ *         "xlylzl.format == 'd'", "xlylzl.ndim >= 1"],
+ *     "gil_release": true,
+ *     "c_overloads": [{
+ *         "when": "s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'",
+ *         "sig": "void compute_xlylzl(double s[], double f[], double p[4], double r[9], double dist[3], double xlylzl[][3], intptr_t n)",
+ *         "map": {"s": "s.ptr", "f": "f.ptr", "p": "p.ptr", "r": "r.ptr", "dist": "dist.ptr", "xlylzl": "xlylzl.ptr", "n": "s.n"},
+ *     }],
+ * }
+C2PY_END */
 void compute_xlylzl(double s[], double f[], double p[4], double r[9],
                     double dist[3], double xlylzl[][3], intptr_t n) {
     double s_cen, f_cen, s_size, f_size, v[3];
@@ -243,6 +323,34 @@ void compute_xlylzl(double s[], double f[], double p[4], double r[9],
         ! NOT threadsafe since xlylzl may be shared
     end subroutine compute_xlylzl_xpos_variable
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "compute_xlylzl_xpos_variable(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xpos: buffer, xlylzl: buffer) -> void",
+ *     "doc": "compute_xlylzl_xpos_variable like compute_xlylzl but with extra per-spot x-offset.",
+ *     "params": {
+ *         "s": "Slow-scan pixel positions (double).",
+ *         "f": "Fast-scan pixel positions (double).",
+ *         "p": "Detector params (4).",
+ *         "r": "Rotation matrix (9).",
+ *         "dist": "Detector distance (3).",
+ *         "xpos": "Per-spot x-axis offset (double, same size as s).",
+ *         "xlylzl": "Output spot positions.",
+ *     },
+ *     "checks": ["s.format == 'd'", "f.format == 'd'", "f.n == s.n",
+ *         "p.format == 'd'", "p.n == 4",
+ *         "r.format == 'd'", "r.n == 9",
+ *         "dist.format == 'd'", "dist.n == 3",
+ *         "xpos.format == 'd'", "xpos.n == s.n",
+ *         "xlylzl.format == 'd'", "xlylzl.ndim >= 1"],
+ *     "gil_release": true,
+ *     "c_overloads": [{
+ *         "when": "s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'",
+ *         "sig": "void compute_xlylzl_xpos_variable(double s[], double f[], double p[4], double r[9], double dist[3], double xpos[], double xlylzl[][3], intptr_t n)",
+ *         "map": {"s": "s.ptr", "f": "f.ptr", "p": "p.ptr", "r": "r.ptr", "dist": "dist.ptr", "xpos": "xpos.ptr", "xlylzl": "xlylzl.ptr", "n": "s.n"},
+ *     }],
+ * }
+C2PY_END */
 void compute_xlylzl_xpos_variable(double s[], double f[], double p[4], double r[9],
     double dist[3], double xpos[],
     double xlylzl[][3], intptr_t n)
@@ -291,6 +399,22 @@ xlylzl[i][2] = r[3 * 2 + 1] * v[1] + r[3 * 2 + 2] * v[2] + dist[2];
         double precision, dimension(3,3), intent (in) :: bt
     end subroutine orient
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "quickorient(ubi: buffer, bt: buffer) -> void",
+ *     "doc": "quickorient takes two g-vectors in UBI and overwrites with UBI orientation using cache in bt.",
+ *     "params": {
+ *         "ubi": "Orientation matrix (9-element). First 2 rows are g-vectors on entry; overwritten with UBI on exit.",
+ *         "bt": "Busing-Levy cache (9-element).",
+ *     },
+ *     "checks": ["ubi.format == 'd'", "ubi.n == 9", "bt.format == 'd'", "bt.n == 9"],
+ *     "c_overloads": [{
+ *         "sig": "void quickorient(double *ubi, const double *bt)",
+ *         "map": {"ubi": "ubi.ptr", "bt": "bt.ptr"},
+ *     }],
+ * }
+C2PY_END */
 void quickorient(double UBI[9], double BT[9]) {
     /* On entry UBI[0] is g1, UBI[1] is g2, BT is made for this to work.
        0 1 2  == g1

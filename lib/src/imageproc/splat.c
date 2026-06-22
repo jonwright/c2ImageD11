@@ -22,6 +22,17 @@
     end subroutine splat
 
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "splat(rgba: buffer, w: int, h: int, gve: buffer, ng: int, u: buffer, npx: int) -> void",
+ *  "doc": "Draw g-vectors into RGBA image.",
+ *  "params": {"rgba": "Output uint8 RGBA (h, w, 4).", "w": "Width.", "h": "Height.",
+ *      "gve": "G-vectors (ng, 3).", "ng": "Number of g-vectors.",
+ *      "u": "Projection matrix (9).", "npx": "Marker half-size."},
+ *  "checks": ["rgba.format == 'B' or rgba.format == 'b'", "rgba.ndim >= 1",
+ *      "gve.format == 'd'", "gve.ndim >= 1", "u.format == 'd'", "u.n == 9"],
+ *  "c_overloads": [{"sig": "void splat(uint8_t *rgba, intptr_t w, intptr_t h, double gve[][3], intptr_t ng, double *u, intptr_t npx)",
+ *      "map": {"rgba": "rgba.ptr", "w": "w", "h": "h", "gve": "gve.ptr", "ng": "ng", "u": "u.ptr", "npx": "npx"}}]}
+C2PY_END */
 void splat(uint8_t rgba[], intptr_t w, intptr_t h, double gve[][3], intptr_t ng, double u[9],
            intptr_t npx) {
     intptr_t i, j, k; int32_t imx, imy, imz, w2, h2;

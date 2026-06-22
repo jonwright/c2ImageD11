@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "c2ImageD11"
 version = "0.2.0"
-description = "C extensions for ImageD11, built with c2py23 (SIMD + bslz4 dispatch)"
+description = "C extensions for ImageD11 (c2py23 binding)"
 authors = [{name = "Jon Wright", email = "wright@esrf.fr"}]
 requires-python = ">=2.7"
 dependencies = [

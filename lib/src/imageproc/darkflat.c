@@ -48,6 +48,16 @@ __m256 _mm256_mul_ps (__m256 a, __m256 b)
         integer, intent(hide), depend( img ) :: npx
     end subroutine uint16_to_float_darksub
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "uint16_to_float_darksub(img: buffer, drk: buffer, data: buffer) -> void",
+ *  "doc": "Subtract dark current from uint16 data, result in float32 img.",
+ *  "checks": ["img.format == 'f'", "drk.format == 'f'", "drk.n == img.n",
+ *      "data.format == 'H' or data.itemsize == 2", "data.n == img.n"],
+ *  "gil_release": true,
+ *  "c_overloads": [{"when": "img.format == 'f' and drk.format == 'f'",
+ *      "sig": "void uint16_to_float_darksub(float *img, const float *drk, const uint16_t *data, intptr_t npx)",
+ *      "map": {"img": "img.ptr", "drk": "drk.ptr", "data": "data.ptr", "npx": "img.n"}}]}
+C2PY_END */
 void uint16_to_float_darksub(float *restrict img, const float *restrict drk,
                              const uint16_t *restrict data, intptr_t npx) {
     intptr_t i;
@@ -73,6 +83,17 @@ void uint16_to_float_darksub(float *restrict img, const float *restrict drk,
         integer, intent(hide), depend( img ) :: npx
     end subroutine uint16_to_float_darkflm
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "uint16_to_float_darkflm(img: buffer, drk: buffer, flm: buffer, data: buffer) -> void",
+ *  "doc": "Dark subtract, flat-field multiply: img = (data - drk) * flm.",
+ *  "checks": ["img.format == 'f'", "drk.format == 'f'", "drk.n == img.n",
+ *      "flm.format == 'f'", "flm.n == img.n",
+ *      "data.format == 'H' or data.itemsize == 2", "data.n == img.n"],
+ *  "gil_release": true,
+ *  "c_overloads": [{"when": "img.format == 'f' and drk.format == 'f' and flm.format == 'f'",
+ *      "sig": "void uint16_to_float_darkflm(float *img, const float *drk, const float *flm, const uint16_t *data, intptr_t npx)",
+ *      "map": {"img": "img.ptr", "drk": "drk.ptr", "flm": "flm.ptr", "data": "data.ptr", "npx": "img.n"}}]}
+C2PY_END */
 void uint16_to_float_darkflm(float *restrict img, const float *restrict drk,
                              const float *restrict flm,
                              const uint16_t *restrict data, intptr_t npx) {
@@ -98,6 +119,14 @@ void uint16_to_float_darkflm(float *restrict img, const float *restrict drk,
         real, intent(in) :: cut
     end subroutine frelon_lines
 F2PY_WRAPPER_END */
+
+/* C2PY_BEGIN
+ * {"py_sig": "frelon_lines(img: buffer, cut: float) -> void",
+ *  "doc": "Subtract per-row baseline using quiet pixels (value < cut).",
+ *  "checks": ["img.format == 'f'", "img.ndim == 2"],
+ *  "c_overloads": [{"sig": "void frelon_lines(float *img, intptr_t ns, intptr_t nf, float cut)",
+ *      "map": {"img": "img.ptr", "ns": "img.shape[0]", "nf": "img.shape[1]", "cut": "cut"}}]}
+C2PY_END */
 void frelon_lines(float *img, intptr_t ns, intptr_t nf, float cut) {
     intptr_t i, j, p, npx;
     float rowsum, avg;
@@ -138,6 +167,13 @@ void frelon_lines(float *img, intptr_t ns, intptr_t nf, float cut) {
         threadsafe
     end subroutine frelon_lines
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "frelon_lines_sub(img: buffer, drk: buffer, cut: float) -> void",
+ *  "doc": "Dark subtract then per-row baseline removal.",
+ *  "checks": ["img.format == 'f'", "img.ndim == 2", "drk.format == 'f'", "drk.n == img.n"],
+ *  "c_overloads": [{"sig": "void frelon_lines_sub(float *img, float *drk, intptr_t ns, intptr_t nf, float cut)",
+ *      "map": {"img": "img.ptr", "drk": "drk.ptr", "ns": "img.shape[0]", "nf": "img.shape[1]", "cut": "cut"}}]}
+C2PY_END */
 void frelon_lines_sub(float *restrict img, float *restrict drk, intptr_t ns, intptr_t nf,
                       float cut) {
     intptr_t i, j, p, npx;
@@ -182,6 +218,13 @@ void frelon_lines_sub(float *restrict img, float *restrict drk, intptr_t ns, int
         real, intent(in,c), optional :: cut = 3.
     end subroutine array_mean_var_cut
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "array_mean_var_cut(img: buffer, mean: buffer, var: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
+ *  "doc": "Sigma-clipped mean/var.",
+ *  "checks": ["img.format == 'f'", "mean.format == 'f'", "mean.n == 1", "var.format == 'f'", "var.n == 1"],
+ *  "c_overloads": [{"sig": "void array_mean_var_cut(float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
+ *      "map": {"img": "img.ptr", "npx": "img.n", "mean": "mean.ptr", "std": "var.ptr", "n": "n", "cut": "cut", "verbose": "verbose"}}]}
+C2PY_END */
 void array_mean_var_cut(float *restrict img, intptr_t npx, float *mean, float *std,
                         int n, float cut, int verbose) {
     intptr_t i; int nactive;
@@ -248,6 +291,14 @@ void array_mean_var_cut(float *restrict img, intptr_t npx, float *mean, float *s
         real, intent(in,c), optional :: cut = 3.
     end subroutine array_mean_var_msk
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "array_mean_var_msk(img: buffer, msk: buffer, mean: buffer, var: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
+ *  "doc": "Sigma-clipped mean/var with mask.",
+ *  "checks": ["img.format == 'f'", "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n",
+ *      "mean.format == 'f'", "mean.n == 1", "var.format == 'f'", "var.n == 1"],
+ *  "c_overloads": [{"sig": "void array_mean_var_msk(float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
+ *      "map": {"img": "img.ptr", "msk": "msk.ptr", "npx": "img.n", "mean": "mean.ptr", "std": "var.ptr", "n": "n", "cut": "cut", "verbose": "verbose"}}]}
+C2PY_END */
 void array_mean_var_msk(float *restrict img, uint8_t *restrict msk, intptr_t npx,
                         float *mean, float *std, int n, float cut,
                         int verbose) {
@@ -336,6 +387,14 @@ void array_mean_var_msk(float *restrict img, uint8_t *restrict msk, intptr_t npx
         threadsafe
     end subroutine array_stats
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "array_stats(img: buffer, minval: buffer, maxval: buffer, mean: buffer, var: buffer) -> void",
+ *  "doc": "Compute min, max, mean, variance.",
+ *  "checks": ["img.format == 'f'", "minval.format == 'f'", "minval.n == 1",
+ *      "maxval.format == 'f'", "maxval.n == 1", "mean.format == 'f'", "mean.n == 1", "var.format == 'f'", "var.n == 1"],
+ *  "c_overloads": [{"sig": "void array_stats(float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)",
+ *      "map": {"img": "img.ptr", "npx": "img.n", "minval": "minval.ptr", "maxval": "maxval.ptr", "mean": "mean.ptr", "var": "var.ptr"}}]}
+C2PY_END */
 void array_stats(float img[], intptr_t npx, float *minval, float *maxval,
                  float *mean, float *var) {
     intptr_t i;
@@ -409,6 +468,13 @@ void array_stats(float img[], intptr_t npx, float *minval, float *maxval,
         threadsafe
     end subroutine array_histogram
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "array_histogram(img: buffer, low: float, high: float, hist: buffer) -> void",
+ *  "doc": "Compute histogram of float array.",
+ *  "checks": ["img.format == 'f'", "hist.format == 'i'"],
+ *  "c_overloads": [{"sig": "void array_histogram(float *img, intptr_t npx, float low, float high, int32_t *hist, intptr_t nhist)",
+ *      "map": {"img": "img.ptr", "npx": "img.n", "low": "low", "high": "high", "hist": "hist.ptr", "nhist": "hist.n"}}]}
+C2PY_END */
 void array_histogram(float img[], intptr_t npx, float low, float high,
                      int32_t hist[], intptr_t nhist) {
     intptr_t i; int ibin;
@@ -445,6 +511,16 @@ void array_histogram(float img[], intptr_t npx, float low, float high,
         integer, intent(hide), depend(data) :: N
     end subroutine reorder_u16_a32
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "reorder_u16_a32(data: buffer, adr: buffer, out: buffer) -> void",
+ *  "doc": "out[adr[i]] = data[i].",
+ *  "checks": ["data.format == 'H' or data.itemsize == 2", "adr.format == 'I' or adr.itemsize == 4",
+ *      "adr.n == data.n", "out.format == 'H' or out.itemsize == 2", "out.n >= data.n"],
+ *  "gil_release": true,
+ *  "c_overloads": [{"when": "adr.format == 'I' or adr.itemsize == 4",
+ *      "sig": "void reorder_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)",
+ *      "map": {"data": "data.ptr", "adr": "adr.ptr", "out": "out.ptr", "N": "data.n"}}]}
+C2PY_END */
 void reorder_u16_a32(const uint16_t *restrict data,
                      const uint32_t *restrict adr, uint16_t *restrict out,
                      intptr_t N) {
@@ -469,6 +545,16 @@ void reorder_u16_a32(const uint16_t *restrict data,
         integer, intent(hide), depend(data) :: N
     end subroutine reorder_u16_a32
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "reorder_f32_a32(data: buffer, adr: buffer, out: buffer) -> void",
+ *  "doc": "out[adr[i]] = data[i].",
+ *  "checks": ["data.format == 'f'", "adr.format == 'I' or adr.itemsize == 4",
+ *      "adr.n == data.n", "out.format == 'f'", "out.n >= data.n"],
+ *  "gil_release": true,
+ *  "c_overloads": [{"when": "data.format == 'f' and out.format == 'f'",
+ *      "sig": "void reorder_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)",
+ *      "map": {"data": "data.ptr", "adr": "adr.ptr", "out": "out.ptr", "N": "data.n"}}]}
+C2PY_END */
 void reorder_f32_a32(const float *restrict data, const uint32_t *restrict adr,
                      float *restrict out, intptr_t N) {
     intptr_t i;
@@ -492,6 +578,16 @@ void reorder_f32_a32(const float *restrict data, const uint32_t *restrict adr,
         integer, intent(hide), depend(data) :: N
     end subroutine reorderlut_u16_a32
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "reorderlut_u16_a32(data: buffer, adr: buffer, out: buffer) -> void",
+ *  "doc": "out[i] = data[adr[i]].",
+ *  "checks": ["data.format == 'H' or data.itemsize == 2", "adr.format == 'I' or adr.itemsize == 4",
+ *      "adr.n == data.n", "out.format == 'H' or out.itemsize == 2", "out.n == data.n"],
+ *  "gil_release": true,
+ *  "c_overloads": [{"when": "adr.format == 'I' or adr.itemsize == 4",
+ *      "sig": "void reorderlut_u16_a32(uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)",
+ *      "map": {"data": "data.ptr", "adr": "adr.ptr", "out": "out.ptr", "N": "data.n"}}]}
+C2PY_END */
 void reorderlut_u16_a32(uint16_t *restrict data, uint32_t *restrict lut,
                         uint16_t *restrict out, intptr_t N) {
     intptr_t i;
@@ -515,6 +611,16 @@ void reorderlut_u16_a32(uint16_t *restrict data, uint32_t *restrict lut,
         integer, intent(hide), depend(data) :: N
     end subroutine reorderlut_f32_a32
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "reorderlut_f32_a32(data: buffer, adr: buffer, out: buffer) -> void",
+ *  "doc": "out[i] = data[adr[i]].",
+ *  "checks": ["data.format == 'f'", "adr.format == 'I' or adr.itemsize == 4",
+ *      "adr.n == data.n", "out.format == 'f'", "out.n == data.n"],
+ *  "gil_release": true,
+ *  "c_overloads": [{"when": "data.format == 'f' and out.format == 'f'",
+ *      "sig": "void reorderlut_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)",
+ *      "map": {"data": "data.ptr", "adr": "adr.ptr", "out": "out.ptr", "N": "data.n"}}]}
+C2PY_END */
 void reorderlut_f32_a32(const float *restrict data, uint32_t *restrict lut,
                         float *restrict out, intptr_t N) {
     intptr_t i;
@@ -540,6 +646,16 @@ void reorderlut_f32_a32(const float *restrict data, uint32_t *restrict lut,
         integer, intent(hide), depend(adr1) :: nf = shape(adr1,1)
     end subroutine reorder_u16_a32_a16
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "reorder_u16_a32_a16(data: buffer, adr0: buffer, adr1: buffer, out: buffer) -> void",
+ *  "doc": "2D reorder with per-row base + per-pixel offsets.",
+ *  "checks": ["data.format == 'H' or data.itemsize == 2", "data.ndim == 2",
+ *      "adr0.format == 'I' or adr0.itemsize == 4", "adr0.n == data.shape[0]",
+ *      "adr1.format == 'h' or adr1.itemsize == 2", "adr1.n == data.n",
+ *      "out.format == 'H' or out.itemsize == 2", "out.n >= data.n"],
+ *  "c_overloads": [{"sig": "void reorder_u16_a32_a16(const uint16_t *data, const uint32_t *a0, const int16_t *a1, uint16_t *out, intptr_t ns, intptr_t nf)",
+ *      "map": {"data": "data.ptr", "a0": "adr0.ptr", "a1": "adr1.ptr", "out": "out.ptr", "ns": "data.shape[0]", "nf": "data.shape[1]"}}]}
+C2PY_END */
 void reorder_u16_a32_a16(uint16_t *restrict data, uint32_t *restrict a0,
                          int16_t *restrict a1, uint16_t *restrict out, intptr_t ns,
                          intptr_t nf) {
@@ -576,6 +692,14 @@ void reorder_u16_a32_a16(uint16_t *restrict data, uint32_t *restrict a0,
         real :: gain, sp, st
     end subroutine bgcalc
 F2PY_WRAPPER_END */
+/* C2PY_BEGIN
+ * {"py_sig": "bgcalc(img: buffer, bg: buffer, msk: buffer, gain: float, sp: float, st: float) -> void",
+ *  "doc": "Recursive background filter.",
+ *  "checks": ["img.format == 'f'", "img.ndim == 2", "bg.format == 'f'", "bg.n == img.n",
+ *      "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n"],
+ *  "c_overloads": [{"sig": "void bgcalc(const float *img, float *bg, uint8_t *msk, intptr_t ns, intptr_t nf, float gain, float sigmap, float sigmat)",
+ *      "map": {"img": "img.ptr", "bg": "bg.ptr", "msk": "msk.ptr", "ns": "img.shape[0]", "nf": "img.shape[1]", "gain": "gain", "sigmap": "sp", "sigmat": "st"}}]}
+C2PY_END */
 void bgcalc(const float *restrict img, float *restrict bg,
             uint8_t *restrict msk, intptr_t ns, intptr_t nf, float gain, float sigmap,
             float sigmat) {
