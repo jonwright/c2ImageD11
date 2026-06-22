@@ -48,6 +48,34 @@ contain historical context and deferred improvement requests.
 
 Plan documented in STATUS_20260622.md.  Branch: `new_build_system`.
 
+### Current status (June 22)
+
+- [x] P1: Clean layout (lib/src/, lib/interface/, lib/meson.build partially done)
+- [x] Meson builds _cImageD11.so directly (no separate .a, no fat-archive)
+- [x] c2py files moved to lib/interface/, paths fixed
+- [x] Variant groups flattened to flat overloads, name: keys removed
+- [x] Setup.py simplified to pure Python package copy (no compilation)
+- [ ] c2py23 generate succeeds but .so link fails (see blocker)
+- [ ] yaml_harvester.py not yet written
+
+### BLOCKER: c2py23#17
+
+Issue filed: https://github.com/jonwright/c2py23/issues/17
+c2py23's sig: grammar only supports flat pointers (const double *), not
+multi-dimensional arrays (const double (*)[3]).  The generated wrapper
+declares extern int score(const double *, ...) but the actual function
+signature uses vec[3] types (int score(vec ubi[3], vec gv[], ...)).
+
+The compiler rejects the type mismatch even though the ABI is identical.
+Thin flat-pointer wrappers (_wrappers.c) are the current workaround;
+adding array-dimension support to c2py23's sig: grammar is the proper fix.
+
+Awaiting upstream resolution before proceeding with yaml-in-C migration.
+
+## T11: Two-Tier Build + YAML-in-C-Comments
+
+Plan documented in STATUS_20260622.md.  Branch: `new_build_system`.
+
 Phases:
   P1 - Clean layout (lib/meson.build, interface/manifest.c2py)
   P2 - yaml_harvester.py (extracts @c2py blocks, assembles .c2py)
