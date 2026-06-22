@@ -528,12 +528,50 @@ as opaque dependencies. Only the listed API functions are called.
 - Python compatibility: targets 2.7-3.14. The c2py_runtime uses dlopen
   to resolve CPython API, so one .so binary works across versions.
   Build on the oldest target OS for maximum portability.
+
   **Python 2.7 syntax subset**: all .py files must parse on Python 2.7.
-  Do NOT use: f-strings, type annotations, async/await, nonlocal,
-  yield from, `{**d}`, `[*l]`, `@` matrix multiply, keyword-only args
-  (def f(*, kw)), `utf-8` source encoding needed by non-ASCII.
-  Use `from __future__ import print_function` in every .py file.
-  Use `%` or `.format()` for string formatting.
+
+  Avoid (Python-3-only):
+  - f-strings (`f"hello {name}"`)
+  - `async` / `await`
+  - type annotations (`def foo(x: int) -> str:`)
+  - `nonlocal`
+  - keyword-only arguments (`def foo(*, bar):`)
+  - `yield from`
+  - `@` matrix multiplication operator
+  - `pathlib`, `unittest.mock`, `concurrent.futures` (3.x stdlib only)
+  - `{**d}` dict unpacking, `[*l]` list unpacking
+  - `utf-8` source encoding needed by non-ASCII
+
+  Do (works in both):
+  - `from __future__ import print_function, division, absolute_import, unicode_literals` in every `.py` file
+  - Use `.format()` or `%` for string formatting (no f-strings)
+  - `class Foo(object):` (explicit `object` base for new-style classes)
+  - `super(ClassName, self).__init__()`
+  - `isinstance()`, `issubclass()`, `hasattr()`, `getattr()`, `setattr()`
+
+  Strings:
+  - Prefer `u"unicode"` for text on 2.7; it's a no-op on 3.x
+  - Use `b"bytes"` for raw bytes
+  - `str` means bytes on 2.7, unicode on 3.x -- be explicit
+
+  Imports template:
+  ```python
+  from __future__ import absolute_import, division, print_function, unicode_literals
+  import sys, os, io
+  if sys.version_info[0] >= 3:
+      unicode = str
+      raw_input = input
+  else:
+      input = raw_input
+  ```
+
+  File I/O: `import io; with io.open("file.txt", "r", encoding="utf-8") as f:`
+
+  Tooling:
+  - Run: system `python3` (3.12)
+  - Lint: pyright with `pythonVersion: "2.7"` in `pyrightconfig.json`
+  - Verify 2.7 syntax: `python2.7 -m py_compile *.py`
 - numpy is used for testing; its buffer protocol (PEP 3118) is supported
   on Python 2.7-3.14 via `PyObject_GetBuffer` / c2py_acquire_buffer.
 - ImageD11 is installed from git head with `--no-deps` to avoid pulling

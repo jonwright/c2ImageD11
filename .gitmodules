@@ -1,12 +1,12 @@
 [submodule "lz4"]
-	path = src/bslz4/vendor/lz4
+	path = lib/src/bslz4/vendor/lz4
 	url = https://github.com/lz4/lz4.git
 [submodule "kcb"]
-	path = src/bslz4/vendor/kcb
+	path = lib/src/bslz4/vendor/kcb
 	url = https://github.com/kalcutter/bitshuffle.git
 [submodule "bitshuffle"]
-	path = src/bslz4/vendor/bitshuffle
+	path = lib/src/bslz4/vendor/bitshuffle
 	url = https://github.com/kiyo-masui/bitshuffle.git
 [submodule "zstd"]
-	path = src/bslz4/vendor/zstd
+	path = lib/src/bslz4/vendor/zstd
 	url = https://github.com/facebook/zstd.git
