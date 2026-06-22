@@ -11,6 +11,7 @@ tests/sparsetest_dot.h5
 venv/
 venv-*
 build/
+dist/
 .pytest_cache/
 # Tracked in lib/interface/ as generated-but-committed
 !lib/interface/_cImageD11.c2py
