@@ -74,7 +74,7 @@ if "bdist_wheel" in sys.argv:
             "AMD64": "win_amd64",
         }.get(ARCH, "linux_" + ARCH)
 
-        python_tag = "py2.py3" if ARCH in ("AMD64",) else "py3"
+        python_tag = "py2" if sys.version_info[0] == 2 else "py3"
 
         class bdist_wheel_override(_bdist_wheel):
             def finalize_options(self):

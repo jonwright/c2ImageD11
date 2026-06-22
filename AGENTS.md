@@ -109,6 +109,25 @@ ninja
 cp _cImageD11.so ../../c2ImageD11/
 ```
 
+## Wheel
+
+Build the `.so` with meson (see Build), then:
+
+```bash
+# Build once, run under each Python version
+python3 setup.py bdist_wheel
+python2 setup.py bdist_wheel   # if Python 2.7 available
+```
+
+Output is in `dist/` — e.g. `c2imaged11-0.2.0-py3-none-manylinux2014_x86_64.whl`.
+
+The `.so` is the same binary for both Python versions (c2py23 emits both
+`init_cImageD11` and `PyInit__cImageD11`). The `__init__.py` loader detects
+the Python version and uses `imp.load_dynamic` (Py2) or `importlib` (Py3).
+
+The wheel includes an arch-named `.so` (e.g. `_cImageD11_x86_64.so`).
+The loader picks the right one via `platform.machine()` at import time.
+
 ## Regenerate `lib/interface/`
 
 Run this whenever a C2PY_BLOCK is added/changed in a C source file, or
