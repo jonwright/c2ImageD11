@@ -39,16 +39,13 @@
         map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", output: "out.ptr", output_adr: "outP.ptr", threshold: thresh, encoding: encoding, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
         group: bs_u8
         variants:
-          - name: "kcb_avx512"
-            sig: "int bs_u8_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_u8_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx512f"
             doc: "AVX-512 fast path."
-          - name: "kcb_avx2"
-            sig: "int bs_u8_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_u8_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx2"
             doc: "AVX2 fast path."
-          - name: "kcb_sse42"
-            sig: "int bs_u8_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_u8_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             doc: "SSE4.2 fallback."
 
   - py_sig: "bs_u16(compressed: buffer, mask: buffer, out: buffer, outP: buffer, thresh: int, encoding: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
@@ -79,16 +76,13 @@
         map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", output: "out.ptr", output_adr: "outP.ptr", threshold: thresh, encoding: encoding, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
         group: bs_u16
         variants:
-          - name: "kcb_avx512"
-            sig: "int bs_u16_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_u16_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx512f"
             doc: "AVX-512 fast path."
-          - name: "kcb_avx2"
-            sig: "int bs_u16_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_u16_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx2"
             doc: "AVX2 fast path."
-          - name: "kcb_sse42"
-            sig: "int bs_u16_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_u16_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             doc: "SSE4.2 fallback."
 
   - py_sig: "bs_u32(compressed: buffer, mask: buffer, out: buffer, outP: buffer, thresh: int, encoding: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
@@ -119,16 +113,13 @@
         map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", output: "out.ptr", output_adr: "outP.ptr", threshold: thresh, encoding: encoding, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
         group: bs_u32
         variants:
-          - name: "kcb_avx512"
-            sig: "int bs_u32_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_u32_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx512f"
             doc: "AVX-512 fast path."
-          - name: "kcb_avx2"
-            sig: "int bs_u32_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_u32_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx2"
             doc: "AVX2 fast path."
-          - name: "kcb_sse42"
-            sig: "int bs_u32_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_u32_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *output, uint32_t *output_adr, int threshold, int encoding, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             doc: "SSE4.2 fallback."
 
   - py_sig: "bs_csc_u8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, encoding: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
@@ -169,16 +160,13 @@
         map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, encoding: encoding, output: "out.ptr", nout_total: "out.shape[0]", data: "data.ptr", indices: "indices.ptr", indptr: "indptr.ptr", chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
         group: bs_csc_u8
         variants:
-          - name: "kcb_avx512"
-            sig: "int bs_csc_u8_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc_u8_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx512f"
             doc: "AVX-512 fast path."
-          - name: "kcb_avx2"
-            sig: "int bs_csc_u8_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc_u8_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx2"
             doc: "AVX2 fast path."
-          - name: "kcb_sse42"
-            sig: "int bs_csc_u8_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc_u8_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             doc: "SSE4.2 fallback."
 
   - py_sig: "bs_csc1d_u8(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, encoding: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
@@ -217,16 +205,13 @@
         map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, encoding: encoding, output: "out.ptr", nout_total: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
         group: bs_csc1d_u8
         variants:
-          - name: "kcb_avx512"
-            sig: "int bs_csc1d_u8_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc1d_u8_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx512f"
             doc: "AVX-512 fast path."
-          - name: "kcb_avx2"
-            sig: "int bs_csc1d_u8_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc1d_u8_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx2"
             doc: "AVX2 fast path."
-          - name: "kcb_sse42"
-            sig: "int bs_csc1d_u8_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc1d_u8_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint8_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             doc: "SSE4.2 fallback."
 
   - py_sig: "bs_csc_u16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, encoding: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
@@ -267,16 +252,13 @@
         map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, encoding: encoding, output: "out.ptr", nout_total: "out.shape[0]", data: "data.ptr", indices: "indices.ptr", indptr: "indptr.ptr", chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
         group: bs_csc_u16
         variants:
-          - name: "kcb_avx512"
-            sig: "int bs_csc_u16_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc_u16_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx512f"
             doc: "AVX-512 fast path."
-          - name: "kcb_avx2"
-            sig: "int bs_csc_u16_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc_u16_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx2"
             doc: "AVX2 fast path."
-          - name: "kcb_sse42"
-            sig: "int bs_csc_u16_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc_u16_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             doc: "SSE4.2 fallback."
 
   - py_sig: "bs_csc1d_u16(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, encoding: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
@@ -315,16 +297,13 @@
         map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, encoding: encoding, output: "out.ptr", nout_total: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
         group: bs_csc1d_u16
         variants:
-          - name: "kcb_avx512"
-            sig: "int bs_csc1d_u16_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc1d_u16_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx512f"
             doc: "AVX-512 fast path."
-          - name: "kcb_avx2"
-            sig: "int bs_csc1d_u16_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc1d_u16_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx2"
             doc: "AVX2 fast path."
-          - name: "kcb_sse42"
-            sig: "int bs_csc1d_u16_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc1d_u16_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint16_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             doc: "SSE4.2 fallback."
 
   - py_sig: "bs_csc_u32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, encoding: int, out: buffer, data: buffer, indices: buffer, indptr: buffer, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
@@ -365,16 +344,13 @@
         map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, encoding: encoding, output: "out.ptr", nout_total: "out.shape[0]", data: "data.ptr", indices: "indices.ptr", indptr: "indptr.ptr", chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
         group: bs_csc_u32
         variants:
-          - name: "kcb_avx512"
-            sig: "int bs_csc_u32_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc_u32_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx512f"
             doc: "AVX-512 fast path."
-          - name: "kcb_avx2"
-            sig: "int bs_csc_u32_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc_u32_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx2"
             doc: "AVX2 fast path."
-          - name: "kcb_sse42"
-            sig: "int bs_csc_u32_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc_u32_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, float *data, uint32_t *indices, uint32_t *indptr, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             doc: "SSE4.2 fallback."
 
   - py_sig: "bs_csc1d_u32(compressed: buffer, mask: buffer, outpx: buffer, outP: buffer, thresh: int, encoding: int, out: buffer, csc_flat: buffer, csc_first_bin: buffer, csc_entries_per_pixel: int, chunk_offsets: buffer, chunk_lengths: buffer, npx_per_chunk: buffer) -> int"
@@ -413,14 +389,11 @@
         map: {compressed: "compressed.ptr", compressed_length: "compressed.shape[0]", mask: "mask.ptr", NIJ: "mask.shape[0]", outpx: "outpx.ptr", output_adr: "outP.ptr", threshold: thresh, encoding: encoding, output: "out.ptr", nout_total: "out.shape[0]", csc_flat: "csc_flat.ptr", csc_first_bin: "csc_first_bin.ptr", csc_entries_per_pixel: csc_entries_per_pixel, chunk_offsets: "chunk_offsets.ptr", chunk_lengths: "chunk_lengths.ptr", nchunks: "chunk_offsets.shape[0]", npx_per_chunk: "npx_per_chunk.ptr"}
         group: bs_csc1d_u32
         variants:
-          - name: "kcb_avx512"
-            sig: "int bs_csc1d_u32_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc1d_u32_kcb_avx512(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx512f"
             doc: "AVX-512 fast path."
-          - name: "kcb_avx2"
-            sig: "int bs_csc1d_u32_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc1d_u32_kcb_avx2(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             when: "c2py_amd64_avx2"
             doc: "AVX2 fast path."
-          - name: "kcb_sse42"
-            sig: "int bs_csc1d_u32_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
+          - sig: "int bs_csc1d_u32_kcb_sse42(const uint8_t *compressed, intptr_t compressed_length, const uint8_t *mask, intptr_t NIJ, uint32_t *outpx, uint32_t *output_adr, int threshold, int encoding, double *output, intptr_t nout_total, const float *csc_flat, const uint32_t *csc_first_bin, int csc_entries_per_pixel, const int64_t *chunk_offsets, const int32_t *chunk_lengths, intptr_t nchunks, int32_t *npx_per_chunk) -> int"
             doc: "SSE4.2 fallback."

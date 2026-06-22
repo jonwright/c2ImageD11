@@ -7,15 +7,15 @@
 # Build from scratch:
 #   rm -rf build/libc2ImageD11
 #   mkdir -p build/libc2ImageD11
-#   cd build/libc2ImageD11 && meson setup ../../lib && ninja && ninja fat-archive
+#   cd build/libc2ImageD11 && meson setup ../../lib && ninja
 #
 # Incremental rebuild (clean reconfigure):
-#   cd build/libc2ImageD11 && meson setup ../../lib --wipe && ninja && ninja fat-archive
+#   cd build/libc2ImageD11 && meson setup ../../lib --wipe && ninja
 #
-# Output: build/libc2ImageD11/libc2ImageD11.a (fat archive)
+# Output: build/libc2ImageD11/_cImageD11.so
 
 project('c2ImageD11', 'c',
-  default_options: ['c_std=c99', 'warning_level=3'],
+  default_options: ['c_std=c99', 'warning_level=1'],
   version: '0.1.0')
 
 cc = meson.get_compiler('c')
@@ -25,11 +25,12 @@ cc = meson.get_compiler('c')
 # ------------------------------------------------------------------
 # Vendor libraries: lz4, zstd, kcb, bitshuffle use -O2 (maintainer preference)
 vendor_c_args = cc.get_supported_arguments(
-  '-fPIC', '-O2', '-D_DEFAULT_SOURCE')
+  '-fPIC', '-O2', '-D_DEFAULT_SOURCE', '-Wno-format')
 
 # C2ImageD11 sources: -O3 with fast-math and SSE4.2 baseline
 c2_c_args = cc.get_supported_arguments(
-  '-fPIC', '-O3', '-ffast-math', '-msse4.2', '-D_DEFAULT_SOURCE')
+  '-fPIC', '-O3', '-ffast-math', '-msse4.2', '-D_DEFAULT_SOURCE',
+  '-Wno-format', '-Wno-incompatible-pointer-types')
 
 # OpenMP (only C2ImageD11 uses it)
 omp_c_args = cc.get_supported_arguments('-fopenmp')
@@ -40,7 +41,7 @@ m_dep = cc.find_library('m', required: false)
 # Include directories
 # ------------------------------------------------------------------
 c2_inc = include_directories(
-  'src/core', 'src/geometry', 'src/imageproc', 'src/bslz4')
+  'src', 'src/core', 'src/geometry', 'src/imageproc', 'src/bslz4')
 
 lz4_inc = include_directories('src/bslz4/vendor/lz4/lib')
 kcb_inc = include_directories('src/bslz4/vendor/kcb/src')
@@ -53,66 +54,48 @@ zstd_inc = include_directories(
 # ------------------------------------------------------------------
 # Vendor: lz4 (decompress only, -O2)
 # ------------------------------------------------------------------
-liblz4 = static_library('lz4',
-  files('src/bslz4/vendor/lz4/lib/lz4.c'),
-  c_args: vendor_c_args + ['-DXXH_NAMESPACE=LZ4_'],
-  include_directories: lz4_inc,
-  pic: true)
+# Vendor: lz4 (decompress only)
+# ------------------------------------------------------------------
+lz4_sources = files('src/bslz4/vendor/lz4/lib/lz4.c')
 
 # ------------------------------------------------------------------
-# Vendor: zstd (decompress + common only, -O2)
+# Vendor: zstd (decompress + common only)
 # ------------------------------------------------------------------
-libzstd = static_library('zstd',
-  files(
-    'src/bslz4/vendor/zstd/lib/common/entropy_common.c',
-    'src/bslz4/vendor/zstd/lib/common/error_private.c',
-    'src/bslz4/vendor/zstd/lib/common/fse_decompress.c',
-    'src/bslz4/vendor/zstd/lib/common/pool.c',
-    'src/bslz4/vendor/zstd/lib/common/threading.c',
-    'src/bslz4/vendor/zstd/lib/common/xxhash.c',
-    'src/bslz4/vendor/zstd/lib/common/zstd_common.c',
-    'src/bslz4/vendor/zstd/lib/decompress/huf_decompress.c',
-    'src/bslz4/vendor/zstd/lib/decompress/zstd_ddict.c',
-    'src/bslz4/vendor/zstd/lib/decompress/zstd_decompress.c',
-    'src/bslz4/vendor/zstd/lib/decompress/zstd_decompress_block.c',
-    'src/bslz4/vendor/zstd/lib/decompress/huf_decompress_amd64.S',
-  ),
-  c_args: vendor_c_args + ['-DZSTD_LEGACY_SUPPORT=0'],
-  include_directories: zstd_inc,
-  pic: true)
+zstd_sources = files(
+  'src/bslz4/vendor/zstd/lib/common/entropy_common.c',
+  'src/bslz4/vendor/zstd/lib/common/error_private.c',
+  'src/bslz4/vendor/zstd/lib/common/fse_decompress.c',
+  'src/bslz4/vendor/zstd/lib/common/pool.c',
+  'src/bslz4/vendor/zstd/lib/common/threading.c',
+  'src/bslz4/vendor/zstd/lib/common/xxhash.c',
+  'src/bslz4/vendor/zstd/lib/common/zstd_common.c',
+  'src/bslz4/vendor/zstd/lib/decompress/huf_decompress.c',
+  'src/bslz4/vendor/zstd/lib/decompress/zstd_ddict.c',
+  'src/bslz4/vendor/zstd/lib/decompress/zstd_decompress.c',
+  'src/bslz4/vendor/zstd/lib/decompress/zstd_decompress_block.c',
+)
+zstd_asm = files('src/bslz4/vendor/zstd/lib/decompress/huf_decompress_amd64.S')
 
 # ------------------------------------------------------------------
-# Vendor: kcb bitshuffle (-O2)
+# Vendor: kcb bitshuffle
 # ------------------------------------------------------------------
-libkcb = static_library('kcb',
-  files('src/bslz4/vendor/kcb/src/bitshuffle.c'),
-  c_args: vendor_c_args,
-  include_directories: kcb_inc,
-  pic: true)
+kcb_sources = files('src/bslz4/vendor/kcb/src/bitshuffle.c')
 
 # ------------------------------------------------------------------
-# Vendor: bitshuffle-core (-O2)
+# Vendor: bitshuffle-core
 # ------------------------------------------------------------------
-libbshuf = static_library('bitshuffle',
-  files(
-    'src/bslz4/vendor/bitshuffle/src/bitshuffle_core.c',
-    'src/bslz4/vendor/bitshuffle/src/iochain.c',
-  ),
-  c_args: vendor_c_args,
-  include_directories: bshuf_inc,
-  pic: true)
+bshuf_sources = files(
+  'src/bslz4/vendor/bitshuffle/src/bitshuffle_core.c',
+  'src/bslz4/vendor/bitshuffle/src/iochain.c',
+)
 
 # ------------------------------------------------------------------
-# bslz4 (our generated code, C2 flags)
+# bslz4 (our generated code)
 # ------------------------------------------------------------------
-libbslz4 = static_library('bslz4',
-  files('src/bslz4/bs_master.c'),
-  c_args: c2_c_args,
-  include_directories: [c2_inc, lz4_inc, kcb_inc, bshuf_inc, zstd_inc],
-  pic: true)
+bslz4_sources = files('src/bslz4/bs_master.c')
 
 # ------------------------------------------------------------------
-# C2ImageD11 core (C2 flags)
+# C2ImageD11 core
 # ------------------------------------------------------------------
 c2_sources = files(
   'src/core/cimaged11utils.c',
@@ -126,39 +109,45 @@ c2_sources = files(
   'src/imageproc/splat.c',
 )
 
-# ------------------------------------------------------------------
-# Main static library: bundle all objects
-# ------------------------------------------------------------------
-libc2ImageD11 = static_library('c2ImageD11',
-  c2_sources,
-  c_args: c2_c_args + omp_c_args,
-  include_directories: c2_inc,
-  objects: [
-    liblz4.extract_all_objects(recursive: true),
-    libzstd.extract_all_objects(recursive: true),
-    libkcb.extract_all_objects(recursive: true),
-    libbshuf.extract_all_objects(recursive: true),
-    libbslz4.extract_all_objects(recursive: true),
-  ],
-  dependencies: [m_dep],
-  install: false,
-  pic: true,
+# Bridge sources (Python-free C, no Python.h dependency)
+bridge_sources = files(
+  '../src/wrappers/c2py_runtime.c',
+  '../src/wrappers/_wrappers.c',
 )
 
-# Post-build: convert thin archive to fat.
-# meson produces thin archives for static_library() with extract_all_objects().
-# setup.py needs a self-contained fat .a file.
-run_target('fat-archive',
+# ------------------------------------------------------------------
+# c2py23 wrapper (generated by meson build step)
+# ------------------------------------------------------------------
+wrapper_gen = custom_target('c2py-wrapper',
+  output: '_cImageD11_wrapper.c',
+  input: [
+    'interface/_cImageD11_base.c2py',
+    'interface/_cImageD11_bslz4.c2py',
+  ],
   command: [
     'sh', '-c',
-    'cd ${MESON_BUILD_ROOT} && ' +
-    'rm -f libc2ImageD11.a && ' +
-    'ar rcs libc2ImageD11.a ' +
-    '  libc2ImageD11.a.p/*.o ' +
-    '  liblz4.a.p/*.o ' +
-    '  libzstd.a.p/*.o ' +
-    '  libkcb.a.p/*.o ' +
-    '  libbitshuffle.a.p/*.o ' +
-    '  libbslz4.a.p/*.o'
+    'cat ../../lib/interface/_cImageD11_base.c2py ' +
+    '../../lib/interface/_cImageD11_bslz4.c2py > _cImageD11.c2py && ' +
+    'python3 -m c2py23.cli generate _cImageD11.c2py -o _cImageD11_wrapper.c'
   ],
-  depends: [libc2ImageD11])
+)
+
+# ------------------------------------------------------------------
+# Shared library (no Python.h dependency, no CPython headers)
+# ------------------------------------------------------------------
+shared_module('_cImageD11',
+  # All sources: compute + vendor + bslz4 + bridge + generated wrapper
+  c2_sources,
+  lz4_sources, kcb_sources, bshuf_sources,
+  zstd_sources, zstd_asm,
+  bslz4_sources,
+  bridge_sources,
+  wrapper_gen,
+  c_args: c2_c_args + omp_c_args,
+  include_directories: [c2_inc, lz4_inc, kcb_inc, bshuf_inc, zstd_inc,
+    include_directories('../src/wrappers')],
+  dependencies: [m_dep],
+  link_args: ['-ldl', '-lgomp'],
+  name_prefix: '',
+  install: false,
+)

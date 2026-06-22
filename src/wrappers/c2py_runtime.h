@@ -279,6 +279,10 @@ typedef struct {
     PyObject* (*Tuple_New)(Py_ssize_t);
     int (*Tuple_SetItem)(PyObject*, Py_ssize_t, PyObject*);
 
+    /* String construction */
+    PyObject* (*Unicode_FromString)(const char*);   /* Python 3.x str */
+    PyObject* (*String_FromString)(const char*);    /* Python 2.7 str */
+
     /* Scalar conversion from objects */
     long (*Long_AsLong)(PyObject*);
     long long (*Long_AsLongLong)(PyObject*);
