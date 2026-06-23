@@ -94,6 +94,33 @@ c2ImageD11/
     test_build_once.sh   # Legacy CI helper (needs apptainer)
 ```
 
+## Interface regeneration: CI vs Release
+
+The `lib/interface/` files (`_cImageD11.c2py`, `_cImageD11_wrapper.c`,
+c2py_runtime.*, c2py_amd64.h) are GENERATED from C2PY_BEGIN blocks in
+C sources by `tools/harvester.py`.  They are **checked into git** so
+that release/sdist builds do NOT need c2py23.
+
+**Release / sdist build**: uses pre-generated files in `lib/interface/`.
+No c2py23 needed.  `meson setup && ninja` → `_cImageD11.so`.
+
+**CI build**: regenerates from C sources to catch upstream breakage.
+Requires c2py23.  The CI runs `python3 tools/harvester.py --output-dir lib/interface`
+BEFORE `meson setup`, overwriting the pre-generated files.  If c2py23
+changes break generation, CI catches it at build time.
+
+**Local development**: to regenerate after editing C2PY_BEGIN blocks:
+```bash
+python3 tools/harvester.py --output-dir lib/interface
+# or: cd build/libc2ImageD11 && ninja regenerate-interface
+```
+
+This is confusing because the same files are both checked in (for release)
+and overwritten (for CI).  Think of the git-checked-in files as the
+"known good" baseline for release builds, and the CI overwrites them
+to validate that the C2PY_BEGIN blocks are correct and c2py23 still
+generates from them.
+
 ## Build
 
 A normal build needs only meson + ninja + a C compiler.  The generated

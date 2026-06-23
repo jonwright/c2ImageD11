@@ -1,0 +1,2 @@
+option('regenerate', type: 'boolean', value: false,
+       description: 'Regenerate interface files from C2PY_BEGIN blocks in C sources.  Requires c2py23.  Used by CI to catch upstream breakage.  Default false: use pre-generated files checked into git (sdist/release mode).')

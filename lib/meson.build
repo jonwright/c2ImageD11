@@ -49,3 +49,12 @@ shared_module('_cImageD11',
   name_prefix: '',
   install: false,
 )
+
+# Regenerate interface from C2PY_BEGIN blocks in C sources (CI only).
+# Requires c2py23.  Pre-generated files are checked into git for release builds.
+run_target('regenerate-interface',
+  command: [
+    'python3', '../../tools/harvester.py', '--output-dir',
+    '../../lib/interface',
+  ],
+)
