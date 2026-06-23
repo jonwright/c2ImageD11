@@ -1,26 +1,38 @@
 #!/usr/bin/env python3
-"""Benchmark: c2py23 vs f2py timing comparison for c2ImageD11 functions.
+"""Benchmark: c2py23 timing for c2ImageD11 functions.
 
 Compares per-function runtime between:
-  - ImageD11._cImageD11 (f2py-based)
+  - ImageD11._cImageD11 (f2py-based, if installed)
   - c2ImageD11._cImageD11 (c2py23-based)
 
-Uses c2py23.perf for c2py23 side (C time + wrapper overhead in ns).
+Uses c2py23.perf for c2py23 side (C-time + wrapper overhead in ns).
 Uses timeit for f2py side.
 """
 
 from __future__ import print_function
 
 import sys, os, time, numpy as np
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, "/home/worker/c2py23")
 
-import ImageD11._cImageD11 as OLD
+try:
+    from c2py23.perf import read_perf, set_enabled
+    HAVE_PERF = True
+except ImportError:
+    HAVE_PERF = False
+    print("c2py23.perf not available, timing disabled")
+
+try:
+    import ImageD11._cImageD11 as OLD
+    HAVE_OLD = True
+except ImportError:
+    HAVE_OLD = False
+    print("ImageD11 not installed, skipping f2py comparison")
+
 import c2ImageD11._cImageD11 as NEW
-from c2py23.perf import read_perf, set_enabled
 
 
 def time_f2py(fn, args, n=50):
+    if not HAVE_OLD:
+        return 0
     t0 = time.time()
     for _ in range(n):
         fn(*args)
@@ -28,37 +40,45 @@ def time_f2py(fn, args, n=50):
     return (t1 - t0) / n * 1e9  # seconds -> ns
 
 
-def benchmark(name, old_fn, args_builder, n_calls=200):
+def benchmark(name, old_fn, new_fn, args_builder, n_calls=200):
     """Benchmark one function."""
     args = args_builder()
-    enabled_ptr = getattr(NEW, "_c2py_timing_enabled", None)
-    if enabled_ptr:
-        set_enabled(enabled_ptr, 1)
+    if HAVE_PERF:
+        enabled_ptr = getattr(NEW, "_c2py_timing_enabled", None)
+        if enabled_ptr:
+            set_enabled(enabled_ptr, 1)
 
     # Warmup
     for _ in range(10):
-        old_fn(*args)
-    for _ in range(10):
-        getattr(NEW, name)(*args)
+        new_fn(*args)
+    if HAVE_OLD:
+        for _ in range(10):
+            old_fn(*args)
 
-    # c2py23 timing
-    perf_name = "_perf_" + name
-    if hasattr(NEW, perf_name):
-        set_enabled(enabled_ptr, 1)
-        for _ in range(n_calls):
-            getattr(NEW, name)(*args)
-        set_enabled(enabled_ptr, 0)
-        stats = read_perf(getattr(NEW, perf_name))
-        c2py_c_ns = stats["c_mean_ns"]
-        c2py_wrap_ns = stats["wrap_mean_ns"]
-    else:
-        c2py_c_ns = 0
-        c2py_wrap_ns = 0
+    # c2py23 timing via perf structs
+    c2py_c_ns = 0
+    c2py_wrap_ns = 0
+    if HAVE_PERF:
+        perf_name = "_perf_" + name
+        if hasattr(NEW, perf_name):
+            for _ in range(n_calls):
+                new_fn(*args)
+            stats = read_perf(getattr(NEW, perf_name))
+            c2py_c_ns = stats.get("c_mean_ns", 0)
+            c2py_wrap_ns = stats.get("wrap_mean_ns", 0)
+            if enabled_ptr:
+                set_enabled(enabled_ptr, 0)
+        else:
+            # Fallback: wall-clock timing
+            t0 = time.time()
+            for _ in range(n_calls):
+                new_fn(*args)
+            c2py_c_ns = (time.time() - t0) / n_calls * 1e9
 
     # f2py timing
-    f2py_ns = time_f2py(old_fn, args, n=n_calls)
+    f2py_ns = time_f2py(old_fn, args, n=n_calls) if HAVE_OLD else 0
 
-    if c2py_c_ns > 0:
+    if c2py_c_ns > 0 and f2py_ns > 0:
         speedup = f2py_ns / (c2py_c_ns + c2py_wrap_ns)
     else:
         speedup = 0
@@ -73,6 +93,8 @@ def benchmark(name, old_fn, args_builder, n_calls=200):
     }
 
 
+# --- Args builders (match current c2py23 calling conventions) ---
+
 def build_score_args():
     np.random.seed(42)
     ubi = np.random.randn(3, 3)
@@ -80,33 +102,22 @@ def build_score_args():
     tol = 0.1
     return [ubi, gv, tol]
 
-
 def build_closest_args():
     np.random.seed(42)
     x = np.sort(np.random.random(500))
     v = np.random.random(100)
-    ibest = np.zeros(1, dtype=np.int32)
-    best = np.zeros(1, dtype=np.float64)
-    # f2py returns tuple (ibest, best)
-    return [x, v, ibest, best]
-
+    return [x, v]  # both OLD and NEW return (ibest, best) tuple
 
 def build_array_stats_args():
     np.random.seed(42)
     img = np.random.randn(100000).astype(np.float32)
-    mn = np.zeros(1, dtype=np.float32)
-    mx = np.zeros(1, dtype=np.float32)
-    me = np.zeros(1, dtype=np.float32)
-    va = np.zeros(1, dtype=np.float32)
-    return [img, mn, mx, me, va]
-
+    return [img]  # NEW uses buffers, OLD returns tuple
 
 def build_misori_args():
     np.random.seed(42)
     u1 = np.random.randn(3, 3)
     u2 = np.random.randn(3, 3)
     return [u1, u2]
-
 
 def build_compute_geometry_args():
     np.random.seed(42)
@@ -117,13 +128,11 @@ def build_compute_geometry_args():
     out = np.zeros((n, 6))
     return [xl, w, 1.0, 0.3, 5.0, 3.0, t, out]
 
-
 def build_connectedpixels_args():
     np.random.seed(42)
     data = np.random.randn(100, 100).astype(np.float32)
     labels = np.zeros((100, 100), dtype=np.int32)
     return [data, labels, 0.5, 0, 1]
-
 
 def build_uint16_darksub_args():
     np.random.seed(42)
@@ -132,7 +141,6 @@ def build_uint16_darksub_args():
     drk = np.random.randn(n).astype(np.float32)
     img = np.zeros(n, dtype=np.float32)
     return [img, drk, data]
-
 
 def build_tosparse_args():
     np.random.seed(42)
@@ -145,26 +153,34 @@ def build_tosparse_args():
             np.zeros((ns, nf), dtype=np.float32), 3.0]
 
 
-# Functions to benchmark: (name, old_fn, args_builder)
+# Functions to benchmark
+# OLD wrappers slice to f2py calling convention (tuples where applicable)
 BENCHMARKS = [
-    ("score", lambda *a: OLD.score(*a[:3]), build_score_args),
-    ("closest", lambda *a: OLD.closest(*a[:2]), build_closest_args),
-    ("array_stats", lambda *a: OLD.array_stats(*a[:1]), build_array_stats_args),
-    ("misori_cubic", OLD.misori_cubic, build_misori_args),
-    ("compute_geometry", OLD.compute_geometry, build_compute_geometry_args),
-    ("connectedpixels", OLD.connectedpixels, build_connectedpixels_args),
-    ("uint16_to_float_darksub", OLD.uint16_to_float_darksub, build_uint16_darksub_args),
-    ("tosparse_f32", OLD.tosparse_f32, build_tosparse_args),
+    ("score",     lambda *a: OLD.score(*a[:3]) if HAVE_OLD else None,
+     NEW.score,   build_score_args),
+    ("closest",   lambda *a: OLD.closest(*a[:2]) if HAVE_OLD else None,
+     NEW.closest, build_closest_args),
+    ("misori_cubic", (OLD.misori_cubic if HAVE_OLD else None),
+     NEW.misori_cubic, build_misori_args),
+    ("compute_geometry", (OLD.compute_geometry if HAVE_OLD else None),
+     NEW.compute_geometry, build_compute_geometry_args),
+    ("connectedpixels", (OLD.connectedpixels if HAVE_OLD else None),
+     NEW.connectedpixels, build_connectedpixels_args),
+    ("uint16_to_float_darksub", (OLD.uint16_to_float_darksub if HAVE_OLD else None),
+     NEW.uint16_to_float_darksub, build_uint16_darksub_args),
+    ("tosparse_f32", (OLD.tosparse_f32 if HAVE_OLD else None),
+     NEW.tosparse_f32, build_tosparse_args),
 ]
 
 
 def main():
-    print("{:35s} {:>10s} {:>10s} {:>10s} {:>10s} {:>8s}".format(
-        "Function", "c2py_C_ns", "c2py_wrap", "c2py_total", "f2py_ns", "speedup"))
+    header = "{:35s} {:>10s} {:>10s} {:>10s} {:>10s} {:>8s}".format(
+        "Function", "c2py_C_ns", "c2py_wrap", "c2py_total", "f2py_ns", "speedup")
+    print(header)
     print("-" * 90)
 
-    for name, old_fn, builder in BENCHMARKS:
-        result = benchmark(name, old_fn, builder)
+    for name, old_fn, new_fn, builder in BENCHMARKS:
+        result = benchmark(name, old_fn, new_fn, builder)
         if result["c2py_C_ns"] == 0:
             print("{:35s} {:>10s} {:>10s} {:>10s} {:>10s} {:>8s}".format(
                 name, "-", "-", "-", "-", "-"))
