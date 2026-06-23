@@ -1,0 +1,122 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  py3-wheel:
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux2014_x86_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install c2py23
+        run: |
+          /opt/python/cp312-cp312/bin/pip install git+https://github.com/jonwright/c2py23.git
+
+      - name: Regenerate lib/interface from C sources
+        run: |
+          /opt/python/cp312-cp312/bin/python tools/harvester.py --output-dir lib/interface
+
+      - name: Build .so with meson
+        run: |
+          /opt/python/cp312-cp312/bin/pip install meson ninja
+          mkdir -p build/libc2ImageD11
+          cd build/libc2ImageD11
+          meson setup ../../lib
+          ninja
+
+      - name: Build py3 wheel
+        run: |
+          /opt/python/cp312-cp312/bin/python setup.py bdist_wheel
+
+      - name: Repair wheel with auditwheel
+        run: |
+          /opt/python/cp312-cp312/bin/pip install auditwheel
+          /opt/python/cp312-cp312/bin/python -m auditwheel repair \
+            --plat manylinux2014_x86_64 dist/*.whl
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-py3
+          path: wheelhouse/
+
+  py2-wheel:
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux2010_x86_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install c2py23
+        run: |
+          /opt/python/cp27-cp27mu/bin/pip install git+https://github.com/jonwright/c2py23.git
+
+      - name: Regenerate lib/interface from C sources
+        run: |
+          /opt/python/cp27-cp27mu/bin/python tools/harvester.py --output-dir lib/interface
+
+      - name: Build .so with meson
+        run: |
+          /opt/python/cp27-cp27mu/bin/pip install meson ninja
+          mkdir -p build/libc2ImageD11
+          cd build/libc2ImageD11
+          meson setup ../../lib
+          ninja
+
+      - name: Build py2 wheel
+        run: |
+          /opt/python/cp27-cp27mu/bin/python setup.py bdist_wheel
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-py2
+          path: dist/
+
+  test:
+    needs: [py3-wheel, py2-wheel]
+    strategy:
+      matrix:
+        python-version: ["2.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download py3 wheel
+        if: ${{ matrix.python-version != '2.7' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-py3
+          path: dist/
+
+      - name: Download py2 wheel
+        if: ${{ matrix.python-version == '2.7' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-py2
+          path: dist/
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install c2ImageD11 wheel
+        run: |
+          pip install dist/*.whl
+
+      - name: Install ImageD11 (py2 — compile from sdist)
+        if: ${{ matrix.python-version == '2.7' }}
+        run: |
+          pip install --no-binary ImageD11 ImageD11
+
+      - name: Install ImageD11 (py3 — binary from PyPI)
+        if: ${{ matrix.python-version != '2.7' }}
+        run: |
+          pip install ImageD11 --only-binary :all: --no-deps
+
+      - name: Install test deps
+        run: |
+          pip install numpy pytest
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v

@@ -65,15 +65,6 @@ if "bdist_wheel" in sys.argv:
     try:
         from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
-        MANYLINUX_TAG = {
-            "x86_64": "manylinux2014_x86_64",
-            "i686": "manylinux2014_i686",
-            "aarch64": "manylinux2014_aarch64",
-            "ppc64le": "manylinux2014_ppc64le",
-            "s390x": "manylinux2014_s390x",
-            "AMD64": "win_amd64",
-        }.get(ARCH, "linux_" + ARCH)
-
         python_tag = "py2" if sys.version_info[0] == 2 else "py3"
 
         class bdist_wheel_override(_bdist_wheel):
@@ -83,7 +74,7 @@ if "bdist_wheel" in sys.argv:
 
             def get_tag(self):
                 impl, abi, plat = _bdist_wheel.get_tag(self)
-                return python_tag, "none", MANYLINUX_TAG
+                return python_tag, "none", plat
 
         bdist_wheel_cmd = bdist_wheel_override
     except ImportError:
