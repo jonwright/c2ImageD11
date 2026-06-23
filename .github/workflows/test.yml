@@ -71,4 +71,4 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest tests/ -v
+          cd "$(mktemp -d)" && python -m pytest "$GITHUB_WORKSPACE/tests/" -v
