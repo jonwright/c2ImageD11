@@ -103,12 +103,12 @@ jobs:
         run: |
           pip install dist/*.whl
 
-      - name: Install ImageD11 (py2 — compile from sdist)
+      - name: Install ImageD11 (py2 -- compile from sdist)
         if: ${{ matrix.python-version == '2.7' }}
         run: |
           pip install --no-binary ImageD11 ImageD11
 
-      - name: Install ImageD11 (py3 — binary from PyPI)
+      - name: Install ImageD11 (py3 -- binary from PyPI)
         if: ${{ matrix.python-version != '2.7' }}
         run: |
           pip install ImageD11 --only-binary :all: --no-deps

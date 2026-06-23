@@ -1,4 +1,4 @@
-# c2ImageD11 — Agent Guide
+# c2ImageD11 -- Agent Guide
 
 ## Project Purpose
 
@@ -6,7 +6,7 @@ Port ImageD11's C extensions from f2py to **c2py23**, producing a standalone
 shared library `_cImageD11.so` that can be distributed like a ctypes library
 (copy the `.so` into the Python package directory).
 
-All C functions are exposed directly by c2py23's generated wrapper — no
+All C functions are exposed directly by c2py23's generated wrapper -- no
 hand-written adapter code.
 
 ## Current Status
@@ -15,13 +15,13 @@ hand-written adapter code.
 - c2py23 v0.2.0 handles fixed-width integer types and multi-dimensional
   arrays (`double[3][3]`, `double[][3]`) natively
 - 56 tests pass (7 buffer + 49 equivalence including ImageD11 f2py comparison)
-- Tested on Python 3.12; targets Python 2.7–3.14
+- Tested on Python 3.12; targets Python 2.7-3.14
 
 ## Language Choices
 
 - **C**: C99, compiled with `-O3 -ffast-math -msse4.2 -fopenmp`
 - **c2py23**: Code generator for CPython C extensions from YAML interface files
-- **Python**: Must parse on Python 2.7 **and** 3.x — no f-strings, no type
+- **Python**: Must parse on Python 2.7 **and** 3.x -- no f-strings, no type
   annotations, no `async`/`await`, no keyword-only arguments
 
 ### Python 2.7 polyglot rules
@@ -62,7 +62,7 @@ c2ImageD11/
   lib/                   # Meson build root
     meson.build          # Builds _cImageD11.so; single source of truth
                          # for C source/header lists
-    interface/           # GENERATED — checked into git to break
+    interface/           # GENERATED -- checked into git to break
       _cImageD11.c2py      # c2py23 dependency on normal builds.
       _cImageD11_wrapper.c # Regenerate with: ninja -C build/libc2ImageD11 regenerate
       c2py_runtime.c
@@ -102,7 +102,7 @@ C sources by `tools/harvester.py`.  They are **checked into git** so
 that release/sdist builds do NOT need c2py23.
 
 **Release / sdist build**: uses pre-generated files in `lib/interface/`.
-No c2py23 needed.  `meson setup && ninja` → `_cImageD11.so`.
+No c2py23 needed.  `meson setup && ninja` -> `_cImageD11.so`.
 
 **CI build**: regenerates from C sources to catch upstream breakage.
 Requires c2py23.  The CI runs `python3 tools/harvester.py --output-dir lib/interface`
@@ -146,10 +146,10 @@ pip install auditwheel
 auditwheel repair --plat manylinux2014_x86_64 dist/*.whl -w wheelhouse/
 ```
 
-Output is in `wheelhouse/` — e.g. `c2imaged11-0.2.0-py3-none-manylinux2014_x86_64.whl`.
+Output is in `wheelhouse/` -- e.g. `c2imaged11-0.2.0-py3-none-manylinux2014_x86_64.whl`.
 
 The manylinux container sets the platform tag; `auditwheel repair` applies it.
-The `.so` binary works across Python 2.7–3.14 (c2py23 emits both
+The `.so` binary works across Python 2.7-3.14 (c2py23 emits both
 `init_cImageD11` and `PyInit__cImageD11`). The `__init__.py` loader detects
 the Python version and uses `imp.load_dynamic` (Py2) or `importlib` (Py3).
 
@@ -189,7 +189,7 @@ python3 -m pytest tests/
 
 The `.so` is a CPython extension built without Python.h (c2py23's runtime
 uses dlopen internally). It will be distributed as a single `.so` file
-placed in `c2ImageD11/` — the same pattern as a ctypes library.
+placed in `c2ImageD11/` -- the same pattern as a ctypes library.
 
 A two-tier build (meson produces `.a` + setuptools links `.so` for `pip install`)
 is deferred.
