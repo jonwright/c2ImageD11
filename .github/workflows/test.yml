@@ -19,7 +19,8 @@ jobs:
 
       - name: Build .so with meson
         run: |
-          /opt/python/cp312-cp312/bin/pip install meson ninja
+          export PATH="/opt/python/cp312-cp312/bin:$PATH"
+          pip install meson ninja
           mkdir -p build/libc2ImageD11
           cd build/libc2ImageD11
           meson setup ../../lib
