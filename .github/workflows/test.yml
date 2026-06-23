@@ -26,6 +26,7 @@ jobs:
           cd build/libc2ImageD11
           meson setup ../../lib
           ninja
+          cp _cImageD11.so ../../c2ImageD11/_cImageD11_x86_64.so
 
       - name: Build py3 wheel
         run: |
