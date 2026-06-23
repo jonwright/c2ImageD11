@@ -9,18 +9,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install c2py23
+      - name: Setup Python and install build deps
         run: |
-          /opt/python/cp312-cp312/bin/pip install git+https://github.com/jonwright/c2py23.git
+          export PATH="/opt/python/cp312-cp312/bin:$PATH"
+          pip install git+https://github.com/jonwright/c2py23.git
+          pip install meson ninja setuptools auditwheel
+          echo "PATH=/opt/python/cp312-cp312/bin:$PATH" >> "$GITHUB_ENV"
 
       - name: Regenerate lib/interface from C sources
         run: |
-          /opt/python/cp312-cp312/bin/python tools/harvester.py --output-dir lib/interface
+          python tools/harvester.py --output-dir lib/interface
 
       - name: Build .so with meson
         run: |
-          export PATH="/opt/python/cp312-cp312/bin:$PATH"
-          pip install meson ninja
           mkdir -p build/libc2ImageD11
           cd build/libc2ImageD11
           meson setup ../../lib
@@ -28,12 +29,12 @@ jobs:
 
       - name: Build py3 wheel
         run: |
-          /opt/python/cp312-cp312/bin/python setup.py bdist_wheel
+          python setup.py bdist_wheel
 
       - name: Repair wheel with auditwheel
         run: |
-          /opt/python/cp312-cp312/bin/pip install auditwheel
-          /opt/python/cp312-cp312/bin/python -m auditwheel repair \
+          pip install auditwheel
+          python -m auditwheel repair \
             --plat manylinux_2_28_x86_64 dist/*.whl
 
       - uses: actions/upload-artifact@v4
