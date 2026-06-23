@@ -34,9 +34,13 @@ _ext = ".pyd" if sys.platform == "win32" else ".so"
 _lib_name = "_cImageD11_{}{}".format(_arch, _ext)
 _lib_path = os.path.join(_here, _lib_name)
 
+# Fallback: plain name _cImageD11.so (no arch suffix)
 if not os.path.exists(_lib_path):
-    raise ImportError("c2ImageD11: no binary at {} for arch {}".format(
-        _lib_path, _arch))
+    _lib_path = os.path.join(_here, "_cImageD11" + _ext)
+
+if not os.path.exists(_lib_path):
+    raise ImportError("c2ImageD11: no binary at {} or {}".format(
+        os.path.join(_here, _lib_name), os.path.join(_here, "_cImageD11" + _ext)))
 
 if sys.version_info[0] >= 3:
     import importlib.util
