@@ -31,16 +31,10 @@ jobs:
         run: |
           python setup.py bdist_wheel
 
-      - name: Repair wheel with auditwheel
-        run: |
-          pip install auditwheel
-          python -m auditwheel repair \
-            --plat manylinux_2_28_x86_64 dist/*.whl
-
       - uses: actions/upload-artifact@v4
         with:
           name: dist-py3
-          path: wheelhouse/
+          path: dist/
 
   test:
     needs: [py3-wheel]
