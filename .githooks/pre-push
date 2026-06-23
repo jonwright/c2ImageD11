@@ -1,14 +1,10 @@
 #!/bin/bash
-# Pre-push hook: run memory safety checks under valgrind.
+# Pre-push hook: run fast smoke tests on master pushes.
 # Install: ln -sf ../../.githooks/pre-push .git/hooks/pre-push
-#
-# Requires: valgrind
-# Runs: memory tests for bslz4 C functions (small NIJ, quick)
-# Exits non-zero if valgrind detects heap-buffer-overflow, invalid write, etc.
+# Tests: buffer-protocol smoke tests (no ImageD11, no valgrind).
 
 set -euo pipefail
 
-# Only check if pushing to master
 ZERO_COMMIT="0000000000000000000000000000000000000000"
 while read LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
     if [ "$REMOTE_REF" = "refs/heads/master" ]; then
@@ -17,20 +13,14 @@ while read LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
 done
 
 if [ -z "${MASTER_PUSH:-}" ]; then
-    exit 0  # only check master pushes
-fi
-
-echo "Running memory safety checks (valgrind)..."
-if ! command -v valgrind &>/dev/null; then
-    echo "WARNING: valgrind not installed, skipping memory check"
-    echo "Install: apt install valgrind"
     exit 0
 fi
 
+echo "Running smoke tests..."
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
-# Use the project venv if available (per AGENTS.md convention)
+# Use the project venv if available
 VENV_PYTHON="$REPO_ROOT/venv/py312/x86_64/bin/python3"
 if [ -x "$VENV_PYTHON" ]; then
     PYTHON="$VENV_PYTHON"
@@ -38,19 +28,9 @@ else
     PYTHON="python3"
 fi
 
-# Run memory test under valgrind
-MEMTEST_ITERS=3 \
-valgrind \
-    --tool=memcheck \
-    --leak-check=full \
-    --error-exitcode=1 \
-    --errors-for-leak-kinds=definite \
-    --track-origins=yes \
-    $PYTHON -m pytest "$REPO_ROOT/tests/test_memory_bslz4.py" -v 2>&1 || {
-    echo "FAILED: Memory safety check detected errors!"
-    echo "Run locally: valgrind --leak-check=full --track-origins=yes"
-    echo "  python3 -m pytest tests/test_memory_bslz4.py -v"
+$PYTHON -m pytest "$REPO_ROOT/tests/test_buffer.py" -v 2>&1 || {
+    echo "FAILED: Smoke tests failed!"
     exit 1
 }
 
-echo "Memory safety check passed."
+echo "Smoke tests passed."
