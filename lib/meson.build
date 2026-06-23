@@ -31,7 +31,7 @@ c2_sources = files(
 )
 
 c2_c_args = cc.get_supported_arguments(
-  '-fPIC', '-O2', '-fopenmp', '-D_DEFAULT_SOURCE',
+  '-fPIC', '-O3', '-ffast-math', '-fopenmp', '-D_DEFAULT_SOURCE',
   '-Wno-format', '-Wno-incompatible-pointer-types')
 
 m_dep = cc.find_library('m', required: false)
