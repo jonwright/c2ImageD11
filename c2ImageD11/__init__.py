@@ -62,6 +62,19 @@ for _k in dir(_mod):
         globals()[_k] = getattr(_mod, _k)
 
 
+_blobproperties_c = _mod.blobproperties  # save raw C function
+
+def blobproperties(data, labels, npk, omega=0.0, verbose=0):
+    """Allocate results and call C blobproperties, matching f2py convention."""
+    import numpy as np
+    results = np.zeros((npk, 36), dtype=np.float64)
+    _blobproperties_c(data, labels, npk, results, omega, verbose)
+    return results
+
+# Replace raw C function on submodule with allocation wrapper
+_mod.blobproperties = blobproperties
+
+
 # ---------------------------------------------------------------------------
 # OpenMP safety
 # ---------------------------------------------------------------------------

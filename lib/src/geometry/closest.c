@@ -780,13 +780,12 @@ F2PY_WRAPPER_END */
 
 /* C2PY_BEGIN
  * {
- *     "py_sig": "cluster1d(ar: buffer, order: buffer, tol: float, nclusters: buffer, ids: buffer, avgs: buffer) -> void",
+ *     "py_sig": "cluster1d(ar: buffer, order: buffer, tol: float, ids: buffer, avgs: buffer) -> void",
  *     "doc": "cluster1d is used to find clusters of peaks.",
  *     "params": {
  *         "ar": "Array of values to cluster.",
  *         "order": "Permutation that sorts ar ascending.",
  *         "tol": "Distance tolerance for cluster membership.",
- *         "nclusters": "Output: number of clusters found.",
  *         "ids": "Output: cluster id for each element.",
  *         "avgs": "Output: average value of each cluster.",
  *     },
@@ -794,8 +793,6 @@ F2PY_WRAPPER_END */
  *         "ar.format == 'd'",
  *         "( order.format == 'i' or order.format == 'l' )",
  *         "order.n == ar.n",
- *         "( nclusters.format == 'i' or nclusters.format == 'l' )",
- *         "nclusters.n == 1",
  *         "( ids.format == 'i' or ids.format == 'l' )",
  *         "ids.n == ar.n",
  *         "avgs.format == 'd'",
@@ -803,7 +800,8 @@ F2PY_WRAPPER_END */
  *     ],
  *     "c_overloads": [{
  *         "sig": "void cluster1d(double *ar, intptr_t n, int *order, double tol, int *nclusters, int *ids, double *avgs)",
- *         "map": {"ar": "ar.ptr", "n": "ar.n", "order": "order.ptr", "tol": "tol", "nclusters": "nclusters.ptr", "ids": "ids.ptr", "avgs": "avgs.ptr"},
+ *         "map": {"ar": "ar.ptr", "n": "ar.n", "order": "order.ptr", "tol": "tol", "ids": "ids.ptr", "avgs": "avgs.ptr"},
+ *         "outputs": {"nclusters": "int"},
  *     }],
  * }
 C2PY_END */

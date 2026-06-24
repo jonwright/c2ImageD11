@@ -38,17 +38,13 @@ class TestArrayStats:
     def test_output(self):
         np.random.seed(42)
         img = (np.random.randn(200).astype(np.float32) * 3 + 7)
-        mn = np.zeros(1, dtype=np.float32)
-        mx = np.zeros(1, dtype=np.float32)
-        me = np.zeros(1, dtype=np.float32)
-        va = np.zeros(1, dtype=np.float32)
-        ci.array_stats(img, mn, mx, me, va)
-        assert np.isfinite(mn[0])
-        assert np.isfinite(mx[0])
-        assert np.isfinite(me[0])
-        assert np.isfinite(va[0])
-        assert mn[0] <= me[0] <= mx[0]
-        assert va[0] >= 0.0
+        mn, mx, me, va = ci.array_stats(img)
+        assert np.isfinite(mn)
+        assert np.isfinite(mx)
+        assert np.isfinite(me)
+        assert np.isfinite(va)
+        assert mn <= me <= mx
+        assert va >= 0.0
 
 
 # ============================================================
@@ -108,8 +104,8 @@ class TestComputeGV:
 class TestQuickorient:
     def test_inplace(self):
         np.random.seed(42)
-        ubi = np.random.randn(9).astype(np.float64)
-        bt = np.random.randn(9).astype(np.float64)
+        ubi = np.random.randn(3, 3).astype(np.float64)
+        bt = np.random.randn(3, 3).astype(np.float64)
         ubi_copy = ubi.copy()
         ci.quickorient(ubi, bt)
         assert np.isfinite(ubi).all()
