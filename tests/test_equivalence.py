@@ -43,6 +43,8 @@ def close(a, b, rtol=1e-10, atol=1e-10):
 
 class TestVerifyRounding:
     def test_basic(self):
+        if not hasattr(OLD, 'verify_rounding'):
+            pytest.skip("verify_rounding not in ImageD11 %s" % str(_IMAGE_D11_VERSION))
         assert OLD.verify_rounding(20) == NEW.verify_rounding(20)
 
 class TestOMP:
@@ -223,6 +225,8 @@ class TestMisori:
 
 class TestComputeGeometry:
     def test_random(self):
+        if not hasattr(OLD, 'compute_geometry'):
+            pytest.skip("compute_geometry not in ImageD11 %s" % str(_IMAGE_D11_VERSION))
         np.random.seed(42)
         n = 20
         xl = np.random.randn(n, 3) * 0.1
@@ -550,6 +554,8 @@ class TestSparseConnectedPixels:
 
 class TestSparseSmooth:
     def test_small(self):
+        if not hasattr(OLD, 'sparse_smooth'):
+            pytest.skip("sparse_smooth not in ImageD11 %s" % str(_IMAGE_D11_VERSION))
         np.random.seed(42)
         n = 50
         v = np.random.randn(n).astype(np.float32) + 2
@@ -581,6 +587,8 @@ class TestSparseLocalMaxLabel:
 
 class TestToSparse:
     def test_u16(self):
+        if not hasattr(OLD, 'tosparse_u16'):
+            pytest.skip("tosparse_u16 not in ImageD11 %s" % str(_IMAGE_D11_VERSION))
         ns, nf = 8, 8
         img = np.random.randint(0, 100, (ns, nf), dtype=np.uint16)
         msk = np.ones((ns, nf), dtype=np.uint8)
@@ -596,6 +604,8 @@ class TestToSparse:
         assert o == n
 
     def test_f32(self):
+        if not hasattr(OLD, 'tosparse_f32'):
+            pytest.skip("tosparse_f32 not in ImageD11 %s" % str(_IMAGE_D11_VERSION))
         ns, nf = 8, 8
         img = np.random.randn(ns, nf).astype(np.float32) + 5
         msk = np.ones((ns, nf), dtype=np.uint8)
@@ -611,6 +621,8 @@ class TestToSparse:
 
 class TestCoverlaps:
     def test_small(self):
+        if not hasattr(OLD, 'coverlaps'):
+            pytest.skip("coverlaps not in ImageD11 %s" % str(_IMAGE_D11_VERSION))
         r1 = np.array([0, 0, 1], dtype=np.uint16)
         c1 = np.array([1, 2, 1], dtype=np.uint16)
         l1 = np.array([1, 1, 2], dtype=np.int32)
