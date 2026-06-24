@@ -4,26 +4,22 @@ on: [push, pull_request]
 
 jobs:
   linux-py27:
-    runs-on: ubuntu-latest
-    container: ubuntu:20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
       - name: Install system deps
         run: |
-          apt-get update -qq
-          apt-get install -y -qq git gcc make python2 python2-dev python3 python3-pip python3-distutils python3-setuptools python3-wheel curl libpython3-dev ca-certificates
-
-      - name: Install meson and ninja
-        run: |
-          python3 -m pip install meson ninja
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends python2 python2-dev python3 python3-pip python3-wheel gcc curl
 
       - name: Install pip for Python 2
         run: |
-          curl -sS https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2
+          curl -sS https://bootstrap.pypa.io/pip/2.7/get-pip.py | sudo python2
 
-      - name: Install Python 2 deps
+      - name: Install build deps
         run: |
+          python3 -m pip install meson ninja
           python2 -m pip install numpy==1.16.6 "pytest>=4.6,<5"
 
       - name: Build _cImageD11.so
@@ -100,6 +96,12 @@ jobs:
         shell: cmd
         run: |
           C:\Python27\python.exe -m pip install ImageD11==1.9.8 --only-binary :all: --no-deps
+
+      - name: Install VC++ 2008 redist
+        shell: cmd
+        run: |
+          curl -L -o %TEMP%\vcredist2008_x64.exe https://download.microsoft.com/download/5/D/8/5D8C65CB-C849-4025-8E95-C3966CAFD8AE/vcredist_x64.exe
+          %TEMP%\vcredist2008_x64.exe /quiet /norestart
 
       - name: Run equivalence tests
         shell: cmd
