@@ -12,14 +12,13 @@ jobs:
       - name: Setup Python and install build deps
         run: |
           export PATH="/opt/python/cp312-cp312/bin:$PATH"
-          pip install git+https://github.com/jonwright/c2py23.git@e22aabf
+          pip install git+https://github.com/jonwright/c2py23.git
           pip install meson ninja setuptools auditwheel
           echo "PATH=/opt/python/cp312-cp312/bin:$PATH" >> "$GITHUB_ENV"
 
       - name: Regenerate lib/interface from C sources
         run: |
           python tools/harvester.py --output-dir lib/interface
-          sed -i 's/, __VA_ARGS__)/, ##__VA_ARGS__)/g' lib/interface/c2py_runtime.h
 
       - name: Build .so with meson
         run: |
