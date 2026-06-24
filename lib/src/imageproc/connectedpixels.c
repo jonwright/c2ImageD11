@@ -245,8 +245,8 @@ void blobproperties(float *data, int32_t *labels, int32_t npk, float omega,
             res[i * NPROPERTY + j] = 0.;
         }
         /* Set min to max +1 and vice versa */
-        res[i * NPROPERTY + bb_mn_f] = nf + 1;
-        res[i * NPROPERTY + bb_mn_s] = ns + 1;
+        res[i * NPROPERTY + bb_mn_f] = (double)(nf + 1);
+        res[i * NPROPERTY + bb_mn_s] = (double)(ns + 1);
         res[i * NPROPERTY + bb_mx_f] = -1;
         res[i * NPROPERTY + bb_mx_s] = -1;
         /* All pixels have the same omega in this frame */

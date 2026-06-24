@@ -124,15 +124,15 @@ int verify_rounding(int n) {
 
     for (i = -100; i < 200; i++) {
         v = n + i * 50.0;
-        hfast = conv_double_to_int_fast(v);
-        hslow = conv_double_to_int_safe(v);
+        hfast = (int)conv_double_to_int_fast(v);
+        hslow = (int)conv_double_to_int_safe(v);
         if (hfast != hslow)
             bad++;
     }
     for (i = -100; i < 200; i++) {
         v = -n + i * 50.0;
-        hfast = conv_double_to_int_fast(v);
-        hslow = conv_double_to_int_safe(v);
+        hfast = (int)conv_double_to_int_fast(v);
+        hslow = (int)conv_double_to_int_safe(v);
         if (hfast != hslow)
             bad++;
     }

@@ -1074,7 +1074,7 @@ int tosparse_u32(uint32_t *restrict img, uint8_t *restrict msk,
                  uint32_t *restrict val, float cut, intptr_t ns, intptr_t nf) {
     intptr_t i; int k;
     uint32_t uicut;
-    uicut = cut;
+    uicut = (uint32_t)cut;
     k = 0;
     for (i = 0; i < ns * nf; i++) {
         if (msk[i] && (img[i] > uicut)) {
