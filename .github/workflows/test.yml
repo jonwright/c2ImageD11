@@ -136,7 +136,7 @@ jobs:
 
       - name: Install c2ImageD11 wheel
         run: |
-          pip install dist/*.whl
+          for /f "delims=" %%f in ('dir /b /s dist\*.whl') do pip install "%%f"
 
       - name: Install ImageD11 (binary from PyPI, no deps)
         run: |
