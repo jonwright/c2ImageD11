@@ -84,7 +84,7 @@ functions:
     doc: Connected-component labeling above threshold.
     params: {data: Input float32 2D., labels: Output int32 labels., threshold: Threshold., verbose: Print diagnostics., con8: 8-connected
         (1) or 4-connected (0).}
-    checks: [data.format == 'f', data.ndim == 2, labels.format == 'i', labels.n == data.n]
+    checks: [data.format == 'f', data.ndim == 2, ( labels.format == 'i' or labels.format == 'l' ), labels.n == data.n]
     c_overloads:
     - sig: int connectedpixels(float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t ns,
         intptr_t nf) -> int
@@ -96,8 +96,8 @@ functions:
     doc: Compute blob properties for each labelled object.
     params: {data: Input float32 2D., labels: Input int32 labels., np: Number of objects., results: 'Output array (np, 36).',
       omega: Omega angle., verbose: Print diagnostics.}
-    checks: [data.format == 'f', data.ndim == 2, labels.format == 'i', labels.n == data.n, results.format == 'd', 'results.shape[0]
-        == np', 'results.shape[1] == 36']
+    checks: [data.format == 'f', data.ndim == 2, ( labels.format == 'i' or labels.format == 'l' ), labels.n == data.n, results.format
+        == 'd', 'results.shape[0] == np', 'results.shape[1] == 36']
     gil_release: true
     c_overloads:
     - sig: void blobproperties(float *data, int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf,
@@ -110,9 +110,9 @@ functions:
     doc: Determine overlaps between two frames label images.
     params: {labels1: First frame labels (int32 2D)., npk1: Objects in first frame., results1: First frame properties., labels2: Second
         frame labels., npk2: Objects in second frame., results2: Second frame properties., verbose: Print diagnostics.}
-    checks: [labels1.format == 'i', labels1.ndim == 2, labels2.format == 'i', labels2.n == labels1.n, results1.format == 'd',
-      'results1.shape[0] == npk1', 'results1.shape[1] == 36', results2.format == 'd', 'results2.shape[0] == npk2', 'results2.shape[1]
-        == 36']
+    checks: [( labels1.format == 'i' or labels1.format == 'l' ), labels1.ndim == 2, ( labels2.format == 'i' or labels2.format
+        == 'l' ), labels2.n == labels1.n, results1.format == 'd', 'results1.shape[0] == npk1', 'results1.shape[1] == 36', results2.format
+        == 'd', 'results2.shape[0] == npk2', 'results2.shape[1] == 36']
     c_overloads:
     - sig: int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2, double *res2, int verbose, intptr_t
         ns, intptr_t nf) -> int
@@ -207,7 +207,7 @@ functions:
 
   - py_sig: 'array_histogram(img: buffer, low: float, high: float, hist: buffer) -> void'
     doc: Compute histogram of float array.
-    checks: [img.format == 'f', hist.format == 'i']
+    checks: [img.format == 'f', ( hist.format == 'i' or hist.format == 'l' )]
     c_overloads:
     - sig: void array_histogram(float *img, intptr_t npx, float low, float high, int32_t *hist, intptr_t nhist)
       map: {img: img.ptr, npx: img.n, low: low, high: high, hist: hist.ptr, nhist: hist.n}
@@ -276,8 +276,8 @@ functions:
   - py_sig: 'localmaxlabel(data: buffer, labels: buffer, wrk: buffer) -> int'
     doc: Label each pixel to its local maximum.
     params: {data: Input float32 2D., labels: Output int32 labels., wrk: Temp uint8 workspace.}
-    checks: [data.format == 'f', data.ndim == 2, labels.format == 'i', labels.n == data.n, wrk.format == 'B' or wrk.format ==
-        'b', wrk.n == data.n]
+    checks: [data.format == 'f', data.ndim == 2, ( labels.format == 'i' or labels.format == 'l' ), labels.n == data.n, wrk.format
+        == 'B' or wrk.format == 'b', wrk.n == data.n]
     c_overloads:
     - sig: int localmaxlabel(const float *im, int32_t *lout, uint8_t *l, intptr_t dim0, intptr_t dim1) -> int
       map: {im: data.ptr, lout: labels.ptr, l: wrk.ptr, dim0: 'data.shape[0]', dim1: 'data.shape[1]'}
@@ -291,7 +291,7 @@ functions:
     params: {msk: Input int8 2D mask., i: Output row indices (uint16)., j: Output col indices (uint16)., w: Output per-row counts
         (int32).}
     checks: [msk.format == 'b' or msk.format == 'B', msk.ndim == 2, i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize
-        == 2, j.n == i.n, w.format == 'i', 'w.n == msk.shape[0]']
+        == 2, j.n == i.n, ( w.format == 'i' or w.format == 'l' ), 'w.n == msk.shape[0]']
     c_overloads:
     - sig: int mask_to_coo(int8_t *msk, intptr_t ns, intptr_t nf, uint16_t *i, uint16_t *j, intptr_t nnz, int *nrow) -> int
       map: {msk: msk.ptr, ns: 'msk.shape[0]', nf: 'msk.shape[1]', i: i.ptr, j: j.ptr, nnz: i.n, nrow: w.ptr}
@@ -308,7 +308,7 @@ functions:
     doc: Connected-component labeling on sparse image.
     params: {v: Values (float32)., i: Rows (uint16)., j: Cols (uint16)., threshold: Threshold., labels: Output labels (int32).}
     checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
-      labels.format == 'i', labels.n == i.n]
+      ( labels.format == 'i' or labels.format == 'l' ), labels.n == i.n]
     c_overloads:
     - sig: int sparse_connectedpixels(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) ->
         int
@@ -320,7 +320,7 @@ functions:
     params: {v: Values (float32)., i: Rows (uint16)., j: Cols (uint16)., th: Threshold., lbl: Output labels., Z: Temp buffer.,
       ni: Rows., nj: Cols.}
     checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
-      lbl.format == 'i', lbl.n == i.n, Z.format == 'i']
+      ( lbl.format == 'i' or lbl.format == 'l' ), lbl.n == i.n, ( Z.format == 'i' or Z.format == 'l' )]
     c_overloads:
     - sig: int sparse_connectedpixels_splat(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float threshold, int32_t *labels,
         int32_t *Z, intptr_t imax, intptr_t jmax) -> int
@@ -331,7 +331,8 @@ functions:
     params: {v: Values (float32)., i: Rows (uint16)., j: Cols (uint16)., labels: Labels (int32)., npk: Number of objects., results: 'Output
         (npk, 11).'}
     checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
-      labels.format == 'i', labels.n == i.n, results.format == 'd', 'results.shape[0] == npk', 'results.shape[1] == 11']
+      ( labels.format == 'i' or labels.format == 'l' ), labels.n == i.n, results.format == 'd', 'results.shape[0] == npk', 'results.shape[1]
+        == 11']
     c_overloads:
     - sig: void sparse_blob2Dproperties(float *data, uint16_t *i, uint16_t *j, intptr_t nnz, int32_t *labels, double *res, int32_t
         npk)
@@ -351,7 +352,8 @@ functions:
     params: {v: Values (float32)., i: Rows (uint16)., j: Cols (uint16)., MV: Temp float32., iMV: Temp int32., labels: Output
         labels (int32).}
     checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
-      MV.format == 'f', MV.n == i.n, iMV.format == 'i', iMV.n == i.n, labels.format == 'i', labels.n == i.n]
+      MV.format == 'f', MV.n == i.n, ( iMV.format == 'i' or iMV.format == 'l' ), iMV.n == i.n, ( labels.format == 'i' or labels.format
+        == 'l' ), labels.n == i.n]
     c_overloads:
     - sig: int sparse_localmaxlabel(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV, int32_t *labels)
         -> int
@@ -361,9 +363,9 @@ functions:
     doc: Find overlapping pixels between two sparse arrays.
     params: {i1: Rows 1 (uint16)., j1: Cols 1 (uint16)., k1: Output indices into 1., i2: Rows 2 (uint16)., j2: Cols 2 (uint16).,
       k2: Output indices into 2.}
-    checks: [i1.format == 'H' or i1.itemsize == 2, j1.format == 'H' or j1.itemsize == 2, j1.n == i1.n, k1.format == 'i', k1.n
-        == i1.n, i2.format == 'H' or i2.itemsize == 2, j2.format == 'H' or j2.itemsize == 2, j2.n == i2.n, k2.format == 'i',
-      k2.n == i2.n]
+    checks: [i1.format == 'H' or i1.itemsize == 2, j1.format == 'H' or j1.itemsize == 2, j1.n == i1.n, k1.format == 'i' or k1.format
+        == 'l', k1.n == i1.n, i2.format == 'H' or i2.itemsize == 2, j2.format == 'H' or j2.itemsize == 2, j2.n == i2.n, k2.format
+        == 'i' or k2.format == 'l', k2.n == i2.n]
     c_overloads:
     - sig: int sparse_overlaps(uint16_t *i1, uint16_t *j1, int *k1, intptr_t nnz1, uint16_t *i2, uint16_t *j2, int *k2, intptr_t
         nnz2) -> int
@@ -372,8 +374,9 @@ functions:
   - py_sig: 'compress_duplicates(i: buffer, j: buffer, oi: buffer, oj: buffer, tmp: buffer) -> int'
     doc: Remove duplicate (i,j) pairs via counting sort.
     params: {i: I/O int32 col 0., j: I/O int32 col 1., oi: Output counts., oj: Temp., tmp: Temp.}
-    checks: [i.format == 'i', j.format == 'i', j.n == i.n, oi.format == 'i', oi.n == i.n, oj.format == 'i', oj.n == i.n, tmp.format
-        == 'i']
+    checks: [( i.format == 'i' or i.format == 'l' ), ( j.format == 'i' or j.format == 'l' ), j.n == i.n, ( oi.format == 'i'
+        or oi.format == 'l' ), oi.n == i.n, ( oj.format == 'i' or oj.format == 'l' ), oj.n == i.n, ( tmp.format == 'i' or tmp.format
+        == 'l' )]
     c_overloads:
     - sig: int compress_duplicates(int *i, int *j, int *oi, int *oj, int *tmp, intptr_t n, intptr_t nt) -> int
       map: {i: i.ptr, j: j.ptr, oi: oi.ptr, oj: oj.ptr, tmp: tmp.ptr, n: i.n, nt: tmp.n}
@@ -384,8 +387,9 @@ functions:
     params: {row1: Rows 1 (uint16)., col1: Cols 1 (uint16)., labels1: Labels 1 (int32)., row2: Rows 2 (uint16)., col2: Cols
         2 (uint16)., labels2: Labels 2 (int32)., mat: Output overlap matrix (int32)., results: Output triples (int32).}
     checks: [row1.format == 'H' or row1.itemsize == 2, col1.format == 'H' or col1.itemsize == 2, col1.n == row1.n, labels1.format
-        == 'i', labels1.n == row1.n, row2.format == 'H' or row2.itemsize == 2, col2.format == 'H' or col2.itemsize == 2, col2.n
-        == row2.n, labels2.format == 'i', labels2.n == row2.n, mat.format == 'i', mat.ndim == 2, results.format == 'i']
+        == 'i' or labels1.format == 'l', labels1.n == row1.n, row2.format == 'H' or row2.itemsize == 2, col2.format == 'H' or
+        col2.itemsize == 2, col2.n == row2.n, labels2.format == 'i' or labels2.format == 'l', labels2.n == row2.n, ( mat.format
+        == 'i' or mat.format == 'l' ), mat.ndim == 2, ( results.format == 'i' or results.format == 'l' )]
     c_overloads:
     - sig: int coverlaps(uint16_t *row1, uint16_t *col1, int *labels1, intptr_t nnz1, uint16_t *row2, uint16_t *col2, int *labels2,
         intptr_t nnz2, int *mat, intptr_t npk1, intptr_t npk2, int *results) -> int
@@ -529,7 +533,7 @@ functions:
     doc: closest_vec finds the closest neighbors for each row of X ignoring the self.
     params: {x: '2D array of feature vectors, shape (nv, dim). Each row is a vector.', ic: 'Output array of shape (nv,). For
         each row i, ic[i] = index j of the nearest neighbor (j != i).'}
-    checks: [x.format == 'd', x.ndim == 2, 'x.shape[1] >= 1', ic.format == 'i', 'ic.n == x.shape[0]']
+    checks: [x.format == 'd', x.ndim == 2, 'x.shape[1] >= 1', ( ic.format == 'i' or ic.format == 'l' ), 'ic.n == x.shape[0]']
     c_overloads:
     - sig: void closest_vec(double *x, intptr_t dim, intptr_t nv, int *ic)
       map: {x: x.ptr, dim: 'x.shape[1]', nv: 'x.shape[0]', ic: ic.ptr}
@@ -573,8 +577,8 @@ functions:
     params: {ubi: Orientation matrix (9-element flattened double)., gv: 'G-vectors array, shape (ng, 3) flattened.', tol: Matching
         tolerance., drlv2: Input/output array (ng). Current best squared residuals per peak., labels: Input/output array (ng).
         Current grain labels per peak., label: Grain label assigned to peaks that match this UBI.}
-    checks: [ubi.format == 'd', ubi.n == 9, gv.format == 'd', drlv2.format == 'd', 'drlv2.n == gv.shape[0]', labels.format ==
-        'i', 'labels.n == gv.shape[0]']
+    checks: [ubi.format == 'd', ubi.n == 9, gv.format == 'd', drlv2.format == 'd', 'drlv2.n == gv.shape[0]', ( labels.format
+        == 'i' or labels.format == 'l' ), 'labels.n == gv.shape[0]']
     gil_release: true
     c_overloads:
     - when: ubi.format == 'd' and gv.format == 'd'
@@ -586,7 +590,8 @@ functions:
     doc: refine_assigned fits a ubi matrix to a set of g-vectors and assignments in labels.
     params: {ubi: Orientation matrix (9-element flattened double)., gv: 'G-vectors array, shape (ng, 3) flattened.', labels: Peak-to-grain
         assignments (ng ints)., label: Grain label to refine.}
-    checks: [ubi.format == 'd', ubi.n == 9, gv.format == 'd', labels.format == 'i', 'labels.n == gv.shape[0]']
+    checks: [ubi.format == 'd', ubi.n == 9, gv.format == 'd', ( labels.format == 'i' or labels.format == 'l' ), 'labels.n ==
+        gv.shape[0]']
     c_overloads:
     - sig: void refine_assigned(double ubi[3][3], double gv[][3], int *labels, int label, int *npk, double *drlv2, intptr_t
         ng)
@@ -608,10 +613,10 @@ functions:
     doc: 'put_incr32 does the simple loop: data[ind] += vals, 32 bit addressing'
     params: {data: Destination array (float32)., ind: Indices array (int32)., vals: Values array (float32) to add., boundscheck: 'If
         non-zero, enables bounds checking on ind.'}
-    checks: [data.format == 'f', ind.format == 'i', ind.n == vals.n, vals.format == 'f']
+    checks: [data.format == 'f', ( ind.format == 'i' or ind.format == 'l' ), ind.n == vals.n, vals.format == 'f']
     gil_release: true
     c_overloads:
-    - when: data.format == 'f' and vals.format == 'f' and ind.format == 'i'
+    - when: data.format == 'f' and vals.format == 'f' and (ind.format == 'i' or ind.format == 'l')
       sig: void put_incr32(float *data, const int32_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m)
       map: {data: data.ptr, ind: ind.ptr, vals: vals.ptr, boundscheck: boundscheck, n: ind.n, m: data.n}
 
@@ -620,8 +625,9 @@ functions:
     params: {ar: Array of values to cluster., order: Permutation that sorts ar ascending., tol: Distance tolerance for cluster
         membership., nclusters: 'Output: number of clusters found.', ids: 'Output: cluster id for each element.', avgs: 'Output:
         average value of each cluster.'}
-    checks: [ar.format == 'd', order.format == 'i', order.n == ar.n, nclusters.format == 'i', nclusters.n == 1, ids.format ==
-        'i', ids.n == ar.n, avgs.format == 'd', avgs.n == ar.n]
+    checks: [ar.format == 'd', ( order.format == 'i' or order.format == 'l' ), order.n == ar.n, ( nclusters.format == 'i' or
+        nclusters.format == 'l' ), nclusters.n == 1, ( ids.format == 'i' or ids.format == 'l' ), ids.n == ar.n, avgs.format
+        == 'd', avgs.n == ar.n]
     c_overloads:
     - sig: void cluster1d(double *ar, intptr_t n, int *order, double tol, int *nclusters, int *ids, double *avgs)
       map: {ar: ar.ptr, n: ar.n, order: order.ptr, tol: tol, nclusters: nclusters.ptr, ids: ids.ptr, avgs: avgs.ptr}
@@ -674,7 +680,7 @@ functions:
   - py_sig: 'count_shared(pi: buffer, pj: buffer) -> int'
     doc: count_shared takes two sorted arrays and counts collisions.
     params: {pi: First sorted array of integer labels., pj: Second sorted array of integer labels.}
-    checks: [pi.format == 'i', pj.format == 'i']
+    checks: [( pi.format == 'i' or pi.format == 'l' ), ( pj.format == 'i' or pj.format == 'l' )]
     c_overloads:
     - sig: int count_shared(int *pi, intptr_t ni, int *pj, intptr_t nj) -> int
       map: {pi: pi.ptr, ni: pi.n, pj: pj.ptr, nj: pj.n}

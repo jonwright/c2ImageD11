@@ -471,7 +471,7 @@ F2PY_WRAPPER_END */
 /* C2PY_BEGIN
  * {"py_sig": "array_histogram(img: buffer, low: float, high: float, hist: buffer) -> void",
  *  "doc": "Compute histogram of float array.",
- *  "checks": ["img.format == 'f'", "hist.format == 'i'"],
+ *  "checks": ["img.format == 'f'", "( hist.format == 'i' or hist.format == 'l' )"],
  *  "c_overloads": [{"sig": "void array_histogram(float *img, intptr_t npx, float low, float high, int32_t *hist, intptr_t nhist)",
  *      "map": {"img": "img.ptr", "npx": "img.n", "low": "low", "high": "high", "hist": "hist.ptr", "nhist": "hist.n"}}]}
 C2PY_END */

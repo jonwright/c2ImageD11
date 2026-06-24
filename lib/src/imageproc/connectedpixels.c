@@ -68,7 +68,7 @@ DLL_LOCAL
  *  "doc": "Connected-component labeling above threshold.",
  *  "params": {"data": "Input float32 2D.", "labels": "Output int32 labels.", "threshold": "Threshold.",
  *      "verbose": "Print diagnostics.", "con8": "8-connected (1) or 4-connected (0)."},
- *  "checks": ["data.format == 'f'", "data.ndim == 2", "labels.format == 'i'", "labels.n == data.n"],
+ *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n"],
  *  "c_overloads": [{"sig": "int connectedpixels(float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
  *      "map": {"data": "data.ptr", "labels": "labels.ptr", "threshold": "threshold", "verbose": "verbose", "eightconnected": "con8", "ns": "data.shape[0]", "nf": "data.shape[1]"}}]}
 C2PY_END */
@@ -225,7 +225,7 @@ F2PY_WRAPPER_END */
  *  "doc": "Compute blob properties for each labelled object.",
  *  "params": {"data": "Input float32 2D.", "labels": "Input int32 labels.", "np": "Number of objects.",
  *      "results": "Output array (np, 36).", "omega": "Omega angle.", "verbose": "Print diagnostics."},
- *  "checks": ["data.format == 'f'", "data.ndim == 2", "labels.format == 'i'", "labels.n == data.n",
+ *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n",
  *      "results.format == 'd'", "results.shape[0] == np", "results.shape[1] == 36"],
  *  "gil_release": true,
  *  "c_overloads": [{"sig": "void blobproperties(float *data, int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf, double *res)",
@@ -309,7 +309,7 @@ F2PY_WRAPPER_END */
  *  "params": {"labels1": "First frame labels (int32 2D).", "npk1": "Objects in first frame.",
  *      "results1": "First frame properties.", "labels2": "Second frame labels.", "npk2": "Objects in second frame.",
  *      "results2": "Second frame properties.", "verbose": "Print diagnostics."},
- *  "checks": ["labels1.format == 'i'", "labels1.ndim == 2", "labels2.format == 'i'", "labels2.n == labels1.n",
+ *  "checks": ["( labels1.format == 'i' or labels1.format == 'l' )", "labels1.ndim == 2", "( labels2.format == 'i' or labels2.format == 'l' )", "labels2.n == labels1.n",
  *      "results1.format == 'd'", "results1.shape[0] == npk1", "results1.shape[1] == 36",
  *      "results2.format == 'd'", "results2.shape[0] == npk2", "results2.shape[1] == 36"],
  *  "c_overloads": [{"sig": "int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2, double *res2, int verbose, intptr_t ns, intptr_t nf) -> int",

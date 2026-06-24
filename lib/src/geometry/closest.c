@@ -165,7 +165,7 @@ F2PY_WRAPPER_END */
  *         "x.format == 'd'",
  *         "x.ndim == 2",
  *         "x.shape[1] >= 1",
- *         "ic.format == 'i'",
+ *         "( ic.format == 'i' or ic.format == 'l' )",
  *         "ic.n == x.shape[0]",
  *     ],
  *     "c_overloads": [{
@@ -493,7 +493,7 @@ F2PY_WRAPPER_END */
  *         "gv.format == 'd'",
  *         "drlv2.format == 'd'",
  *         "drlv2.n == gv.shape[0]",
- *         "labels.format == 'i'",
+ *         "( labels.format == 'i' or labels.format == 'l' )",
  *         "labels.n == gv.shape[0]",
  *     ],
  *     "gil_release": true,
@@ -569,7 +569,7 @@ F2PY_WRAPPER_END */
  *         "ubi.format == 'd'",
  *         "ubi.n == 9",
  *         "gv.format == 'd'",
- *         "labels.format == 'i'",
+ *         "( labels.format == 'i' or labels.format == 'l' )",
  *         "labels.n == gv.shape[0]",
  *     ],
  *     "c_overloads": [{
@@ -730,13 +730,13 @@ F2PY_WRAPPER_END */
  *     },
  *     "checks": [
  *         "data.format == 'f'",
- *         "ind.format == 'i'",
+ *         "( ind.format == 'i' or ind.format == 'l' )",
  *         "ind.n == vals.n",
  *         "vals.format == 'f'",
  *     ],
  *     "gil_release": true,
  *     "c_overloads": [{
- *         "when": "data.format == 'f' and vals.format == 'f' and ind.format == 'i'",
+ *         "when": "data.format == 'f' and vals.format == 'f' and (ind.format == 'i' or ind.format == 'l')",
  *         "sig": "void put_incr32(float *data, const int32_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m)",
  *         "map": {"data": "data.ptr", "ind": "ind.ptr", "vals": "vals.ptr", "boundscheck": "boundscheck", "n": "ind.n", "m": "data.n"},
  *     }],
@@ -792,11 +792,11 @@ F2PY_WRAPPER_END */
  *     },
  *     "checks": [
  *         "ar.format == 'd'",
- *         "order.format == 'i'",
+ *         "( order.format == 'i' or order.format == 'l' )",
  *         "order.n == ar.n",
- *         "nclusters.format == 'i'",
+ *         "( nclusters.format == 'i' or nclusters.format == 'l' )",
  *         "nclusters.n == 1",
- *         "ids.format == 'i'",
+ *         "( ids.format == 'i' or ids.format == 'l' )",
  *         "ids.n == ar.n",
  *         "avgs.format == 'd'",
  *         "avgs.n == ar.n",
@@ -1269,8 +1269,8 @@ F2PY_WRAPPER_END */
  *         "pj": "Second sorted array of integer labels.",
  *     },
  *     "checks": [
- *         "pi.format == 'i'",
- *         "pj.format == 'i'",
+ *         "( pi.format == 'i' or pi.format == 'l' )",
+ *         "( pj.format == 'i' or pj.format == 'l' )",
  *     ],
  *     "c_overloads": [{
  *         "sig": "int count_shared(int *pi, intptr_t ni, int *pj, intptr_t nj) -> int",

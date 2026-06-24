@@ -98,7 +98,7 @@ F2PY_WRAPPER_END */
  * {"py_sig": "localmaxlabel(data: buffer, labels: buffer, wrk: buffer) -> int",
  *  "doc": "Label each pixel to its local maximum.",
  *  "params": {"data": "Input float32 2D.", "labels": "Output int32 labels.", "wrk": "Temp uint8 workspace."},
- *  "checks": ["data.format == 'f'", "data.ndim == 2", "labels.format == 'i'", "labels.n == data.n",
+ *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n",
  *      "wrk.format == 'B' or wrk.format == 'b'", "wrk.n == data.n"],
  *  "c_overloads": [{"sig": "int localmaxlabel(const float *im, int32_t *lout, uint8_t *l, intptr_t dim0, intptr_t dim1) -> int",
  *      "map": {"im": "data.ptr", "lout": "labels.ptr", "l": "wrk.ptr", "dim0": "data.shape[0]", "dim1": "data.shape[1]"}}]}

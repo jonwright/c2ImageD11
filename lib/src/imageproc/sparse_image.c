@@ -36,7 +36,7 @@ F2PY_WRAPPER_END */
  *      "j": "Output col indices (uint16).", "w": "Output per-row counts (int32)."},
  *  "checks": ["msk.format == 'b' or msk.format == 'B'", "msk.ndim == 2",
  *      "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2", "j.n == i.n",
- *      "w.format == 'i'", "w.n == msk.shape[0]"],
+ *      "( w.format == 'i' or w.format == 'l' )", "w.n == msk.shape[0]"],
  *  "c_overloads": [{"sig": "int mask_to_coo(int8_t *msk, intptr_t ns, intptr_t nf, uint16_t *i, uint16_t *j, intptr_t nnz, int *nrow) -> int",
  *      "map": {"msk": "msk.ptr", "ns": "msk.shape[0]", "nf": "msk.shape[1]", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "nrow": "w.ptr"}}]}
 C2PY_END */
@@ -186,7 +186,7 @@ F2PY_WRAPPER_END */
  *  "doc": "Connected-component labeling on sparse image.",
  *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).", "threshold": "Threshold.", "labels": "Output labels (int32)."},
  *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
- *      "j.n == i.n", "v.n == i.n", "labels.format == 'i'", "labels.n == i.n"],
+ *      "j.n == i.n", "v.n == i.n", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == i.n"],
  *  "c_overloads": [{"sig": "int sparse_connectedpixels(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) -> int",
  *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "threshold": "threshold", "labels": "labels.ptr"}}]}
 C2PY_END */
@@ -302,7 +302,7 @@ F2PY_WRAPPER_END */
  *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).",
  *      "th": "Threshold.", "lbl": "Output labels.", "Z": "Temp buffer.", "ni": "Rows.", "nj": "Cols."},
  *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
- *      "j.n == i.n", "v.n == i.n", "lbl.format == 'i'", "lbl.n == i.n", "Z.format == 'i'"],
+ *      "j.n == i.n", "v.n == i.n", "( lbl.format == 'i' or lbl.format == 'l' )", "lbl.n == i.n", "( Z.format == 'i' or Z.format == 'l' )"],
  *  "c_overloads": [{"sig": "int sparse_connectedpixels_splat(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float threshold, int32_t *labels, int32_t *Z, intptr_t imax, intptr_t jmax) -> int",
  *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "threshold": "th", "labels": "lbl.ptr", "Z": "Z.ptr", "imax": "ni", "jmax": "nj"}}]}
 C2PY_END */
@@ -447,7 +447,7 @@ F2PY_WRAPPER_END */
  *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).",
  *      "labels": "Labels (int32).", "npk": "Number of objects.", "results": "Output (npk, 11)."},
  *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
- *      "j.n == i.n", "v.n == i.n", "labels.format == 'i'", "labels.n == i.n",
+ *      "j.n == i.n", "v.n == i.n", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == i.n",
  *      "results.format == 'd'", "results.shape[0] == npk", "results.shape[1] == 11"],
  *  "c_overloads": [{"sig": "void sparse_blob2Dproperties(float *data, uint16_t *i, uint16_t *j, intptr_t nnz, int32_t *labels, double *res, int32_t npk)",
  *      "map": {"data": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "labels": "labels.ptr", "res": "results.ptr", "npk": "npk"}}]}
@@ -586,7 +586,7 @@ F2PY_WRAPPER_END */
  *      "MV": "Temp float32.", "iMV": "Temp int32.", "labels": "Output labels (int32)."},
  *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
  *      "j.n == i.n", "v.n == i.n", "MV.format == 'f'", "MV.n == i.n",
- *      "iMV.format == 'i'", "iMV.n == i.n", "labels.format == 'i'", "labels.n == i.n"],
+ *      "( iMV.format == 'i' or iMV.format == 'l' )", "iMV.n == i.n", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == i.n"],
  *  "c_overloads": [{"sig": "int sparse_localmaxlabel(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV, int32_t *labels) -> int",
  *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "MV": "MV.ptr", "iMV": "iMV.ptr", "labels": "labels.ptr"}}]}
 C2PY_END */
@@ -757,9 +757,9 @@ F2PY_WRAPPER_END */
  *  "params": {"i1": "Rows 1 (uint16).", "j1": "Cols 1 (uint16).", "k1": "Output indices into 1.",
  *      "i2": "Rows 2 (uint16).", "j2": "Cols 2 (uint16).", "k2": "Output indices into 2."},
  *  "checks": ["i1.format == 'H' or i1.itemsize == 2", "j1.format == 'H' or j1.itemsize == 2", "j1.n == i1.n",
- *      "k1.format == 'i'", "k1.n == i1.n",
+ *      "k1.format == 'i' or k1.format == 'l'", "k1.n == i1.n",
  *      "i2.format == 'H' or i2.itemsize == 2", "j2.format == 'H' or j2.itemsize == 2", "j2.n == i2.n",
- *      "k2.format == 'i'", "k2.n == i2.n"],
+ *      "k2.format == 'i' or k2.format == 'l'", "k2.n == i2.n"],
  *  "c_overloads": [{"sig": "int sparse_overlaps(uint16_t *i1, uint16_t *j1, int *k1, intptr_t nnz1, uint16_t *i2, uint16_t *j2, int *k2, intptr_t nnz2) -> int",
  *      "map": {"i1": "i1.ptr", "j1": "j1.ptr", "k1": "k1.ptr", "nnz1": "i1.n", "i2": "i2.ptr", "j2": "j2.ptr", "k2": "k2.ptr", "nnz2": "i2.n"}}]}
 C2PY_END */
@@ -827,8 +827,8 @@ F2PY_WRAPPER_END */
  * {"py_sig": "compress_duplicates(i: buffer, j: buffer, oi: buffer, oj: buffer, tmp: buffer) -> int",
  *  "doc": "Remove duplicate (i,j) pairs via counting sort.",
  *  "params": {"i": "I/O int32 col 0.", "j": "I/O int32 col 1.", "oi": "Output counts.", "oj": "Temp.", "tmp": "Temp."},
- *  "checks": ["i.format == 'i'", "j.format == 'i'", "j.n == i.n",
- *      "oi.format == 'i'", "oi.n == i.n", "oj.format == 'i'", "oj.n == i.n", "tmp.format == 'i'"],
+ *  "checks": ["( i.format == 'i' or i.format == 'l' )", "( j.format == 'i' or j.format == 'l' )", "j.n == i.n",
+ *      "( oi.format == 'i' or oi.format == 'l' )", "oi.n == i.n", "( oj.format == 'i' or oj.format == 'l' )", "oj.n == i.n", "( tmp.format == 'i' or tmp.format == 'l' )"],
  *  "c_overloads": [{"sig": "int compress_duplicates(int *i, int *j, int *oi, int *oj, int *tmp, intptr_t n, intptr_t nt) -> int",
  *      "map": {"i": "i.ptr", "j": "j.ptr", "oi": "oi.ptr", "oj": "oj.ptr", "tmp": "tmp.ptr", "n": "i.n", "nt": "tmp.n"}}]}
 C2PY_END */
@@ -942,10 +942,10 @@ F2PY_WRAPPER_END */
  *      "row2": "Rows 2 (uint16).", "col2": "Cols 2 (uint16).", "labels2": "Labels 2 (int32).",
  *      "mat": "Output overlap matrix (int32).", "results": "Output triples (int32)."},
  *  "checks": ["row1.format == 'H' or row1.itemsize == 2", "col1.format == 'H' or col1.itemsize == 2", "col1.n == row1.n",
- *      "labels1.format == 'i'", "labels1.n == row1.n",
+ *      "labels1.format == 'i' or labels1.format == 'l'", "labels1.n == row1.n",
  *      "row2.format == 'H' or row2.itemsize == 2", "col2.format == 'H' or col2.itemsize == 2", "col2.n == row2.n",
- *      "labels2.format == 'i'", "labels2.n == row2.n",
- *      "mat.format == 'i'", "mat.ndim == 2", "results.format == 'i'"],
+ *      "labels2.format == 'i' or labels2.format == 'l'", "labels2.n == row2.n",
+ *      "( mat.format == 'i' or mat.format == 'l' )", "mat.ndim == 2", "( results.format == 'i' or results.format == 'l' )"],
  *  "c_overloads": [{"sig": "int coverlaps(uint16_t *row1, uint16_t *col1, int *labels1, intptr_t nnz1, uint16_t *row2, uint16_t *col2, int *labels2, intptr_t nnz2, int *mat, intptr_t npk1, intptr_t npk2, int *results) -> int",
  *      "map": {"row1": "row1.ptr", "col1": "col1.ptr", "labels1": "labels1.ptr", "nnz1": "row1.n",
  *          "row2": "row2.ptr", "col2": "col2.ptr", "labels2": "labels2.ptr", "nnz2": "row2.n",
