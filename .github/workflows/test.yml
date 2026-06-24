@@ -148,4 +148,5 @@ jobs:
 
       - name: Run tests
         run: |
+          move %GITHUB_WORKSPACE%\c2ImageD11\__init__.py %GITHUB_WORKSPACE%\c2ImageD11\__init__.py.bak
           cd %TEMP% && python -m pytest %GITHUB_WORKSPACE%\tests\ -v
