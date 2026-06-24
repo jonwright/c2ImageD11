@@ -651,19 +651,6 @@ static inline void c2py_perf_record_call(c2py_perf_t *p,
     }
 }
 
-/* Zero a c2py_perf_t struct, resetting all counters to their
- * initial state.  Safe to call with timing enabled or disabled. */
-static inline void c2py_perf_reset(c2py_perf_t *p)
-{
-    if (p != NULL) {
-        memset(p, 0, sizeof(c2py_perf_t));
-        p->variant = -1;       /* unset */
-        p->group_idx = -1;     /* flat */
-        p->t_c_min = UINT64_MAX;
-        p->t_wrap_min = UINT64_MAX;
-    }
-}
-
 /* ------------------------------------------------------------------ */
 /* CPU feature probing (for user extensibility, callable from         */
 /* __attribute__((constructor)) functions)                            */
