@@ -71,8 +71,18 @@ def blobproperties(data, labels, npk, omega=0.0, verbose=0):
     _blobproperties_c(data, labels, npk, results, omega, verbose)
     return results
 
-# Replace raw C function on submodule with allocation wrapper
+_sparse_blob2Dproperties_c = _mod.sparse_blob2Dproperties
+
+def sparse_blob2Dproperties(v, i, j, labels, npk):
+    """Allocate results and call C sparse_blob2Dproperties, matching f2py convention."""
+    import numpy as np
+    results = np.zeros((npk, 11), dtype=np.float64)
+    _sparse_blob2Dproperties_c(v, i, j, labels, npk, results)
+    return results
+
+# Replace raw C functions on submodule with allocation wrappers
 _mod.blobproperties = blobproperties
+_mod.sparse_blob2Dproperties = sparse_blob2Dproperties
 
 
 # ---------------------------------------------------------------------------
