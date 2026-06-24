@@ -92,19 +92,18 @@ jobs:
         run: |
           C:\Python27\python.exe -m pytest tests\test_buffer.py -v
 
-      - name: Build ImageD11 1.9.8 from source
+      - name: Install VC++ 2008 redist
         shell: cmd
         run: |
-          C:\Python27\python.exe -m pip download --no-deps --no-binary ImageD11 ImageD11==1.9.8 -d %TEMP%\imaged11_src
-          mkdir %TEMP%\imaged11_src\extract 2>nul
-          tar -xf %TEMP%\imaged11_src\ImageD11-1.9.8.tar.gz -C %TEMP%\imaged11_src\extract
-          for /f "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath') do call "%%i\VC\Auxiliary\Build\vcvars64.bat" >nul
-          cd /d %TEMP%\imaged11_src\extract\ImageD11-1.9.8
-          C:\Python27\python.exe setup.py build_ext --inplace
+          choco install vcredist2008 -y --limit-output
+
+      - name: Install ImageD11 1.9.8 (cp27 wheel)
+        shell: cmd
+        run: |
+          C:\Python27\python.exe -m pip install ImageD11==1.9.8 --only-binary :all: --no-deps
 
       - name: Run equivalence tests
         shell: cmd
         run: |
-          set PYTHONPATH=%TEMP%\imaged11_src\extract\ImageD11-1.9.8;%PYTHONPATH%
           C:\Python27\python.exe -m pytest tests\test_equivalence.py -v
         continue-on-error: true
