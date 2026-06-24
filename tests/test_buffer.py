@@ -109,3 +109,43 @@ class TestQuickorient:
         ubi_copy = ubi.copy()
         ci.quickorient(ubi, bt)
         assert np.isfinite(ubi).all()
+
+
+# ============================================================
+# tosparse with boolean mask (regression test for issue #6)
+# ============================================================
+
+class TestToSparseBoolMask:
+    def test_f32_bool_mask(self):
+        """Boolean masks should be accepted (format '?')."""
+        ns, nf = 8, 8
+        img = np.random.randn(ns, nf).astype(np.float32) + 5
+        msk = np.ones((ns, nf), dtype=bool)
+        row = np.zeros((ns, nf), dtype=np.uint16)
+        col = np.zeros((ns, nf), dtype=np.uint16)
+        val = np.zeros((ns, nf), dtype=np.float32)
+        nnz = ci.tosparse_f32(img, msk, row, col, val, 0.0)
+        assert nnz >= 0
+        assert nnz == ns * nf
+
+    def test_u16_bool_mask(self):
+        ns, nf = 8, 8
+        img = np.random.randint(1, 256, (ns, nf), dtype=np.uint16)
+        msk = np.ones((ns, nf), dtype=bool)
+        row = np.zeros((ns, nf), dtype=np.uint16)
+        col = np.zeros((ns, nf), dtype=np.uint16)
+        val = np.zeros((ns, nf), dtype=np.uint16)
+        nnz = ci.tosparse_u16(img, msk, row, col, val, 0)
+        assert nnz >= 0
+        assert nnz == ns * nf
+
+    def test_u32_bool_mask(self):
+        ns, nf = 8, 8
+        img = np.random.randint(1, 256, (ns, nf), dtype=np.uint32)
+        msk = np.ones((ns, nf), dtype=bool)
+        row = np.zeros((ns, nf), dtype=np.uint16)
+        col = np.zeros((ns, nf), dtype=np.uint16)
+        val = np.zeros((ns, nf), dtype=np.uint32)
+        nnz = ci.tosparse_u32(img, msk, row, col, val, 0.0)
+        assert nnz >= 0
+        assert nnz == ns * nf
