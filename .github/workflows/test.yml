@@ -19,6 +19,7 @@ jobs:
       - name: Regenerate lib/interface from C sources
         run: |
           python tools/harvester.py --output-dir lib/interface
+          sed -i 's/, __VA_ARGS__)/, ##__VA_ARGS__)/g' lib/interface/c2py_runtime.h
 
       - name: Build .so with meson
         run: |
