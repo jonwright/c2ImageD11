@@ -12,14 +12,13 @@ jobs:
       - name: Setup Python and install build deps
         run: |
           export PATH="/opt/python/cp312-cp312/bin:$PATH"
-          pip install git+https://github.com/jonwright/c2py23.git@e22aabf
+          pip install git+https://github.com/jonwright/c2py23.git
           pip install meson ninja setuptools auditwheel
           echo "PATH=/opt/python/cp312-cp312/bin:$PATH" >> "$GITHUB_ENV"
 
       - name: Regenerate lib/interface from C sources
         run: |
           python tools/harvester.py --output-dir lib/interface
-          sed -i 's/, __VA_ARGS__)/, ##__VA_ARGS__)/g' lib/interface/c2py_runtime.h
 
       - name: Build .so with meson
         run: |
@@ -38,7 +37,7 @@ jobs:
           name: dist-linux
           path: dist/
 
-  linux-test:
+  linux-test-matrix:
     needs: [linux-wheel]
     strategy:
       fail-fast: false
@@ -111,7 +110,7 @@ jobs:
           name: dist-windows
           path: dist/
 
-  windows-test:
+  windows-test-matrix:
     needs: [windows-wheel]
     strategy:
       fail-fast: false
@@ -151,3 +150,23 @@ jobs:
         run: |
           move %GITHUB_WORKSPACE%\c2ImageD11\__init__.py %GITHUB_WORKSPACE%\c2ImageD11\__init__.py.bak
           cd %TEMP% && python -m pytest %GITHUB_WORKSPACE%\tests\ -v
+
+  linux-test:
+    needs: [linux-test-matrix]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all matrix jobs passed
+        run: |
+          [ "${{ needs.linux-test-matrix.result }}" = "success" ] || \
+            { echo "FAIL: some linux-test-matrix jobs failed (${{ needs.linux-test-matrix.result }})"; exit 1; }
+
+  windows-test:
+    needs: [windows-test-matrix]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all matrix jobs passed
+        run: |
+          [ "${{ needs.windows-test-matrix.result }}" = "success" ] || \
+            { echo "FAIL: some windows-test-matrix jobs failed (${{ needs.windows-test-matrix.result }})"; exit 1; }

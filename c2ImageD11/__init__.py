@@ -47,10 +47,14 @@ if sys.version_info[0] >= 3:
     _spec = importlib.util.spec_from_file_location(
         "c2ImageD11._cImageD11", _lib_path)
     _mod = importlib.util.module_from_spec(_spec)
+    sys.modules["c2ImageD11._cImageD11"] = _mod
     _spec.loader.exec_module(_mod)
 else:
     import imp
     _mod = imp.load_dynamic("c2ImageD11._cImageD11", _lib_path)
+
+# Make _cImageD11 importable as c2ImageD11._cImageD11
+sys.modules[__name__]._cImageD11 = _mod
 
 # Re-export all non-private names from the loaded module
 for _k in dir(_mod):

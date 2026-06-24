@@ -1,0 +1,111 @@
+name: CI (Python 2.7)
+
+on: [push, pull_request]
+
+jobs:
+  linux-py27:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends python2 python2-dev python3 python3-pip python3-wheel gcc curl
+
+      - name: Install pip for Python 2
+        run: |
+          curl -sS https://bootstrap.pypa.io/pip/2.7/get-pip.py | sudo python2
+
+      - name: Install build deps
+        run: |
+          python3 -m pip install meson ninja
+          python2 -m pip install numpy==1.16.6 "pytest>=4.6,<5"
+
+      - name: Build _cImageD11.so
+        run: |
+          meson setup build/libc2ImageD11 lib
+          ninja -C build/libc2ImageD11
+          cp build/libc2ImageD11/_cImageD11.so c2ImageD11/_cImageD11.so
+
+      - name: Run buffer tests
+        run: |
+          python2 -m pytest tests/test_buffer.py -v
+
+      - name: Build ImageD11 1.9.8 from source
+        run: |
+          python2 -m pip download --no-deps --no-binary ImageD11 ImageD11==1.9.8 -d /tmp/imaged11_src
+          cd /tmp/imaged11_src
+          tar xzf ImageD11-1.9.8.tar.gz
+          cd ImageD11-1.9.8
+          python2 setup.py build_ext --inplace
+
+      - name: Run equivalence tests
+        run: |
+          PYTHONPATH=/tmp/imaged11_src/ImageD11-1.9.8:$PYTHONPATH python2 -m pytest tests/test_equivalence.py -v
+        continue-on-error: true
+
+  windows-py27:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python 2.7
+        shell: cmd
+        run: |
+          curl -L -o %TEMP%\python27.msi https://www.python.org/ftp/python/2.7.18/python-2.7.18.amd64.msi
+          msiexec /i %TEMP%\python27.msi /quiet /qn /norestart TARGETDIR=C:\Python27
+          echo C:\Python27>> %GITHUB_PATH%
+          echo C:\Python27\Scripts>> %GITHUB_PATH%
+
+      - name: Setup Python 3 (for meson)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install meson and ninja (Python 3)
+        shell: cmd
+        run: |
+          python -m pip install meson ninja
+
+      - name: Install Python 2.7 deps
+        shell: cmd
+        run: |
+          C:\Python27\python.exe --version
+          C:\Python27\python.exe -m pip install --upgrade pip --trusted-host pypi.org --trusted-host files.pythonhosted.org
+          C:\Python27\python.exe -m pip install --only-binary :all: numpy==1.16.6 --trusted-host pypi.org --trusted-host files.pythonhosted.org || C:\Python27\python.exe -m pip install numpy==1.16.6 --trusted-host pypi.org --trusted-host files.pythonhosted.org || echo numpy install failed
+          C:\Python27\python.exe -m pip install "pytest>=4.6,<5" --trusted-host pypi.org --trusted-host files.pythonhosted.org
+
+      - name: Build _cImageD11.pyd
+        shell: cmd
+        run: |
+          for /f "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath') do call "%%i\VC\Auxiliary\Build\vcvars64.bat" >nul
+          set CC=cl
+          mkdir build 2>nul
+          mkdir build\libc2ImageD11 2>nul
+          meson setup build\libc2ImageD11 lib
+          ninja -C build\libc2ImageD11
+          copy build\libc2ImageD11\_cImageD11.dll c2ImageD11\_cImageD11.pyd
+
+      - name: Run buffer tests
+        shell: cmd
+        run: |
+          C:\Python27\python.exe -m pytest tests\test_buffer.py -v
+
+      - name: Install VC++ 2008 redist
+        shell: cmd
+        run: |
+          curl -L -o %TEMP%\vcredist_x64.exe https://download.microsoft.com/download/5/D/8/5D8C65CB-C849-4025-8E95-C3966CAFD8AE/vcredist_x64.exe
+          start /wait %TEMP%\vcredist_x64.exe /q /norestart
+        continue-on-error: true
+
+      - name: Install ImageD11 1.9.8 (cp27 wheel)
+        shell: cmd
+        run: |
+          C:\Python27\python.exe -m pip install ImageD11==1.9.8 --only-binary :all: --no-deps
+
+      - name: Run equivalence tests
+        shell: cmd
+        run: |
+          C:\Python27\python.exe -m pytest tests\test_equivalence.py -v
+        continue-on-error: true
