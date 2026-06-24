@@ -333,12 +333,13 @@ extern c2py_api_t C2PY;
 #define PyBuffer_Release(b)            C2PY.ReleaseBuffer(b)
 
 /* MSVC traditional preprocessor auto-removes the comma before an empty
- * __VA_ARGS__; GCC/Clang require the ## token-paste to do so. */
+ * __VA_ARGS__; GCC/Clang require the ## token-paste to do so.
+ * MSVC 2022+ (conformant preprocessor) behaves like GCC and also needs ##. */
 #ifdef _MSC_VER
-#define PyArg_ParseTuple(a, f, ...)    C2PY.ParseTuple((PyObject*)(a), (f), __VA_ARGS__)
+#define PyArg_ParseTuple(a, f, ...)    C2PY.ParseTuple((PyObject*)(a), (f), ##__VA_ARGS__)
 #define PyArg_ParseTupleAndKeywords(a, k, f, kw, ...) \
-    C2PY.ParseTupleAndKeywords((PyObject*)(a), (PyObject*)(k), (f), (char**)(kw), __VA_ARGS__)
-#define PyErr_Format(e, f, ...)        C2PY.Err_Format((PyObject*)(e), (f), __VA_ARGS__)
+    C2PY.ParseTupleAndKeywords((PyObject*)(a), (PyObject*)(k), (f), (char**)(kw), ##__VA_ARGS__)
+#define PyErr_Format(e, f, ...)        C2PY.Err_Format((PyObject*)(e), (f), ##__VA_ARGS__)
 #else
 #define PyArg_ParseTuple(a, f, ...)    C2PY.ParseTuple((PyObject*)(a), (f), ##__VA_ARGS__)
 #define PyArg_ParseTupleAndKeywords(a, k, f, kw, ...) \
