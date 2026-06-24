@@ -3,7 +3,7 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  py3-wheel:
+  linux-wheel:
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux_2_28_x86_64
     steps:
@@ -28,17 +28,17 @@ jobs:
           ninja
           cp _cImageD11.so ../../c2ImageD11/_cImageD11_x86_64.so
 
-      - name: Build py3 wheel
+      - name: Build wheel
         run: |
           python setup.py bdist_wheel
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dist-py3
+          name: dist-linux
           path: dist/
 
-  test:
-    needs: [py3-wheel]
+  linux-test:
+    needs: [linux-wheel]
     strategy:
       fail-fast: false
       matrix:
@@ -47,10 +47,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download py3 wheel
+      - name: Download wheel
         uses: actions/download-artifact@v4
         with:
-          name: dist-py3
+          name: dist-linux
           path: dist/
 
       - name: Setup Python ${{ matrix.python-version }}
@@ -74,11 +74,7 @@ jobs:
         run: |
           cd "$(mktemp -d)" && python -m pytest "$GITHUB_WORKSPACE/tests/" -v
 
-  test-windows:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+  windows-wheel:
     runs-on: windows-latest
     defaults:
       run:
@@ -86,14 +82,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python ${{ matrix.python-version }}
+      - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
 
       - name: Install build deps
         run: |
-          pip install meson ninja numpy
+          pip install meson ninja numpy setuptools
 
       - name: Build _cImageD11
         run: |
@@ -103,7 +99,41 @@ jobs:
           cd build\libc2ImageD11
           meson setup ..\..\lib
           ninja
-          copy _cImageD11.dll ..\..\c2ImageD11\_cImageD11.pyd
+          copy _cImageD11.dll ..\..\c2ImageD11\_cImageD11_AMD64.pyd
+
+      - name: Build wheel
+        run: |
+          python setup.py bdist_wheel
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows
+          path: dist/
+
+  windows-test:
+    needs: [windows-wheel]
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-windows
+          path: dist/
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install c2ImageD11 wheel
+        run: |
+          pip install dist/*.whl
 
       - name: Install ImageD11 (binary from PyPI, no deps)
         run: |
@@ -111,7 +141,7 @@ jobs:
 
       - name: Install test deps
         run: |
-          pip install pytest
+          pip install numpy pytest
 
       - name: Run tests
         run: |
