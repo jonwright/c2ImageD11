@@ -1,0 +1,90 @@
+name: CI (Python 2.7)
+
+on: [push, pull_request]
+
+jobs:
+  linux-py27:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 2.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: "2.7"
+
+      - name: Setup Python 3 (for meson)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install build deps
+        run: |
+          python2 -m pip install numpy==1.16.6 pytest==4.6.11
+          python3 -m pip install meson ninja
+
+      - name: Build _cImageD11.so
+        run: |
+          python3 -m meson setup build/libc2ImageD11 lib
+          ninja -C build/libc2ImageD11
+          cp build/libc2ImageD11/_cImageD11.so c2ImageD11/_cImageD11.so
+
+      - name: Run buffer tests
+        run: |
+          python2 -m pytest tests/test_buffer.py -v
+
+      - name: Build ImageD11 1.9.8 from source
+        run: |
+          python2 -m pip download --no-deps --no-binary ImageD11 ImageD11==1.9.8 -d /tmp/imaged11_src
+          cd /tmp/imaged11_src
+          tar xzf ImageD11-1.9.8.tar.gz
+          cd ImageD11-1.9.8
+          python2 setup.py build_ext --inplace
+
+      - name: Run equivalence tests
+        run: |
+          PYTHONPATH=/tmp/imaged11_src/ImageD11-1.9.8:$PYTHONPATH python2 -m pytest tests/test_equivalence.py -v
+        continue-on-error: true
+
+  windows-py27:
+    runs-on: windows-2019
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 2.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: "2.7"
+
+      - name: Setup Python 3 (for meson)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install build deps
+        run: |
+          python2 -m pip install numpy==1.16.6 pytest==4.6.11
+          python3 -m pip install meson ninja
+
+      - name: Build _cImageD11.pyd
+        run: |
+          for /f "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath') do call "%%i\VC\Auxiliary\Build\vcvars64.bat" >nul
+          set CC=cl
+          python3 -m meson setup build\libc2ImageD11 lib
+          ninja -C build\libc2ImageD11
+          copy build\libc2ImageD11\_cImageD11.dll c2ImageD11\_cImageD11.pyd
+
+      - name: Run buffer tests
+        run: |
+          python2 -m pytest tests\test_buffer.py -v
+
+      - name: Install ImageD11 1.9.8 (cp27 wheel)
+        run: |
+          python2 -m pip install ImageD11==1.9.8 --only-binary :all: --no-deps
+
+      - name: Run equivalence tests
+        run: |
+          python2 -m pytest tests\test_equivalence.py -v
