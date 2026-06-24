@@ -237,7 +237,7 @@ void blobproperties(float *data, int32_t *labels, int32_t npk, float omega,
     double fval;
     int32_t ipk;
     if (verbose) {
-        printf("Computing blob moments, ns %d, nf %d, npk %d\n", ns, nf, npk);
+        printf("Computing blob moments, ns %td, nf %td, npk %td\n", ns, nf, npk);
     }
     /* Initialise the results */
     for (i = 0; i < npk; i++) {
@@ -269,7 +269,7 @@ void blobproperties(float *data, int32_t *labels, int32_t npk, float omega,
                 if (ipk != 0) {
                     bad++;
                     if (bad < 10) {
-                        printf("Found %d in your blob image at i=%d, j=%d\n",
+                        printf("Found %d in your blob image at i=%td, j=%td\n",
                                ipk, i, j);
                     }
                 }
@@ -426,9 +426,9 @@ int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2,
         }
     }
     if (verbose) {
-        printf("n1 = %d n2 = %d ", n1, n2);
+        printf("n1 = %td n2 = %td ", n1, n2);
         for (i = 0; i < n2 + 3; i++)
-            printf("T[%d]=%d ", i, T[i]);
+            printf("T[%td]=%td ", i, T[i]);
     }
     /* T is now compressed, merge the peaks */
     if (verbose)

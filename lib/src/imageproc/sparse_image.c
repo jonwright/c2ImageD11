@@ -472,7 +472,7 @@ void sparse_blob2Dproperties(float *restrict data, uint16_t *restrict i,
             continue; /* background pixel */
         }
         if (labels[k] > npk) {
-            printf("Error,k %d,labels[k] %d, npk %d \n", k, labels[k], npk);
+            printf("Error,k %td,labels[k] %d, npk %td \n", k, labels[k], npk);
         }
         kpk = (labels[k] - 1) * NPROPERTY2D;
         fval = (double)data[k];
@@ -604,7 +604,7 @@ int sparse_localmaxlabel(float *restrict v, uint16_t *restrict i,
     if (NOISY) {
         k = sparse_is_sorted(i, j, nnz);
         if (k != 0) {
-            printf("Not sorted! k=%d\n", k);
+            printf("Not sorted! k=%td\n", k);
         }
     }
     /* prev row */
@@ -628,7 +628,7 @@ int sparse_localmaxlabel(float *restrict v, uint16_t *restrict i,
             }
         }
         if (TRACE)
-            printf("k %d    i[k] %d  j[k] %d  v[k] %f MV[k] %f\n", k, i[k],
+            printf("k %td    i[k] %td  j[k] %td  v[k] %f MV[k] %f\n", k, i[k],
                    j[k], v[k], MV[k]);
         /* skip if nothing on row above */
         if (i[pp] < i[k]) {
@@ -646,7 +646,7 @@ int sparse_localmaxlabel(float *restrict v, uint16_t *restrict i,
                     assert(p < k);
                 }
                 if (TRACE)
-                    printf("p %d   i[p] %d   j[p] %d  v[p] %f MV[k] %f\n", p,
+                    printf("p %td   i[p] %td   j[p] %td  v[p] %f MV[k] %f\n", p,
                            i[p], j[p], v[p], MV[k]);
                 if (i[p] != ir)
                     break;
@@ -674,7 +674,7 @@ int sparse_localmaxlabel(float *restrict v, uint16_t *restrict i,
         if ((i[k] == i[p]) &&
             (j[k] == (j[p] + 1))) { /* previous pixel, same row */
             if (TRACE)
-                printf("p %d   i[p] %d   j[p] %d  v[p] %f\n", p, i[p], j[p],
+                printf("p %td   i[p] %td   j[p] %td  v[p] %f\n", p, i[p], j[p],
                        v[p]);
             if (v[k] > v[p]) { /* This one is higher */
                 /* Steal if we are higher than neighbor currently points to */

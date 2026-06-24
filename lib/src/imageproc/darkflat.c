@@ -233,7 +233,7 @@ void array_mean_var_cut(float *restrict img, intptr_t npx, float *mean, float *s
     s1 = 0;
     s2 = 0;
     if (verbose)
-        printf("Args, img[0] %f npx %d n %d cut %f verbose %d\n", img[0], npx,
+        printf("Args, img[0] %f npx %td n %td cut %f verbose %d\n", img[0], npx,
                n, cut, verbose);
 #ifdef GOT_OMP_SIMD
 #pragma omp parallel for simd private(t) reduction(+ : s1, s2)
@@ -308,7 +308,7 @@ void array_mean_var_msk(float *restrict img, uint8_t *restrict msk, intptr_t npx
     s1 = 0;
     s2 = 0;
     if (verbose)
-        printf("Args, img[0] %f npx %d n %d cut %f verbose %d\n", img[0], npx,
+        printf("Args, img[0] %f npx %td n %td cut %f verbose %d\n", img[0], npx,
                n, cut, verbose);
 #ifdef GOT_OMP_SIMD
 #pragma omp parallel for simd private(t) reduction(+ : s1, s2)
