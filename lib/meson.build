@@ -10,7 +10,7 @@
 # Output: build/libc2ImageD11/_cImageD11.so
 
 project('c2ImageD11', 'c',
-  default_options: ['c_std=c99', 'warning_level=1'],
+  default_options: ['c_std=c11', 'warning_level=1'],
   version: '0.1.0')
 
 cc = meson.get_compiler('c')
@@ -30,9 +30,17 @@ c2_sources = files(
   'src/imageproc/splat.c',
 )
 
-c2_c_args = cc.get_supported_arguments(
-  '-fPIC', '-O3', '-ffast-math', '-fopenmp', '-D_DEFAULT_SOURCE',
-  '-Wno-format', '-Wno-incompatible-pointer-types')
+# Platform-specific compiler and link flags
+is_msvc = cc.get_id() == 'msvc'
+if is_msvc
+  c2_c_args = ['/openmp', '/O2', '/fp:fast', '/D_DEFAULT_SOURCE']
+  c2_link_args = []
+else
+  c2_c_args = cc.get_supported_arguments(
+    '-fPIC', '-O3', '-ffast-math', '-fopenmp', '-D_DEFAULT_SOURCE',
+    '-Wno-format', '-Wno-incompatible-pointer-types')
+  c2_link_args = ['-lgomp']
+endif
 
 m_dep = cc.find_library('m', required: false)
 
@@ -45,7 +53,7 @@ shared_module('_cImageD11',
   c_args: c2_c_args,
   include_directories: [c2_inc],
   dependencies: [m_dep],
-  link_args: ['-lgomp'],
+  link_args: c2_link_args,
   name_prefix: '',
   install: false,
 )

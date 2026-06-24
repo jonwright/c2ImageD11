@@ -15,11 +15,12 @@ hand-written adapter code.
 - c2py23 v0.2.0 handles fixed-width integer types and multi-dimensional
   arrays (`double[3][3]`, `double[][3]`) natively
 - 56 tests pass (7 buffer + 49 equivalence including ImageD11 f2py comparison)
+- Performance at parity with ImageD11 (e.g. `compute_geometry` 0.97x of f2py at n=200)
 - Tested on Python 3.12; targets Python 2.7-3.14
 
 ## Language Choices
 
-- **C**: C99, compiled with `-O3 -ffast-math -msse4.2 -fopenmp`
+- **C**: C99, compiled with `-O3 -ffast-math -fopenmp`
 - **c2py23**: Code generator for CPython C extensions from YAML interface files
 - **Python**: Must parse on Python 2.7 **and** 3.x -- no f-strings, no type
   annotations, no `async`/`await`, no keyword-only arguments
@@ -196,11 +197,51 @@ is deferred.
 
 ## Deferred Work
 
-- **Two-tier build** (meson `.a` + setuptools `.so` bridge)
-- **SIMD dispatch** (SSE4.2/AVX2/AVX-512) for hot-path functions
-- **bslz4** bitshuffle-lz4 sparse decompress (was present, removed for clean slate)
-- **YAML-in-C comments** single-source-of-truth for c2py metadata
-- **Integer CSC types** (uint8/16/32 with uint64 exact arithmetic)
-- **CI** (GitHub Actions, multi-version)
+### SIMD / Type Dispatch Architecture
 
-All deferred work is tracked in git history on the `new_build_system` branch.
+**Design decisions (not yet implemented):**
+
+- **Three dispatch axes:** type (f32 vs f64), ISA (SSE4.2/AVX2/AVX-512), kernel variant.
+  Type dispatch is the first axis to solve. ISA dispatch comes after.
+- **Functions as a tree:** each function is a directory. Context lives at the leaf.
+  `C2PY_BEGIN` blocks in `.c` files (current pattern) remain the single source of truth
+  for the interface -- when you change C code, the YAML is right above it.
+- **Variants are leaves:** each variant directory has `.h` (ABI declaration) + `.c` or `.S`.
+  The reference implementation lives alongside its `C2PY_BEGIN` block. Variants carry
+  the same ABI.
+- **ISA from binary scan, not manual tag:** the build scans each `.o`/`.S` for
+  instruction encoding bytes and infers the required ISA level (e.g. `c2py_amd64_avx2`).
+  No human writes `-mavx2` in a manifest. This prevents illegal instruction crashes
+  from mismatched human-entered tags.
+- **Assembly format:** Intel syntax (NASM, or gcc `-masm=intel`) for LLM readability.
+  NASM assembles to `.o` which links into the same `.so` regardless of source language.
+- **C++ templates for type dispatch:** one C++ template per algorithm instantiated
+  for float32/float64, exposed via `extern "C"` wrappers. c2py23 only sees the extern
+  C ABI -- type dispatch happens at the c2py23 `when: "format == 'd'"` / `"format == 'f'"`
+  level (already supported).
+- **LLM agent driven compiler workflow:** compile kernels with multiple compilers/flags,
+  capture assembly, measure performance, have LLM read and analyze the assembly, select
+  winning variants. Winners are checked in as `.o` files.
+- **Pilot function:** `score_and_refine` -- most used function (refinegrains.py, indexing.py).
+  Always has a float32 vs float64 question (indexing vs strain refinement) and a SIMD question.
+- **Infrastructure:** c2py23 already supports grouped variant dispatch (`polysimd.c2py`
+  example), CPU feature detection (cpuid in `c2py_runtime.c`), `_rebind_` / `_variants_`
+  for runtime introspection, and per-variant perf counters. Build system needs multi-flag
+  compilation support (compile same `.c` with different `-m` flags), which meson supports.
+- **Context locality:** functions live in `functions/<name>/` directories with their own
+  YAML, reference source, variant kernels, tests, and benchmarks. LLM sessions focus on
+  one function's local context, not the whole project.
+
+### Completed (since last AGENTS update)
+
+- **OpenMP `if()` thresholds:** `compute_geometry` and `compute_gv` in `lib/src/geometry/cdiffraction.c`
+  use `#pragma omp parallel for if(n > 5000)` to avoid thread-pool overhead on small workloads
+  while still parallelizing large arrays.
+- **Perf counter reset:** `c2py_perf_reset()` added to `c2py_runtime.h`, `reset_perf()` added to
+  `c2py23.perf`. Benchmark uses it for clean per-batch measurements.
+- **Benchmark warmup fixed:** timing disabled during warmup, `reset_perf()` called before timed
+  batch. No contamination from cold-start thread pool creation or previous runs.
+- **Compute geometry parity:** at n=200, c2py at 0.97x of f2py. With `if(n > 5000)` the
+  overhead-free serial path matches ImageD11 performance.
+
+### Remaining Deferred

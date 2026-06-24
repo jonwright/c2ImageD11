@@ -87,7 +87,7 @@ void compute_geometry(double xlylzl[][3], double omega[], double omegasign,
     cmat[8] = cc;
     // Combined mat = chi.wedge
     matmat(cmat, wmat, mat);
-#pragma omp parallel for private(so, co, u, o, d, modyz, ds, v, k)
+#pragma omp parallel for if(n > 5000) private(so, co, u, o, d, modyz, ds, v, k)
     for (i = 0; i < n; i++) {
         // ! Compute translation + rotation for grain origin
         so = sin(RAD * omega[i] * omegasign);
@@ -195,7 +195,7 @@ void compute_gv(double xlylzl[][3], double omega[], double omegasign,
     cmat[8] = cc;
     // Combined mat = chi.wedge
     matmat(cmat, wmat, mat);
-#pragma omp parallel for private(so, co, u, o, d, modyz, ds, v, k)
+#pragma omp parallel for if(n > 5000) private(so, co, u, o, d, modyz, ds, v, k)
     for (i = 0; i < n; i++) {
         // ! Compute translation + rotation for grain origin
         so = sin(RAD * omega[i] * omegasign);

@@ -40,7 +40,8 @@ def _build_so(force=False):
         subprocess.check_call(["meson", "setup", lib_dir], cwd=build_dir)
         subprocess.check_call(["ninja"], cwd=build_dir)
         shutil.copy(
-            os.path.join(build_dir, "_cImageD11.so"), SO_PATH)
+            os.path.join(build_dir, "_cImageD11.dll" if sys.platform == "win32" else "_cImageD11.so"),
+            SO_PATH)
     except Exception as exc:
         print("meson build failed: %s" % exc, file=sys.stderr)
         print("Build manually: see lib/meson.build for instructions",

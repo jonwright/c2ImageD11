@@ -14,7 +14,7 @@ from __future__ import print_function
 import sys, os, time, numpy as np
 
 try:
-    from c2py23.perf import read_perf, set_enabled
+    from c2py23.perf import read_perf, set_enabled, reset_perf
     HAVE_PERF = True
 except ImportError:
     HAVE_PERF = False
@@ -43,12 +43,9 @@ def time_f2py(fn, args, n=50):
 def benchmark(name, old_fn, new_fn, args_builder, n_calls=200):
     """Benchmark one function."""
     args = args_builder()
-    if HAVE_PERF:
-        enabled_ptr = getattr(NEW, "_c2py_timing_enabled", None)
-        if enabled_ptr:
-            set_enabled(enabled_ptr, 1)
+    enabled_ptr = getattr(NEW, "_c2py_timing_enabled", None) if HAVE_PERF else None
 
-    # Warmup
+    # Warmup with timing OFF
     for _ in range(10):
         new_fn(*args)
     if HAVE_OLD:
@@ -58,22 +55,24 @@ def benchmark(name, old_fn, new_fn, args_builder, n_calls=200):
     # c2py23 timing via perf structs
     c2py_c_ns = 0
     c2py_wrap_ns = 0
-    if HAVE_PERF:
+    if HAVE_PERF and enabled_ptr:
+        set_enabled(enabled_ptr, 1)
         perf_name = "_perf_" + name
         if hasattr(NEW, perf_name):
+            perf_struct = getattr(NEW, perf_name)
+            reset_perf(perf_struct)
             for _ in range(n_calls):
                 new_fn(*args)
-            stats = read_perf(getattr(NEW, perf_name))
+            stats = read_perf(perf_struct)
             c2py_c_ns = stats.get("c_mean_ns", 0)
             c2py_wrap_ns = stats.get("wrap_mean_ns", 0)
-            if enabled_ptr:
-                set_enabled(enabled_ptr, 0)
         else:
             # Fallback: wall-clock timing
             t0 = time.time()
             for _ in range(n_calls):
                 new_fn(*args)
             c2py_c_ns = (time.time() - t0) / n_calls * 1e9
+        set_enabled(enabled_ptr, 0)
 
     # f2py timing
     f2py_ns = time_f2py(old_fn, args, n=n_calls) if HAVE_OLD else 0
