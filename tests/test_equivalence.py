@@ -168,11 +168,9 @@ class TestCluster1D:
         ids_n = np.zeros(20, dtype=np.int32)
         avgs_o = np.zeros(20, dtype=np.float64)
         avgs_n = np.zeros(20, dtype=np.float64)
-        # f2py returns nclusters as bare int (single intent(out) scalar)
         nco = OLD.cluster1d(ar, order, tol, ids_o, avgs_o)
-        ncn_buf = np.zeros(1, dtype=np.int32)
-        NEW.cluster1d(ar, order, tol, ncn_buf, ids_n, avgs_n)
-        assert nco == ncn_buf[0]
+        ncn = NEW.cluster1d(ar, order, tol, ids_n, avgs_n)
+        assert nco == ncn
         assert (ids_o == ids_n).all()
 
 
@@ -269,14 +267,13 @@ class TestComputeXlylzl:
 class TestQuickorient:
     def test_random(self):
         np.random.seed(42)
-        # quickorient expects flat 9-element arrays (C API uses double[9])
-        # f2py wraps as (3,3); c2py23 exposes flat 9 directly
-        ubi_3x3 = np.random.randn(3, 3).copy()
-        ubi_n = ubi_3x3.ravel().copy()
-        bt = np.random.randn(9)
-        OLD.quickorient(ubi_3x3, bt.reshape(3, 3))
-        NEW.quickorient(ubi_n, bt)
-        close(ubi_3x3.ravel(), ubi_n)
+        ubi = np.random.randn(3, 3).copy()
+        bt = np.random.randn(3, 3).copy()
+        ubi_n = ubi.copy()
+        bt_n = bt.copy()
+        OLD.quickorient(ubi, bt)
+        NEW.quickorient(ubi_n, bt_n)
+        close(ubi.ravel(), ubi_n.ravel())
 
 
 # ============================================================
@@ -287,29 +284,21 @@ class TestArrayStats:
     def test_random(self):
         np.random.seed(42)
         img = np.random.randn(1000).astype(np.float32) * 2 + 10
-        # f2py returns tuple
         mn_o, mx_o, me_o, va_o = OLD.array_stats(img)
-        mn_n = np.zeros(1, dtype=np.float32)
-        mx_n = np.zeros(1, dtype=np.float32)
-        me_n = np.zeros(1, dtype=np.float32)
-        va_n = np.zeros(1, dtype=np.float32)
-        NEW.array_stats(img, mn_n, mx_n, me_n, va_n)
-        close(mn_o, mn_n[0])
-        close(mx_o, mx_n[0])
-        close(me_o, me_n[0])
-        close(va_o, va_n[0])
+        mn_n, mx_n, me_n, va_n = NEW.array_stats(img)
+        close(mn_o, mn_n)
+        close(mx_o, mx_n)
+        close(me_o, me_n)
+        close(va_o, va_n)
 
 class TestArrayMeanVarCut:
     def test_random(self):
         np.random.seed(42)
         img = np.random.randn(1000).astype(np.float32) * 2 + 10
-        # f2py returns (mean, var)
         me_o, va_o = OLD.array_mean_var_cut(img)
-        me_n = np.zeros(1, dtype=np.float32)
-        va_n = np.zeros(1, dtype=np.float32)
-        NEW.array_mean_var_cut(img, me_n, va_n)
-        close(me_o, me_n[0], atol=1e-4)
-        close(va_o, va_n[0], atol=1e-4)
+        me_n, va_n = NEW.array_mean_var_cut(img)
+        close(me_o, me_n, atol=1e-4)
+        close(va_o, va_n, atol=1e-4)
 
 class TestArrayHistogram:
     def test_random(self):
@@ -395,13 +384,8 @@ class TestBlobProperties:
         npk = OLD.connectedpixels(im, labels, 100.0, 0, 1)
         assert npk >= 1, "Expected at least 1 connected component"
 
-        # OLD: f2py allocates and returns the result array
         res_o = OLD.blobproperties(im, labels, npk)
-
-        # NEW: c2py23 writes into pre-allocated buffer (npk rows x 36 cols)
-        res_n = np.zeros((npk, 36), dtype=np.float64)
-        NEW.blobproperties(im, labels, npk, res_n)
-
+        res_n = NEW.blobproperties(im, labels, npk)
         assert res_o.shape == res_n.shape
         close(res_o, res_n)
 
@@ -673,8 +657,7 @@ class TestSplat:
         rgba = np.zeros((100, 100, 4), dtype=np.uint8)
         gv = np.random.randn(10, 3)
         u = np.array([0.05, 0, 0, 0, -0.05, 0, 0, 0, 0.1])
-        # f2py auto-detects w, h from rgba.shape; ng from gv.shape
         OLD.splat(rgba, gv, u, 1)
         rgba2 = np.zeros((100, 100, 4), dtype=np.uint8)
-        NEW.splat(rgba2, 100, 100, gv, 10, u, 1)
+        NEW.splat(rgba2, gv, u, 1)
         assert (rgba == rgba2).all()

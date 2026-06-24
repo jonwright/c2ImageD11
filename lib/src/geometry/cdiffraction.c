@@ -404,9 +404,10 @@ F2PY_WRAPPER_END */
  *         "ubi": "Orientation matrix (9-element). First 2 rows are g-vectors on entry; overwritten with UBI on exit.",
  *         "bt": "Busing-Levy cache (9-element).",
  *     },
- *     "checks": ["ubi.format == 'd'", "ubi.n == 9", "bt.format == 'd'", "bt.n == 9"],
+ *     "checks": ["ubi.format == 'd'", "ubi.ndim == 2", "ubi.shape[0] == 3", "ubi.shape[1] == 3",
+ *                "bt.format == 'd'", "bt.ndim == 2", "bt.shape[0] == 3", "bt.shape[1] == 3"],
  *     "c_overloads": [{
- *         "sig": "void quickorient(double *ubi, const double *bt)",
+ *         "sig": "void quickorient(double ubi[3][3], const double bt[3][3])",
  *         "map": {"ubi": "ubi.ptr", "bt": "bt.ptr"},
  *     }],
  * }

@@ -181,29 +181,29 @@ functions:
     - sig: void frelon_lines_sub(float *img, float *drk, intptr_t ns, intptr_t nf, float cut)
       map: {img: img.ptr, drk: drk.ptr, ns: 'img.shape[0]', nf: 'img.shape[1]', cut: cut}
 
-  - py_sig: 'array_mean_var_cut(img: buffer, mean: buffer, var: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void'
+  - py_sig: 'array_mean_var_cut(img: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void'
     doc: Sigma-clipped mean/var.
-    checks: [img.format == 'f', mean.format == 'f', mean.n == 1, var.format == 'f', var.n == 1]
+    checks: [img.format == 'f']
     c_overloads:
     - sig: void array_mean_var_cut(float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)
-      map: {img: img.ptr, npx: img.n, mean: mean.ptr, std: var.ptr, n: n, cut: cut, verbose: verbose}
+      map: {img: img.ptr, npx: img.n, n: n, cut: cut, verbose: verbose}
+      outputs: {mean: float, std: float}
 
-  - py_sig: 'array_mean_var_msk(img: buffer, msk: buffer, mean: buffer, var: buffer, n: int = 3, cut: float = 3.0, verbose:
-      int = 0) -> void'
+  - py_sig: 'array_mean_var_msk(img: buffer, msk: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void'
     doc: Sigma-clipped mean/var with mask.
-    checks: [img.format == 'f', msk.format == 'B' or msk.format == 'b', msk.n == img.n, mean.format == 'f', mean.n == 1, var.format
-        == 'f', var.n == 1]
+    checks: [img.format == 'f', msk.format == 'B' or msk.format == 'b', msk.n == img.n]
     c_overloads:
     - sig: void array_mean_var_msk(float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)
-      map: {img: img.ptr, msk: msk.ptr, npx: img.n, mean: mean.ptr, std: var.ptr, n: n, cut: cut, verbose: verbose}
+      map: {img: img.ptr, msk: msk.ptr, npx: img.n, n: n, cut: cut, verbose: verbose}
+      outputs: {mean: float, std: float}
 
-  - py_sig: 'array_stats(img: buffer, minval: buffer, maxval: buffer, mean: buffer, var: buffer) -> void'
+  - py_sig: 'array_stats(img: buffer) -> void'
     doc: Compute min, max, mean, variance.
-    checks: [img.format == 'f', minval.format == 'f', minval.n == 1, maxval.format == 'f', maxval.n == 1, mean.format == 'f',
-      mean.n == 1, var.format == 'f', var.n == 1]
+    checks: [img.format == 'f']
     c_overloads:
     - sig: void array_stats(float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)
-      map: {img: img.ptr, npx: img.n, minval: minval.ptr, maxval: maxval.ptr, mean: mean.ptr, var: var.ptr}
+      map: {img: img.ptr, npx: img.n}
+      outputs: {minval: float, maxval: float, mean: float, var: float}
 
   - py_sig: 'array_histogram(img: buffer, low: float, high: float, hist: buffer) -> void'
     doc: Compute histogram of float array.
@@ -432,15 +432,14 @@ functions:
   # ../src/imageproc/splat.c
   # =====================================================================
 
-  - py_sig: 'splat(rgba: buffer, w: int, h: int, gve: buffer, ng: int, u: buffer, npx: int) -> void'
+  - py_sig: 'splat(rgba: buffer, gve: buffer, u: buffer, npx: int) -> void'
     doc: Draw g-vectors into RGBA image.
-    params: {rgba: 'Output uint8 RGBA (h, w, 4).', w: Width., h: Height., gve: 'G-vectors (ng, 3).', ng: Number of g-vectors.,
-      u: Projection matrix (9)., npx: Marker half-size.}
+    params: {rgba: 'Output uint8 RGBA (h, w, 4).', gve: 'G-vectors (ng, 3).', u: Projection matrix (9)., npx: Marker half-size.}
     checks: [rgba.format == 'B' or rgba.format == 'b', rgba.ndim >= 1, gve.format == 'd', gve.ndim >= 1, u.format == 'd', u.n
-        == 9]
+        == 9, gve.slow_axis == 0, gve.ndim == 2, 'gve.shape[1] == 3']
     c_overloads:
     - sig: void splat(uint8_t *rgba, intptr_t w, intptr_t h, double gve[][3], intptr_t ng, double *u, intptr_t npx)
-      map: {rgba: rgba.ptr, w: w, h: h, gve: gve.ptr, ng: ng, u: u.ptr, npx: npx}
+      map: {rgba: rgba.ptr, w: 'rgba.shape[1]', h: 'rgba.shape[0]', gve: gve.ptr, ng: 'gve.shape[0]', u: u.ptr, npx: npx}
 
   # =====================================================================
   # ../src/geometry/cdiffraction.c
@@ -513,9 +512,10 @@ functions:
     doc: quickorient takes two g-vectors in UBI and overwrites with UBI orientation using cache in bt.
     params: {ubi: Orientation matrix (9-element). First 2 rows are g-vectors on entry; overwritten with UBI on exit., bt: Busing-Levy
         cache (9-element).}
-    checks: [ubi.format == 'd', ubi.n == 9, bt.format == 'd', bt.n == 9]
+    checks: [ubi.format == 'd', ubi.ndim == 2, 'ubi.shape[0] == 3', 'ubi.shape[1] == 3', bt.format == 'd', bt.ndim == 2, 'bt.shape[0]
+        == 3', 'bt.shape[1] == 3']
     c_overloads:
-    - sig: void quickorient(double *ubi, const double *bt)
+    - sig: void quickorient(double ubi[3][3], const double bt[3][3])
       map: {ubi: ubi.ptr, bt: bt.ptr}
 
   # =====================================================================
@@ -620,17 +620,16 @@ functions:
       sig: void put_incr32(float *data, const int32_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m)
       map: {data: data.ptr, ind: ind.ptr, vals: vals.ptr, boundscheck: boundscheck, n: ind.n, m: data.n}
 
-  - py_sig: 'cluster1d(ar: buffer, order: buffer, tol: float, nclusters: buffer, ids: buffer, avgs: buffer) -> void'
+  - py_sig: 'cluster1d(ar: buffer, order: buffer, tol: float, ids: buffer, avgs: buffer) -> void'
     doc: cluster1d is used to find clusters of peaks.
     params: {ar: Array of values to cluster., order: Permutation that sorts ar ascending., tol: Distance tolerance for cluster
-        membership., nclusters: 'Output: number of clusters found.', ids: 'Output: cluster id for each element.', avgs: 'Output:
-        average value of each cluster.'}
-    checks: [ar.format == 'd', ( order.format == 'i' or order.format == 'l' ), order.n == ar.n, ( nclusters.format == 'i' or
-        nclusters.format == 'l' ), nclusters.n == 1, ( ids.format == 'i' or ids.format == 'l' ), ids.n == ar.n, avgs.format
-        == 'd', avgs.n == ar.n]
+        membership., ids: 'Output: cluster id for each element.', avgs: 'Output: average value of each cluster.'}
+    checks: [ar.format == 'd', ( order.format == 'i' or order.format == 'l' ), order.n == ar.n, ( ids.format == 'i' or ids.format
+        == 'l' ), ids.n == ar.n, avgs.format == 'd', avgs.n == ar.n]
     c_overloads:
     - sig: void cluster1d(double *ar, intptr_t n, int *order, double tol, int *nclusters, int *ids, double *avgs)
-      map: {ar: ar.ptr, n: ar.n, order: order.ptr, tol: tol, nclusters: nclusters.ptr, ids: ids.ptr, avgs: avgs.ptr}
+      map: {ar: ar.ptr, n: ar.n, order: order.ptr, tol: tol, ids: ids.ptr, avgs: avgs.ptr}
+      outputs: {nclusters: int}
 
   - py_sig: 'score_gvec_z(ubi: buffer, ub: buffer, gv: buffer, g0: buffer, g1: buffer, g2: buffer, e: buffer, recompute: int)
       -> void'

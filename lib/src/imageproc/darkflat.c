@@ -219,11 +219,12 @@ void frelon_lines_sub(float *restrict img, float *restrict drk, intptr_t ns, int
     end subroutine array_mean_var_cut
 F2PY_WRAPPER_END */
 /* C2PY_BEGIN
- * {"py_sig": "array_mean_var_cut(img: buffer, mean: buffer, var: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
+ * {"py_sig": "array_mean_var_cut(img: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
  *  "doc": "Sigma-clipped mean/var.",
- *  "checks": ["img.format == 'f'", "mean.format == 'f'", "mean.n == 1", "var.format == 'f'", "var.n == 1"],
+ *  "checks": ["img.format == 'f'"],
  *  "c_overloads": [{"sig": "void array_mean_var_cut(float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
- *      "map": {"img": "img.ptr", "npx": "img.n", "mean": "mean.ptr", "std": "var.ptr", "n": "n", "cut": "cut", "verbose": "verbose"}}]}
+ *      "map": {"img": "img.ptr", "npx": "img.n", "n": "n", "cut": "cut", "verbose": "verbose"},
+ *      "outputs": {"mean": "float", "std": "float"}}]}
 C2PY_END */
 void array_mean_var_cut(float *restrict img, intptr_t npx, float *mean, float *std,
                         int n, float cut, int verbose) {
@@ -292,12 +293,12 @@ void array_mean_var_cut(float *restrict img, intptr_t npx, float *mean, float *s
     end subroutine array_mean_var_msk
 F2PY_WRAPPER_END */
 /* C2PY_BEGIN
- * {"py_sig": "array_mean_var_msk(img: buffer, msk: buffer, mean: buffer, var: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
+ * {"py_sig": "array_mean_var_msk(img: buffer, msk: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
  *  "doc": "Sigma-clipped mean/var with mask.",
- *  "checks": ["img.format == 'f'", "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n",
- *      "mean.format == 'f'", "mean.n == 1", "var.format == 'f'", "var.n == 1"],
+ *  "checks": ["img.format == 'f'", "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n"],
  *  "c_overloads": [{"sig": "void array_mean_var_msk(float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
- *      "map": {"img": "img.ptr", "msk": "msk.ptr", "npx": "img.n", "mean": "mean.ptr", "std": "var.ptr", "n": "n", "cut": "cut", "verbose": "verbose"}}]}
+ *      "map": {"img": "img.ptr", "msk": "msk.ptr", "npx": "img.n", "n": "n", "cut": "cut", "verbose": "verbose"},
+ *      "outputs": {"mean": "float", "std": "float"}}]}
 C2PY_END */
 void array_mean_var_msk(float *restrict img, uint8_t *restrict msk, intptr_t npx,
                         float *mean, float *std, int n, float cut,
@@ -388,12 +389,12 @@ void array_mean_var_msk(float *restrict img, uint8_t *restrict msk, intptr_t npx
     end subroutine array_stats
 F2PY_WRAPPER_END */
 /* C2PY_BEGIN
- * {"py_sig": "array_stats(img: buffer, minval: buffer, maxval: buffer, mean: buffer, var: buffer) -> void",
+ * {"py_sig": "array_stats(img: buffer) -> void",
  *  "doc": "Compute min, max, mean, variance.",
- *  "checks": ["img.format == 'f'", "minval.format == 'f'", "minval.n == 1",
- *      "maxval.format == 'f'", "maxval.n == 1", "mean.format == 'f'", "mean.n == 1", "var.format == 'f'", "var.n == 1"],
+ *  "checks": ["img.format == 'f'"],
  *  "c_overloads": [{"sig": "void array_stats(float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)",
- *      "map": {"img": "img.ptr", "npx": "img.n", "minval": "minval.ptr", "maxval": "maxval.ptr", "mean": "mean.ptr", "var": "var.ptr"}}]}
+ *      "map": {"img": "img.ptr", "npx": "img.n"},
+ *      "outputs": {"minval": "float", "maxval": "float", "mean": "float", "var": "float"}}]}
 C2PY_END */
 void array_stats(float img[], intptr_t npx, float *minval, float *maxval,
                  float *mean, float *var) {
