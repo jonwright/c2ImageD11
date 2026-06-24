@@ -95,7 +95,9 @@ jobs:
       - name: Install VC++ 2008 redist
         shell: cmd
         run: |
-          choco install vcredist2008 -y --limit-output
+          curl -L -o %TEMP%\vcredist_x64.exe https://download.microsoft.com/download/5/D/8/5D8C65CB-C849-4025-8E95-C3966CAFD8AE/vcredist_x64.exe
+          start /wait %TEMP%\vcredist_x64.exe /q /norestart
+        continue-on-error: true
 
       - name: Install ImageD11 1.9.8 (cp27 wheel)
         shell: cmd
