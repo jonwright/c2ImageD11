@@ -12,7 +12,7 @@ jobs:
       - name: Install system deps
         run: |
           apt-get update -qq
-          apt-get install -y -qq git gcc make python3 python3-pip python3-distutils python3-setuptools python3-wheel curl libpython3-dev ca-certificates
+          apt-get install -y -qq git gcc make python2 python2-dev python3 python3-pip python3-distutils python3-setuptools python3-wheel curl libpython3-dev ca-certificates
           python3 -m pip install --upgrade pip
 
       - name: Install pip for Python 2
@@ -68,10 +68,11 @@ jobs:
       - name: Install build deps
         shell: cmd
         run: |
-          python -m pip install --upgrade pip --trusted-host pypi.org --trusted-host files.pythonhosted.org
-          python -m pip install --only-binary :all: numpy==1.16.6 --trusted-host pypi.org --trusted-host files.pythonhosted.org
-          python -m pip install "pytest>=4.6,<5" --trusted-host pypi.org --trusted-host files.pythonhosted.org
           python3 -m pip install meson ninja
+          python -m pip install --upgrade pip --trusted-host pypi.org --trusted-host files.pythonhosted.org
+          python -m pip install --only-binary :all: numpy==1.16.6 --trusted-host pypi.org --trusted-host files.pythonhosted.org || echo "numpy wheel failed, trying source"
+          python -m pip install numpy==1.16.6 --trusted-host pypi.org --trusted-host files.pythonhosted.org || echo "numpy source failed too"
+          python -m pip install "pytest>=4.6,<5" --trusted-host pypi.org --trusted-host files.pythonhosted.org
 
       - name: Build _cImageD11.pyd
         shell: cmd
