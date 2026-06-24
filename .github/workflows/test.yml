@@ -94,9 +94,8 @@ jobs:
           pip install meson ninja numpy
 
       - name: Build _cImageD11
-        env:
-          CC: cl
         run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" >nul
           if not exist build\libc2ImageD11 mkdir build\libc2ImageD11
           cd build\libc2ImageD11
           meson setup ..\..\lib
