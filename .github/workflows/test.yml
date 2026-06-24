@@ -76,7 +76,7 @@ jobs:
   test-windows:
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: windows-latest
     defaults:
       run:
@@ -94,6 +94,8 @@ jobs:
           pip install meson ninja numpy
 
       - name: Build _cImageD11
+        env:
+          CC: cl
         run: |
           if not exist build\libc2ImageD11 mkdir build\libc2ImageD11
           cd build\libc2ImageD11
