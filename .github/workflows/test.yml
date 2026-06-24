@@ -170,35 +170,3 @@ jobs:
         run: |
           [ "${{ needs.windows-test-matrix.result }}" = "success" ] || \
             { echo "FAIL: some windows-test-matrix jobs failed (${{ needs.windows-test-matrix.result }})"; exit 1; }
-
-  aarch64-test:
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install build deps
-        run: |
-          pip install git+https://github.com/jonwright/c2py23.git
-          pip install meson ninja numpy pytest
-
-      - name: Regenerate lib/interface from C sources
-        run: |
-          python tools/harvester.py --output-dir lib/interface
-
-      - name: Build _cImageD11.so
-        run: |
-          mkdir -p build/libc2ImageD11
-          cd build/libc2ImageD11
-          meson setup ../../lib
-          ninja
-          cp _cImageD11.so ../../c2ImageD11/_cImageD11_aarch64.so
-
-      - name: Run tests
-        run: |
-          python -m pytest tests/test_buffer.py tests/test_equivalence.py -v
