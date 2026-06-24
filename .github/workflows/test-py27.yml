@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   linux-py27:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +47,7 @@ jobs:
         continue-on-error: true
 
   windows-py27:
-    runs-on: windows-2019
+    runs-on: windows-2022
     defaults:
       run:
         shell: cmd
