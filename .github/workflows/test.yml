@@ -12,7 +12,7 @@ jobs:
       - name: Setup Python and install build deps
         run: |
           export PATH="/opt/python/cp312-cp312/bin:$PATH"
-          pip install git+https://github.com/jonwright/c2py23.git
+          pip install git+https://github.com/jonwright/c2py23.git@e22aabf
           pip install meson ninja setuptools auditwheel
           echo "PATH=/opt/python/cp312-cp312/bin:$PATH" >> "$GITHUB_ENV"
 
