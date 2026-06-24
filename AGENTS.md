@@ -56,8 +56,8 @@ c2ImageD11/
   AGENTS.md              # This file
   README.md
   pyproject.toml
-  setup.py               # Stub (two-tier build deferred)
-  MANIFEST.in            # Needs update (deferred)
+  setup.py               # Meson + ninja build driver for wheels
+  MANIFEST.in
   .gitignore
 
   lib/                   # Meson build root
@@ -79,9 +79,7 @@ c2ImageD11/
 
   c2ImageD11/            # Python package
     __init__.py          # Re-exports C functions, OpenMP safety, constants
-    _constants.py        # Blob property enum values from blobs.h
     _cImageD11.so        # Built .so (copied from build/)
-    csc_convert.py       # pyFAI CSC conversion utility
 
   tests/
     test_buffer.py       # Lightweight numpy buffer protocol tests
@@ -93,6 +91,14 @@ c2ImageD11/
     harvester.py         # Regenerates lib/interface/ from C sources + c2py23
     strip_c2py.py        # Removes C2PY_BLOCKs to verify C code unchanged
     test_build_once.sh   # Legacy CI helper (needs apptainer)
+
+  .github/
+    workflows/
+      test.yml           # Main CI: Linux/Win wheel + test matrix (3.8-3.13)
+      test-py27.yml      # Python 2.7 CI: Linux + Windows
+    PULL_REQUEST_TEMPLATE.md
+
+  doc/history/           # Design docs and planning history
 ```
 
 ## Interface regeneration: CI vs Release
@@ -232,16 +238,18 @@ is deferred.
   YAML, reference source, variant kernels, tests, and benchmarks. LLM sessions focus on
   one function's local context, not the whole project.
 
-### Completed (since last AGENTS update)
+### Reached milestones
 
-- **OpenMP `if()` thresholds:** `compute_geometry` and `compute_gv` in `lib/src/geometry/cdiffraction.c`
-  use `#pragma omp parallel for if(n > 5000)` to avoid thread-pool overhead on small workloads
-  while still parallelizing large arrays.
-- **Perf counter reset:** `c2py_perf_reset()` added to `c2py_runtime.h`, `reset_perf()` added to
-  `c2py23.perf`. Benchmark uses it for clean per-batch measurements.
-- **Benchmark warmup fixed:** timing disabled during warmup, `reset_perf()` called before timed
-  batch. No contamination from cold-start thread pool creation or previous runs.
-- **Compute geometry parity:** at n=200, c2py at 0.97x of f2py. With `if(n > 5000)` the
-  overhead-free serial path matches ImageD11 performance.
-
-### Remaining Deferred
+- **OpenMP `if()` thresholds:** `compute_geometry` and `compute_gv` use
+  `#pragma omp parallel for if(n > 5000)`.
+- **Perf counter reset:** `c2py_perf_reset()` in `c2py_runtime.h`.
+- **Compute geometry parity:** at n=200, c2py at 0.97x of f2py.
+- **Python 2.7 CI:** separate workflow `test-py27.yml` covers Linux (ubuntu-22.04 + apt python2)
+  and Windows (python.org MSI + vcredist2008). Buffer tests pass, equivalence 42/48 (6 skipped
+  for functions absent in ImageD11 1.9.8).
+- **Branch protection:** CI gates on `linux-test` + `windows-test` (matrix aggregation jobs),
+  plus `linux-wheel` and `windows-wheel`. PR required, 1 human approval.
+- **Windows CI:** MSVC build via vswhere+vcvars64, CC=cl, produces
+  `_cImageD11_AMD64.pyd`. Linux test matrix 3.8-3.13, Windows 3.10-3.13.
+- **Compiler warnings:** all fixed (RAD/DEG, printf %td, explicit casts).
+- **c2py23 HEAD tracking:** regenerated wrappers committed in git, un-pinned.

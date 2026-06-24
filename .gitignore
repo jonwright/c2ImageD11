@@ -14,10 +14,7 @@ build/
 dist/
 .pytest_cache/
 # Tracked in lib/interface/ as generated-but-committed
-!lib/interface/_cImageD11.c2py
 !lib/interface/_cImageD11_wrapper.c
 *.h5
 *.lprof
-multi_bslz4.md
-examples/multi_chunk_bslz4/*.h5
 *.npz
