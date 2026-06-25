@@ -1,5 +1,6 @@
 #include "cImageD11.h"
 #include "blobs.h"
+#include "cimaged11utils.h"
 
 /* C2PY_BEGIN
  * {"py_sig": "localmaxlabel(data: buffer, labels: buffer, wrk: buffer) -> int",
