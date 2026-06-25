@@ -1,6 +1,9 @@
 #include "cImageD11.h"
 #include "blobs.h"
 
+/* clean_mask is defined in clean_mask/clean_mask.c */
+int clean_mask(const int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf);
+
 /* C2PY_BEGIN
  * {"py_sig": "make_clean_mask(img: buffer, cut: float, msk: buffer, ret: buffer) -> int",
  *  "doc": "Generate mask from threshold then clean isolated pixels.",
