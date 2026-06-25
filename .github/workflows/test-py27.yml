@@ -19,7 +19,7 @@ jobs:
 
       - name: Install build deps
         run: |
-          python3 -m pip install meson ninja auditwheel
+          python3 -m pip install "setuptools>=70.1" meson ninja auditwheel
           python2 -m pip install numpy==1.16.6 "pytest>=4.6,<5" wheel
 
       - name: Build _cImageD11.so
@@ -82,7 +82,7 @@ jobs:
       - name: Install meson and ninja (Python 3)
         shell: cmd
         run: |
-          python -m pip install meson ninja
+          python -m pip install "setuptools>=70.1" meson ninja
 
       - name: Install Python 2.7 deps
         shell: cmd
