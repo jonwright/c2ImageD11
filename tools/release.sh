@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# tools/release.sh — gather CI-built wheels for manual PyPI upload
+# tools/release.sh  --  gather CI-built wheels for manual PyPI upload
 #
 # Downloads pre-built wheels from GitHub Actions CI, computes SHA256
 # checksums, and prints the `twine upload` command.
@@ -82,7 +82,7 @@ for entry in "${WORKFLOWS[@]}"; do
   IFS=':' read -r wf artifact desc <<< "$entry"
   rid=$(get_latest_run "$wf")
   if [ -z "$rid" ]; then
-    echo "WARNING: No successful run for '$wf' — skipping $desc"
+    echo "WARNING: No successful run for '$wf'  --  skipping $desc"
     continue
   fi
 
@@ -92,7 +92,6 @@ for entry in "${WORKFLOWS[@]}"; do
   if gh run download "$rid" --repo "$REPO" --name "$artifact" --dir "$subdir" 2>/dev/null; then
     echo "  -> $subdir/"
   else
-    # Try downloading the full run and filtering
     echo "  Trying full run download for $artifact ..."
     tmpdir=$(mktemp -d)
     gh run download "$rid" --repo "$REPO" --dir "$tmpdir" 2>/dev/null || true
@@ -102,7 +101,7 @@ for entry in "${WORKFLOWS[@]}"; do
       echo "  -> $subdir/"
     else
       rm -rf "$tmpdir"
-      echo "  WARNING: artifact '$artifact' not found in run #$rid — skipping"
+      echo "  WARNING: artifact '$artifact' not found in run #$rid  --  skipping"
     fi
   fi
 done
@@ -144,7 +143,7 @@ echo "First, register the PyPI project (one-time):"
 echo "  1. Go to https://pypi.org/manage/projects/"
 echo "  2. Create project 'c2ImageD11'"
 echo ""
-echo "Set up Trusted Publisher (OIDC — no token needed):"
+echo "Set up Trusted Publisher (OIDC  --  no token needed):"
 echo "  1. Go to https://pypi.org/manage/account/publishing/"
 echo "  2. Add a pending publisher:"
 echo "       PyPI Project: c2ImageD11"
