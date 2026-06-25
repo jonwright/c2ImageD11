@@ -10,9 +10,9 @@
 # Output: build/libc2ImageD11/_cImageD11.so
 
 project('c2ImageD11', 'c',
-  default_options: ['c_std=c11', 'warning_level=1'],
+  default_options: ['c_std=c11', 'warning_level=1', 'buildtype=release', 'strip=true'],
   # Keep in sync with c2ImageD11/__init__.py __version__ (single source of truth)
-  version: '0.2.0')
+  version: '0.2.1')
 
 cc = meson.get_compiler('c')
 
