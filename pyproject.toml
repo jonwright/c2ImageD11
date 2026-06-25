@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "c2ImageD11"
-version = "0.2.0"
+dynamic = ["version"]
 description = "C extensions for ImageD11 (c2py23 binding)"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
@@ -29,6 +29,9 @@ dependencies = [
 Homepage = "https://github.com/jonwright/c2ImageD11"
 Source = "https://github.com/jonwright/c2ImageD11"
 "Bug tracker" = "https://github.com/jonwright/c2ImageD11/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "c2ImageD11._version.__version__"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

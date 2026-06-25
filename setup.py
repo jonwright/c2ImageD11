@@ -107,7 +107,6 @@ if bdist_wheel_cmd:
 
 setup(
     name=str("c2ImageD11"),
-    version=str("0.2.0"),
     description=str("C extensions for ImageD11 (c2py23 binding)"),
     packages=[str("c2ImageD11")],
     package_data={str("c2ImageD11"): [SO_NAME]},

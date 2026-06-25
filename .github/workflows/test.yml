@@ -115,7 +115,7 @@ jobs:
         run: |
           pip install delvewheel 2>nul || exit 0
           if not exist "%TEMP%\wheelhouse" mkdir "%TEMP%\wheelhouse"
-          delvewheel repair -w "%TEMP%\wheelhouse" dist\c2imaged11-0.2.0-py3-none-win_amd64.whl
+          for /f "delims=" %%f in ('dir /b dist\*.whl 2^>nul') do delvewheel repair -w "%TEMP%\wheelhouse" "dist\%%f"
           if exist dist\*.whl del /f /q dist\*.whl
           if exist "%TEMP%\wheelhouse\*.whl" xcopy /y "%TEMP%\wheelhouse\*.whl" dist\
         continue-on-error: true
