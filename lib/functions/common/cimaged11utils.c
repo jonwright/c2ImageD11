@@ -3,7 +3,11 @@
 #include "cImageD11.h"
 #include "cimaged11utils.h"
 #include <stdint.h>
+#ifdef _MSC_VER
+#include <windows.h>
+#else
 #include <sys/time.h>
+#endif
 
 /* C2PY_BEGIN
  * {
@@ -28,10 +32,6 @@ void cimaged11_omp_set_num_threads(int n) {}
 int cimaged11_omp_get_max_threads(void) { return 0; }
 #endif
 
-double my_get_time(void) {
-#if defined(_MSC_VER) || defined(__MINGW32__)
-    LARGE_INTEGER t, f;
-    QueryPerformanceCounter(&t);
 /* C2PY_BEGIN
  * {
  *     "py_sig": "cimaged11_omp_get_max_threads() -> int",
@@ -43,6 +43,10 @@ double my_get_time(void) {
  * }
 C2PY_END */
 
+double my_get_time(void) {
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    LARGE_INTEGER t, f;
+    QueryPerformanceCounter(&t);
     QueryPerformanceFrequency(&f);
     return (double)t.QuadPart / (double)f.QuadPart;
 #else
