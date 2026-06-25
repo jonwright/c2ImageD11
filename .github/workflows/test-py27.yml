@@ -35,7 +35,7 @@ jobs:
 
       - name: Repair wheel for manylinux (via python3)
         run: |
-          python3 -m auditwheel repair --plat manylinux_2_28_x86_64 dist/*.whl -w /tmp/wheelhouse/
+          python3 -m auditwheel repair dist/*.whl -w /tmp/wheelhouse/
           rm -f dist/*.whl
           mv /tmp/wheelhouse/*.whl dist/
 
