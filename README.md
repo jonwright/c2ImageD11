@@ -1,8 +1,10 @@
 # c2ImageD11
 
 Standalone C extensions for ImageD11, ported from f2py to **c2py23**.
-All C functions are exposed directly by the generated wrapper — no
-hand-written adapter code.
+C functions are exposed by a generated CPython extension wrapper.
+Two functions (`blobproperties`, `sparse_blob2Dproperties`) have thin
+Python allocation wrappers in `__init__.py` to match f2py's convention
+of auto-allocating output arrays.
 
 ## Build
 

@@ -32,6 +32,12 @@ jobs:
         run: |
           python setup.py bdist_wheel
 
+      - name: Repair wheel for manylinux
+        run: |
+          auditwheel repair --plat manylinux_2_28_x86_64 dist/*.whl -w /tmp/wheelhouse/
+          rm -f dist/*.whl
+          mv /tmp/wheelhouse/*.whl dist/
+
       - uses: actions/upload-artifact@v4
         with:
           name: dist-linux
@@ -104,6 +110,14 @@ jobs:
       - name: Build wheel
         run: |
           python setup.py bdist_wheel
+
+      - name: Repair wheel (delvewheel)
+        run: |
+          pip install delvewheel
+          if not exist "%TEMP%\wheelhouse\" mkdir "%TEMP%\wheelhouse\"
+          delvewheel repair -w "%TEMP%\wheelhouse\" dist\*.whl
+          if exist dist\*.whl del /f /q dist\*.whl
+          xcopy /y "%TEMP%\wheelhouse\*.whl" dist\
 
       - uses: actions/upload-artifact@v4
         with:

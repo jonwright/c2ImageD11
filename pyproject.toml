@@ -6,11 +6,29 @@ build-backend = "setuptools.build_meta"
 name = "c2ImageD11"
 version = "0.2.0"
 description = "C extensions for ImageD11 (c2py23 binding)"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
 authors = [{name = "Jon Wright", email = "wright@esrf.fr"}]
 requires-python = ">=2.7"
+keywords = ["imageD11", "diffraction", "xray", "crystallography"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: C",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
 dependencies = [
     "numpy",
 ]
+
+[project.urls]
+Homepage = "https://github.com/jonwright/c2ImageD11"
+Source = "https://github.com/jonwright/c2ImageD11"
+"Bug tracker" = "https://github.com/jonwright/c2ImageD11/issues"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -19,14 +19,30 @@ jobs:
 
       - name: Install build deps
         run: |
-          python3 -m pip install meson ninja
-          python2 -m pip install numpy==1.16.6 "pytest>=4.6,<5"
+          python3 -m pip install meson ninja auditwheel
+          python2 -m pip install numpy==1.16.6 "pytest>=4.6,<5" wheel
 
       - name: Build _cImageD11.so
         run: |
           meson setup build/libc2ImageD11 lib
           ninja -C build/libc2ImageD11
           cp build/libc2ImageD11/_cImageD11.so c2ImageD11/_cImageD11.so
+          cp build/libc2ImageD11/_cImageD11.so c2ImageD11/_cImageD11_x86_64.so
+
+      - name: Build py2 wheel
+        run: |
+          python2 setup.py bdist_wheel
+
+      - name: Repair wheel for manylinux (via python3)
+        run: |
+          python3 -m auditwheel repair --plat manylinux_2_28_x86_64 dist/*.whl -w /tmp/wheelhouse/
+          rm -f dist/*.whl
+          mv /tmp/wheelhouse/*.whl dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux-py2
+          path: dist/
 
       - name: Run buffer tests
         run: |
@@ -74,7 +90,7 @@ jobs:
           C:\Python27\python.exe --version
           C:\Python27\python.exe -m pip install --upgrade pip --trusted-host pypi.org --trusted-host files.pythonhosted.org
           C:\Python27\python.exe -m pip install --only-binary :all: numpy==1.16.6 --trusted-host pypi.org --trusted-host files.pythonhosted.org || C:\Python27\python.exe -m pip install numpy==1.16.6 --trusted-host pypi.org --trusted-host files.pythonhosted.org || echo numpy install failed
-          C:\Python27\python.exe -m pip install "pytest>=4.6,<5" --trusted-host pypi.org --trusted-host files.pythonhosted.org
+          C:\Python27\python.exe -m pip install "pytest>=4.6,<5" wheel --trusted-host pypi.org --trusted-host files.pythonhosted.org
 
       - name: Build _cImageD11.pyd
         shell: cmd
@@ -86,6 +102,17 @@ jobs:
           meson setup build\libc2ImageD11 lib
           ninja -C build\libc2ImageD11
           copy build\libc2ImageD11\_cImageD11.dll c2ImageD11\_cImageD11.pyd
+          copy build\libc2ImageD11\_cImageD11.dll c2ImageD11\_cImageD11_AMD64.pyd
+
+      - name: Build py2 wheel
+        shell: cmd
+        run: |
+          C:\Python27\python.exe setup.py bdist_wheel
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows-py2
+          path: dist/
 
       - name: Run buffer tests
         shell: cmd
