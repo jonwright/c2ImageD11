@@ -83,7 +83,7 @@ if "bdist_wheel" in sys.argv:
             _bdist_wheel = None
 
     if _bdist_wheel is not None:
-        python_tag = "py2" if sys.version_info[0] == 2 else "py3"
+        python_tag = str("py2" if sys.version_info[0] == 2 else "py3")
 
         class bdist_wheel_override(_bdist_wheel):
             def finalize_options(self):
@@ -92,7 +92,7 @@ if "bdist_wheel" in sys.argv:
 
             def get_tag(self):
                 impl, abi, plat = _bdist_wheel.get_tag(self)
-                return python_tag, "none", plat
+                return str(python_tag), str("none"), str(plat)
 
         bdist_wheel_cmd = bdist_wheel_override
     else:
@@ -100,9 +100,9 @@ if "bdist_wheel" in sys.argv:
 else:
     bdist_wheel_cmd = None
 
-cmdclass = {"build_py": build_cmodule}
+cmdclass = {str("build_py"): build_cmodule}
 if bdist_wheel_cmd:
-    cmdclass["bdist_wheel"] = bdist_wheel_cmd
+    cmdclass[str("bdist_wheel")] = bdist_wheel_cmd
 
 setup(
     name=str("c2ImageD11"),
