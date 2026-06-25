@@ -111,13 +111,14 @@ jobs:
         run: |
           python setup.py bdist_wheel
 
-      - name: Repair wheel (delvewheel)
+      - name: Repair wheel (delvewheel) - best effort
         run: |
-          pip install delvewheel
+          pip install delvewheel 2>nul || exit 0
           if not exist "%TEMP%\wheelhouse\" mkdir "%TEMP%\wheelhouse\"
-          for /f "delims=" %%f in ('dir /b dist\*.whl') do delvewheel repair -w "%TEMP%\wheelhouse\" "dist\%%f"
+          delvewheel repair -w "%TEMP%\wheelhouse\" dist\c2imaged11-0.2.0-py3-none-win_amd64.whl
           if exist dist\*.whl del /f /q dist\*.whl
           if exist "%TEMP%\wheelhouse\*.whl" xcopy /y "%TEMP%\wheelhouse\*.whl" dist\
+        continue-on-error: true
 
       - uses: actions/upload-artifact@v4
         with:

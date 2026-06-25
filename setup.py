@@ -105,11 +105,11 @@ if bdist_wheel_cmd:
     cmdclass["bdist_wheel"] = bdist_wheel_cmd
 
 setup(
-    name="c2ImageD11",
-    version="0.2.0",
-    description="C extensions for ImageD11 (c2py23 binding)",
-    packages=["c2ImageD11"],
-    package_data={"c2ImageD11": [SO_NAME]},
+    name=str("c2ImageD11"),
+    version=str("0.2.0"),
+    description=str("C extensions for ImageD11 (c2py23 binding)"),
+    packages=[str("c2ImageD11")],
+    package_data={str("c2ImageD11"): [SO_NAME]},
     include_package_data=True,
     distclass=PlatlibDistribution,
     cmdclass=cmdclass,
