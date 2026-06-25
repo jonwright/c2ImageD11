@@ -47,13 +47,13 @@ F2PY_WRAPPER_END */
  *     "gil_release": true,
  *     "c_overloads": [{
  *         "when": "xlylzl.format == 'd' and omega.format == 'd' and out.format == 'd'",
- *         "sig": "void compute_geometry(double xlylzl[][3], double omega[], double omegasign, double wvln, double wedge, double chi, double t[3], double out[][6], intptr_t n)",
+ *         "sig": "void compute_geometry(const double xlylzl[][3], const double omega[], double omegasign, double wvln, double wedge, double chi, const double t[3], double out[][6], intptr_t n)",
  *         "map": {"xlylzl": "xlylzl.ptr", "omega": "omega.ptr", "omegasign": "omegasign", "wvln": "wvln", "wedge": "wedge", "chi": "chi", "t": "t.ptr", "out": "out.ptr", "n": "xlylzl.shape[0]"},
  *     }],
  * }
 C2PY_END */
-void compute_geometry(double xlylzl[][3], double omega[], double omegasign,
-                      double wvln, double wedge, double chi, double t[3],
+void compute_geometry(const double xlylzl[][3], const double omega[], double omegasign,
+                      double wvln, double wedge, double chi, const double t[3],
                       double out[][6], intptr_t n) {
     double sc, cc, sw, cw, wmat[9], cmat[9], mat[9], u[3], d[3], v[3];
     double modyz, o[3], co, so, ds, k[3];
@@ -155,13 +155,13 @@ F2PY_WRAPPER_END */
  *     "gil_release": true,
  *     "c_overloads": [{
  *         "when": "xlylzl.format == 'd' and omega.format == 'd' and gv.format == 'd'",
- *         "sig": "void compute_gv(double xlylzl[][3], double omega[], double omegasign, double wvln, double wedge, double chi, double t[3], double gv[][3], intptr_t n)",
+ *         "sig": "void compute_gv(const double xlylzl[][3], const double omega[], double omegasign, double wvln, double wedge, double chi, const double t[3], double gv[][3], intptr_t n)",
  *         "map": {"xlylzl": "xlylzl.ptr", "omega": "omega.ptr", "omegasign": "omegasign", "wvln": "wvln", "wedge": "wedge", "chi": "chi", "t": "t.ptr", "gv": "gv.ptr", "n": "xlylzl.shape[0]"},
  *     }],
  * }
 C2PY_END */
-void compute_gv(double xlylzl[][3], double omega[], double omegasign,
-                double wvln, double wedge, double chi, double t[3],
+void compute_gv(const double xlylzl[][3], const double omega[], double omegasign,
+                double wvln, double wedge, double chi, const double t[3],
                 double gv[][3], intptr_t n) {
     double sc, cc, sw, cw, wmat[9], cmat[9], mat[9], u[3], d[3], v[3];
     double modyz, o[3], co, so, ds, k[3];
@@ -259,13 +259,13 @@ F2PY_WRAPPER_END */
  *     "gil_release": true,
  *     "c_overloads": [{
  *         "when": "s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'",
- *         "sig": "void compute_xlylzl(double s[], double f[], double p[4], double r[9], double dist[3], double xlylzl[][3], intptr_t n)",
+ *         "sig": "void compute_xlylzl(const double s[], const double f[], const double p[4], const double r[9], const double dist[3], double xlylzl[][3], intptr_t n)",
  *         "map": {"s": "s.ptr", "f": "f.ptr", "p": "p.ptr", "r": "r.ptr", "dist": "dist.ptr", "xlylzl": "xlylzl.ptr", "n": "s.n"},
  *     }],
  * }
 C2PY_END */
-void compute_xlylzl(double s[], double f[], double p[4], double r[9],
-                    double dist[3], double xlylzl[][3], intptr_t n) {
+void compute_xlylzl(const double s[], const double f[], const double p[4], const double r[9],
+                    const double dist[3], double xlylzl[][3], intptr_t n) {
     double s_cen, f_cen, s_size, f_size, v[3];
     intptr_t i; int j;
     s_cen = p[0];
@@ -342,13 +342,13 @@ F2PY_WRAPPER_END */
  *     "gil_release": true,
  *     "c_overloads": [{
  *         "when": "s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'",
- *         "sig": "void compute_xlylzl_xpos_variable(double s[], double f[], double p[4], double r[9], double dist[3], double xpos[], double xlylzl[][3], intptr_t n)",
+ *         "sig": "void compute_xlylzl_xpos_variable(const double s[], const double f[], const double p[4], const double r[9], const double dist[3], const double xpos[], double xlylzl[][3], intptr_t n)",
  *         "map": {"s": "s.ptr", "f": "f.ptr", "p": "p.ptr", "r": "r.ptr", "dist": "dist.ptr", "xpos": "xpos.ptr", "xlylzl": "xlylzl.ptr", "n": "s.n"},
  *     }],
  * }
 C2PY_END */
-void compute_xlylzl_xpos_variable(double s[], double f[], double p[4], double r[9],
-    double dist[3], double xpos[],
+void compute_xlylzl_xpos_variable(const double s[], const double f[], const double p[4], const double r[9],
+    const double dist[3], const double xpos[],
     double xlylzl[][3], intptr_t n)
 {
 double s_cen, f_cen, s_size, f_size, v[3];
@@ -412,7 +412,7 @@ F2PY_WRAPPER_END */
  *     }],
  * }
 C2PY_END */
-void quickorient(double UBI[9], double BT[9]) {
+void quickorient(double UBI[9], const double BT[9]) {
     /* On entry UBI[0] is g1, UBI[1] is g2, BT is made for this to work.
        0 1 2  == g1
        3 4 5  == g2

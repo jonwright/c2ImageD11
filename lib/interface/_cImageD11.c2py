@@ -86,8 +86,8 @@ functions:
         (1) or 4-connected (0).}
     checks: [data.format == 'f', data.ndim == 2, ( labels.format == 'i' or labels.format == 'l' ), labels.n == data.n]
     c_overloads:
-    - sig: int connectedpixels(float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t ns,
-        intptr_t nf) -> int
+    - sig: int connectedpixels(const float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t
+        ns, intptr_t nf) -> int
       map: {data: data.ptr, labels: labels.ptr, threshold: threshold, verbose: verbose, eightconnected: con8, ns: 'data.shape[0]',
         nf: 'data.shape[1]'}
 
@@ -100,8 +100,8 @@ functions:
         == 'd', 'results.shape[0] == np', 'results.shape[1] == 36']
     gil_release: true
     c_overloads:
-    - sig: void blobproperties(float *data, int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf,
-        double *res)
+    - sig: void blobproperties(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns,
+        intptr_t nf, double *res)
       map: {data: data.ptr, labels: labels.ptr, npk: np, omega: omega, verbose: verbose, ns: 'data.shape[0]', nf: 'data.shape[1]',
         res: results.ptr}
 
@@ -141,7 +141,7 @@ functions:
     checks: [img.format == 'f', img.ndim == 2, msk.format == 'b' or msk.format == 'B', msk.n == img.n, ret.format == 'b' or
         ret.format == 'B', ret.n == img.n]
     c_overloads:
-    - sig: int make_clean_mask(float *img, float cut, int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int
+    - sig: int make_clean_mask(const float *img, float cut, int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int
       map: {img: img.ptr, cut: cut, msk: msk.ptr, ret: ret.ptr, ns: 'img.shape[0]', nf: 'img.shape[1]'}
 
   # =====================================================================
@@ -178,14 +178,14 @@ functions:
     doc: Dark subtract then per-row baseline removal.
     checks: [img.format == 'f', img.ndim == 2, drk.format == 'f', drk.n == img.n]
     c_overloads:
-    - sig: void frelon_lines_sub(float *img, float *drk, intptr_t ns, intptr_t nf, float cut)
+    - sig: void frelon_lines_sub(float *img, const float *drk, intptr_t ns, intptr_t nf, float cut)
       map: {img: img.ptr, drk: drk.ptr, ns: 'img.shape[0]', nf: 'img.shape[1]', cut: cut}
 
   - py_sig: 'array_mean_var_cut(img: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void'
     doc: Sigma-clipped mean/var.
     checks: [img.format == 'f']
     c_overloads:
-    - sig: void array_mean_var_cut(float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)
+    - sig: void array_mean_var_cut(const float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)
       map: {img: img.ptr, npx: img.n, n: n, cut: cut, verbose: verbose}
       outputs: {mean: float, std: float}
 
@@ -193,7 +193,8 @@ functions:
     doc: Sigma-clipped mean/var with mask.
     checks: [img.format == 'f', msk.format == 'B' or msk.format == 'b', msk.n == img.n]
     c_overloads:
-    - sig: void array_mean_var_msk(float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)
+    - sig: void array_mean_var_msk(const float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut,
+        int verbose)
       map: {img: img.ptr, msk: msk.ptr, npx: img.n, n: n, cut: cut, verbose: verbose}
       outputs: {mean: float, std: float}
 
@@ -201,7 +202,7 @@ functions:
     doc: Compute min, max, mean, variance.
     checks: [img.format == 'f']
     c_overloads:
-    - sig: void array_stats(float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)
+    - sig: void array_stats(const float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)
       map: {img: img.ptr, npx: img.n}
       outputs: {minval: float, maxval: float, mean: float, var: float}
 
@@ -209,7 +210,7 @@ functions:
     doc: Compute histogram of float array.
     checks: [img.format == 'f', ( hist.format == 'i' or hist.format == 'l' )]
     c_overloads:
-    - sig: void array_histogram(float *img, intptr_t npx, float low, float high, int32_t *hist, intptr_t nhist)
+    - sig: void array_histogram(const float *img, intptr_t npx, float low, float high, int32_t *hist, intptr_t nhist)
       map: {img: img.ptr, npx: img.n, low: low, high: high, hist: hist.ptr, nhist: hist.n}
 
   - py_sig: 'reorder_u16_a32(data: buffer, adr: buffer, out: buffer) -> void'
@@ -238,7 +239,7 @@ functions:
     gil_release: true
     c_overloads:
     - when: adr.format == 'I' or adr.itemsize == 4
-      sig: void reorderlut_u16_a32(uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)
+      sig: void reorderlut_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)
       map: {data: data.ptr, adr: adr.ptr, out: out.ptr, N: data.n}
 
   - py_sig: 'reorderlut_f32_a32(data: buffer, adr: buffer, out: buffer) -> void'
@@ -293,7 +294,8 @@ functions:
     checks: [msk.format == 'b' or msk.format == 'B', msk.ndim == 2, i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize
         == 2, j.n == i.n, ( w.format == 'i' or w.format == 'l' ), 'w.n == msk.shape[0]']
     c_overloads:
-    - sig: int mask_to_coo(int8_t *msk, intptr_t ns, intptr_t nf, uint16_t *i, uint16_t *j, intptr_t nnz, int *nrow) -> int
+    - sig: int mask_to_coo(const int8_t *msk, intptr_t ns, intptr_t nf, uint16_t *i, uint16_t *j, intptr_t nnz, int *nrow) ->
+        int
       map: {msk: msk.ptr, ns: 'msk.shape[0]', nf: 'msk.shape[1]', i: i.ptr, j: j.ptr, nnz: i.n, nrow: w.ptr}
 
   - py_sig: 'sparse_is_sorted(i: buffer, j: buffer) -> int'
@@ -301,7 +303,7 @@ functions:
     params: {i: Row indices (uint16)., j: Col indices (uint16).}
     checks: [i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n]
     c_overloads:
-    - sig: int sparse_is_sorted(uint16_t *i, uint16_t *j, intptr_t nnz) -> int
+    - sig: int sparse_is_sorted(const uint16_t *i, const uint16_t *j, intptr_t nnz) -> int
       map: {i: i.ptr, j: j.ptr, nnz: i.n}
 
   - py_sig: 'sparse_connectedpixels(v: buffer, i: buffer, j: buffer, threshold: float, labels: buffer) -> int'
@@ -310,8 +312,8 @@ functions:
     checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
       ( labels.format == 'i' or labels.format == 'l' ), labels.n == i.n]
     c_overloads:
-    - sig: int sparse_connectedpixels(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) ->
-        int
+    - sig: int sparse_connectedpixels(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t
+        *labels) -> int
       map: {v: v.ptr, i: i.ptr, j: j.ptr, nnz: i.n, threshold: threshold, labels: labels.ptr}
 
   - py_sig: 'sparse_connectedpixels_splat(v: buffer, i: buffer, j: buffer, th: float, lbl: buffer, Z: buffer, ni: int, nj: int)
@@ -322,8 +324,8 @@ functions:
     checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
       ( lbl.format == 'i' or lbl.format == 'l' ), lbl.n == i.n, ( Z.format == 'i' or Z.format == 'l' )]
     c_overloads:
-    - sig: int sparse_connectedpixels_splat(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float threshold, int32_t *labels,
-        int32_t *Z, intptr_t imax, intptr_t jmax) -> int
+    - sig: int sparse_connectedpixels_splat(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold,
+        int32_t *labels, int32_t *Z, intptr_t imax, intptr_t jmax) -> int
       map: {v: v.ptr, i: i.ptr, j: j.ptr, nnz: i.n, threshold: th, labels: lbl.ptr, Z: Z.ptr, imax: ni, jmax: nj}
 
   - py_sig: 'sparse_blob2Dproperties(v: buffer, i: buffer, j: buffer, labels: buffer, npk: int, results: buffer) -> void'
@@ -344,7 +346,7 @@ functions:
     checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
       s.format == 'f', s.n == i.n]
     c_overloads:
-    - sig: void sparse_smooth(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float *s)
+    - sig: void sparse_smooth(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *s)
       map: {v: v.ptr, i: i.ptr, j: j.ptr, nnz: i.n, s: s.ptr}
 
   - py_sig: 'sparse_localmaxlabel(v: buffer, i: buffer, j: buffer, MV: buffer, iMV: buffer, labels: buffer) -> int'
@@ -355,8 +357,8 @@ functions:
       MV.format == 'f', MV.n == i.n, ( iMV.format == 'i' or iMV.format == 'l' ), iMV.n == i.n, ( labels.format == 'i' or labels.format
         == 'l' ), labels.n == i.n]
     c_overloads:
-    - sig: int sparse_localmaxlabel(float *v, uint16_t *i, uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV, int32_t *labels)
-        -> int
+    - sig: int sparse_localmaxlabel(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV,
+        int32_t *labels) -> int
       map: {v: v.ptr, i: i.ptr, j: j.ptr, nnz: i.n, MV: MV.ptr, iMV: iMV.ptr, labels: labels.ptr}
 
   - py_sig: 'sparse_overlaps(i1: buffer, j1: buffer, k1: buffer, i2: buffer, j2: buffer, k2: buffer) -> int'
@@ -367,8 +369,8 @@ functions:
         == 'l', k1.n == i1.n, i2.format == 'H' or i2.itemsize == 2, j2.format == 'H' or j2.itemsize == 2, j2.n == i2.n, k2.format
         == 'i' or k2.format == 'l', k2.n == i2.n]
     c_overloads:
-    - sig: int sparse_overlaps(uint16_t *i1, uint16_t *j1, int *k1, intptr_t nnz1, uint16_t *i2, uint16_t *j2, int *k2, intptr_t
-        nnz2) -> int
+    - sig: int sparse_overlaps(const uint16_t *i1, const uint16_t *j1, int *k1, intptr_t nnz1, const uint16_t *i2, const uint16_t
+        *j2, int *k2, intptr_t nnz2) -> int
       map: {i1: i1.ptr, j1: j1.ptr, k1: k1.ptr, nnz1: i1.n, i2: i2.ptr, j2: j2.ptr, k2: k2.ptr, nnz2: i2.n}
 
   - py_sig: 'compress_duplicates(i: buffer, j: buffer, oi: buffer, oj: buffer, tmp: buffer) -> int'
@@ -391,8 +393,8 @@ functions:
         col2.itemsize == 2, col2.n == row2.n, labels2.format == 'i' or labels2.format == 'l', labels2.n == row2.n, ( mat.format
         == 'i' or mat.format == 'l' ), mat.ndim == 2, ( results.format == 'i' or results.format == 'l' )]
     c_overloads:
-    - sig: int coverlaps(uint16_t *row1, uint16_t *col1, int *labels1, intptr_t nnz1, uint16_t *row2, uint16_t *col2, int *labels2,
-        intptr_t nnz2, int *mat, intptr_t npk1, intptr_t npk2, int *results) -> int
+    - sig: int coverlaps(const uint16_t *row1, const uint16_t *col1, const int *labels1, intptr_t nnz1, const uint16_t *row2,
+        const uint16_t *col2, const int *labels2, intptr_t nnz2, int *mat, intptr_t npk1, intptr_t npk2, int *results) -> int
       map: {row1: row1.ptr, col1: col1.ptr, labels1: labels1.ptr, nnz1: row1.n, row2: row2.ptr, col2: col2.ptr, labels2: labels2.ptr,
         nnz2: row2.n, mat: mat.ptr, npk1: 'mat.shape[0]', npk2: 'mat.shape[1]', results: results.ptr}
 
@@ -404,8 +406,8 @@ functions:
         == ''?''', msk.n == img.n, row.format == 'H' or row.itemsize == 2, col.format == 'H' or col.itemsize == 2, val.format
         == 'H' or val.itemsize == 2]
     c_overloads:
-    - sig: int tosparse_u16(uint16_t *img, uint8_t *msk, uint16_t *row, uint16_t *col, uint16_t *val, int cut, intptr_t ns,
-        intptr_t nf) -> int
+    - sig: int tosparse_u16(const uint16_t *img, const uint8_t *msk, uint16_t *row, uint16_t *col, uint16_t *val, int cut, intptr_t
+        ns, intptr_t nf) -> int
       map: {img: img.ptr, msk: msk.ptr, row: row.ptr, col: col.ptr, val: val.ptr, cut: cut, ns: 'img.shape[0]', nf: 'img.shape[1]'}
 
   - py_sig: 'tosparse_u32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int'
@@ -416,8 +418,8 @@ functions:
         == ''?''', msk.n == img.n, row.format == 'H' or row.itemsize == 2, col.format == 'H' or col.itemsize == 2, val.format
         == 'I' or val.itemsize == 4]
     c_overloads:
-    - sig: int tosparse_u32(uint32_t *img, uint8_t *msk, uint16_t *row, uint16_t *col, uint32_t *val, float cut, intptr_t ns,
-        intptr_t nf) -> int
+    - sig: int tosparse_u32(const uint32_t *img, const uint8_t *msk, uint16_t *row, uint16_t *col, uint32_t *val, float cut,
+        intptr_t ns, intptr_t nf) -> int
       map: {img: img.ptr, msk: msk.ptr, row: row.ptr, col: col.ptr, val: val.ptr, cut: cut, ns: 'img.shape[0]', nf: 'img.shape[1]'}
 
   - py_sig: 'tosparse_f32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int'
@@ -426,8 +428,8 @@ functions:
     checks: [img.format == 'f', img.ndim == 2, 'msk.format == ''B'' or msk.format == ''b'' or msk.format == ''?''', msk.n ==
         img.n, row.format == 'H' or row.itemsize == 2, col.format == 'H' or col.itemsize == 2, val.format == 'f']
     c_overloads:
-    - sig: int tosparse_f32(float *img, uint8_t *msk, uint16_t *row, uint16_t *col, float *val, float cut, intptr_t ns, intptr_t
-        nf) -> int
+    - sig: int tosparse_f32(const float *img, const uint8_t *msk, uint16_t *row, uint16_t *col, float *val, float cut, intptr_t
+        ns, intptr_t nf) -> int
       map: {img: img.ptr, msk: msk.ptr, row: row.ptr, col: col.ptr, val: val.ptr, cut: cut, ns: 'img.shape[0]', nf: 'img.shape[1]'}
 
   # =====================================================================
@@ -440,7 +442,7 @@ functions:
     checks: [rgba.format == 'B' or rgba.format == 'b', rgba.ndim >= 1, gve.format == 'd', gve.ndim >= 1, u.format == 'd', u.n
         == 9, gve.slow_axis == 0, gve.ndim == 2, 'gve.shape[1] == 3']
     c_overloads:
-    - sig: void splat(uint8_t *rgba, intptr_t w, intptr_t h, double gve[][3], intptr_t ng, double *u, intptr_t npx)
+    - sig: void splat(uint8_t *rgba, intptr_t w, intptr_t h, const double gve[][3], intptr_t ng, const double *u, intptr_t npx)
       map: {rgba: rgba.ptr, w: 'rgba.shape[1]', h: 'rgba.shape[0]', gve: gve.ptr, ng: 'gve.shape[0]', u: u.ptr, npx: npx}
 
   # =====================================================================
@@ -460,8 +462,8 @@ functions:
     gil_release: true
     c_overloads:
     - when: xlylzl.format == 'd' and omega.format == 'd' and out.format == 'd'
-      sig: void compute_geometry(double xlylzl[][3], double omega[], double omegasign, double wvln, double wedge, double chi,
-        double t[3], double out[][6], intptr_t n)
+      sig: void compute_geometry(const double xlylzl[][3], const double omega[], double omegasign, double wvln, double wedge,
+        double chi, const double t[3], double out[][6], intptr_t n)
       map: {xlylzl: xlylzl.ptr, omega: omega.ptr, omegasign: omegasign, wvln: wvln, wedge: wedge, chi: chi, t: t.ptr, out: out.ptr,
         n: 'xlylzl.shape[0]'}
 
@@ -476,8 +478,8 @@ functions:
     gil_release: true
     c_overloads:
     - when: xlylzl.format == 'd' and omega.format == 'd' and gv.format == 'd'
-      sig: void compute_gv(double xlylzl[][3], double omega[], double omegasign, double wvln, double wedge, double chi, double
-        t[3], double gv[][3], intptr_t n)
+      sig: void compute_gv(const double xlylzl[][3], const double omega[], double omegasign, double wvln, double wedge, double
+        chi, const double t[3], double gv[][3], intptr_t n)
       map: {xlylzl: xlylzl.ptr, omega: omega.ptr, omegasign: omegasign, wvln: wvln, wedge: wedge, chi: chi, t: t.ptr, gv: gv.ptr,
         n: 'xlylzl.shape[0]'}
 
@@ -491,8 +493,8 @@ functions:
     gil_release: true
     c_overloads:
     - when: s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'
-      sig: void compute_xlylzl(double s[], double f[], double p[4], double r[9], double dist[3], double xlylzl[][3], intptr_t
-        n)
+      sig: void compute_xlylzl(const double s[], const double f[], const double p[4], const double r[9], const double dist[3],
+        double xlylzl[][3], intptr_t n)
       map: {s: s.ptr, f: f.ptr, p: p.ptr, r: r.ptr, dist: dist.ptr, xlylzl: xlylzl.ptr, n: s.n}
 
   - py_sig: 'compute_xlylzl_xpos_variable(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xpos: buffer, xlylzl: buffer)
@@ -506,8 +508,8 @@ functions:
     gil_release: true
     c_overloads:
     - when: s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'
-      sig: void compute_xlylzl_xpos_variable(double s[], double f[], double p[4], double r[9], double dist[3], double xpos[],
-        double xlylzl[][3], intptr_t n)
+      sig: void compute_xlylzl_xpos_variable(const double s[], const double f[], const double p[4], const double r[9], const
+        double dist[3], const double xpos[], double xlylzl[][3], intptr_t n)
       map: {s: s.ptr, f: f.ptr, p: p.ptr, r: r.ptr, dist: dist.ptr, xpos: xpos.ptr, xlylzl: xlylzl.ptr, n: s.n}
 
   - py_sig: 'quickorient(ubi: buffer, bt: buffer) -> void'
@@ -537,7 +539,7 @@ functions:
         each row i, ic[i] = index j of the nearest neighbor (j != i).'}
     checks: [x.format == 'd', x.ndim == 2, 'x.shape[1] >= 1', ( ic.format == 'i' or ic.format == 'l' ), 'ic.n == x.shape[0]']
     c_overloads:
-    - sig: void closest_vec(double *x, intptr_t dim, intptr_t nv, int *ic)
+    - sig: void closest_vec(const double *x, intptr_t dim, intptr_t nv, int *ic)
       map: {x: x.ptr, dim: 'x.shape[1]', nv: 'x.shape[0]', ic: ic.ptr}
 
   - py_sig: 'closest(x: buffer, v: buffer) -> void'
@@ -546,7 +548,7 @@ functions:
         (e.g. experimental cosines).}
     checks: [x.format == 'd', v.format == 'd']
     c_overloads:
-    - sig: void closest(double *x, double *v, int *ribest, double *rbest, intptr_t nx, intptr_t nv)
+    - sig: void closest(const double *x, const double *v, int *ribest, double *rbest, intptr_t nx, intptr_t nv)
       outputs: {ribest: int, rbest: double}
       doc: Standard O(nx*nv) scan-find-closest.
       map: {x: x.ptr, v: v.ptr, nx: x.n, nv: v.n}
@@ -559,7 +561,7 @@ functions:
     gil_release: true
     c_overloads:
     - when: ubi.format == 'd' and gv.format == 'd'
-      sig: int score(double ubi[3][3], double gv[][3], double tol, intptr_t ng) -> int
+      sig: int score(const double ubi[3][3], const double gv[][3], double tol, intptr_t ng) -> int
       map: {ubi: ubi.ptr, gv: gv.ptr, tol: tol, ng: 'gv.shape[0]'}
 
   - py_sig: 'score_and_refine(ubi: buffer, gv: buffer, tol: float) -> int'
@@ -570,7 +572,8 @@ functions:
     gil_release: true
     c_overloads:
     - when: ubi.format == 'd' and gv.format == 'd'
-      sig: void score_and_refine(double ubi[3][3], double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)
+      sig: void score_and_refine(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t
+        ng)
       outputs: {n_arg: int, sumdrlv2_arg: double}
       map: {ubi: ubi.ptr, gv: gv.ptr, tol: tol, ng: 'gv.shape[0]'}
 
@@ -584,8 +587,8 @@ functions:
     gil_release: true
     c_overloads:
     - when: ubi.format == 'd' and gv.format == 'd'
-      sig: int score_and_assign(double ubi[3][3], double gv[][3], double tol, double *drlv2, int *labels, int label, intptr_t
-        ng) -> int
+      sig: int score_and_assign(const double ubi[3][3], const double gv[][3], double tol, double *drlv2, int *labels, int label,
+        intptr_t ng) -> int
       map: {ubi: ubi.ptr, gv: gv.ptr, tol: tol, drlv2: drlv2.ptr, labels: labels.ptr, label: label, ng: 'gv.shape[0]'}
 
   - py_sig: 'refine_assigned(ubi: buffer, gv: buffer, labels: buffer, label: int) -> void'
@@ -595,8 +598,8 @@ functions:
     checks: [ubi.format == 'd', ubi.n == 9, gv.format == 'd', ( labels.format == 'i' or labels.format == 'l' ), 'labels.n ==
         gv.shape[0]']
     c_overloads:
-    - sig: void refine_assigned(double ubi[3][3], double gv[][3], int *labels, int label, int *npk, double *drlv2, intptr_t
-        ng)
+    - sig: void refine_assigned(double ubi[3][3], const double gv[][3], const int *labels, int label, int *npk, double *drlv2,
+        intptr_t ng)
       outputs: {npk: int, drlv2: double}
       map: {ubi: ubi.ptr, gv: gv.ptr, labels: labels.ptr, label: label, ng: 'gv.shape[0]'}
 
@@ -629,7 +632,7 @@ functions:
     checks: [ar.format == 'd', ( order.format == 'i' or order.format == 'l' ), order.n == ar.n, ( ids.format == 'i' or ids.format
         == 'l' ), ids.n == ar.n, avgs.format == 'd', avgs.n == ar.n]
     c_overloads:
-    - sig: void cluster1d(double *ar, intptr_t n, int *order, double tol, int *nclusters, int *ids, double *avgs)
+    - sig: void cluster1d(const double *ar, intptr_t n, const int *order, double tol, int *nclusters, int *ids, double *avgs)
       map: {ar: ar.ptr, n: ar.n, order: order.ptr, tol: tol, ids: ids.ptr, avgs: avgs.ptr}
       outputs: {nclusters: int}
 
@@ -642,8 +645,8 @@ functions:
     checks: [ubi.format == 'd', ubi.n == 9, ub.format == 'd', ub.n == 9, gv.format == 'd', gv.ndim >= 1, g0.format == 'd', g1.format
         == 'd', g2.format == 'd', e.format == 'd']
     c_overloads:
-    - sig: void score_gvec_z(double ubi[3][3], double ub[3][3], double gv[][3], double g0[], double g1[], double g2[], double
-        e[], int recompute, intptr_t n)
+    - sig: void score_gvec_z(const double ubi[3][3], const double ub[3][3], const double gv[][3], double g0[], double g1[],
+        double g2[], double e[], int recompute, intptr_t n)
       map: {ubi: ubi.ptr, ub: ub.ptr, gv: gv.ptr, g0: g0.ptr, g1: g1.ptr, g2: g2.ptr, e: e.ptr, recompute: recompute, n: 'gv.shape[0]'}
 
   - py_sig: 'misori_cubic(u1: buffer, u2: buffer) -> float'
@@ -683,7 +686,7 @@ functions:
     params: {pi: First sorted array of integer labels., pj: Second sorted array of integer labels.}
     checks: [( pi.format == 'i' or pi.format == 'l' ), ( pj.format == 'i' or pj.format == 'l' )]
     c_overloads:
-    - sig: int count_shared(int *pi, intptr_t ni, int *pj, intptr_t nj) -> int
+    - sig: int count_shared(const int *pi, intptr_t ni, const int *pj, intptr_t nj) -> int
       map: {pi: pi.ptr, ni: pi.n, pj: pj.ptr, nj: pj.n}
 
   # =====================================================================
