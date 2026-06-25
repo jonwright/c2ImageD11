@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """harvester.py - Regenerate all files in lib/interface/.
 
-Extracts C2PY_BEGIN..C2PY_END blocks from C sources in lib/src/,
+Extracts C2PY_BEGIN..C2PY_END blocks from C sources in lib/functions/,
 assembles _cImageD11.c2py, copies c2py23 runtime, and runs
 c2py23.cli.generate to produce the wrapper.
 
