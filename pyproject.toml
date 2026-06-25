@@ -7,7 +7,6 @@ name = "c2ImageD11"
 dynamic = ["version"]
 description = "C extensions for ImageD11 (c2py23 binding)"
 readme = "README.md"
-license = { text = "GPL-3.0-or-later" }
 authors = [{name = "Jon Wright", email = "wright@esrf.fr"}]
 requires-python = ">=2.7"
 keywords = ["imageD11", "diffraction", "xray", "crystallography"]
@@ -30,8 +29,9 @@ Homepage = "https://github.com/jonwright/c2ImageD11"
 Source = "https://github.com/jonwright/c2ImageD11"
 "Bug tracker" = "https://github.com/jonwright/c2ImageD11/issues"
 
-[tool.setuptools.dynamic]
-version = {attr = "c2ImageD11.__version__"}
+[tool.setuptools]
+license-files = []
+dynamic = {version = {attr = "c2ImageD11.__version__"}}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
