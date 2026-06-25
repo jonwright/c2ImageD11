@@ -29,9 +29,9 @@ jobs:
           cp build/libc2ImageD11/_cImageD11.so c2ImageD11/_cImageD11.so
           cp build/libc2ImageD11/_cImageD11.so c2ImageD11/_cImageD11_x86_64.so
 
-      - name: Build py2 wheel
+      - name: Build py2 wheel (using python3 setuptools for proper platlib)
         run: |
-          python2 setup.py bdist_wheel
+          C2IMAGED11_PYTHON_TAG=py2 python3 setup.py bdist_wheel
 
       - name: Repair wheel for manylinux (via python3)
         run: |
@@ -104,10 +104,11 @@ jobs:
           copy build\libc2ImageD11\_cImageD11.dll c2ImageD11\_cImageD11.pyd
           copy build\libc2ImageD11\_cImageD11.dll c2ImageD11\_cImageD11_AMD64.pyd
 
-      - name: Build py2 wheel
+      - name: Build py2 wheel (using python3 setuptools for proper platlib)
         shell: cmd
         run: |
-          C:\Python27\python.exe setup.py bdist_wheel
+          set C2IMAGED11_PYTHON_TAG=py2
+          python setup.py bdist_wheel
 
       - uses: actions/upload-artifact@v4
         with:
