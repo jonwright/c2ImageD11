@@ -31,7 +31,7 @@ Source = "https://github.com/jonwright/c2ImageD11"
 "Bug tracker" = "https://github.com/jonwright/c2ImageD11/issues"
 
 [tool.setuptools.dynamic]
-version = {attr = "c2ImageD11._version.__version__"}
+version = {attr = "c2ImageD11.__version__"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

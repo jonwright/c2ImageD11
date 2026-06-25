@@ -20,14 +20,14 @@ hand-written adapter code.
 
 ## Versioning
 
-Single source of truth: `c2ImageD11/_version.py` (`__version__`).
+Single source of truth: `c2ImageD11/__init__.py` (`__version__`).
 
 On bump:
-1. Edit `c2ImageD11/_version.py` — the new version number
+1. Edit `c2ImageD11/__init__.py` — the `__version__` line
 2. Sync `lib/meson.build` (`version:` field) — same value
 3. Git tag `v<newversion>` after merge
 
-`pyproject.toml` and `setup.py` read from `_version.py` automatically
+`pyproject.toml` and `setup.py` read from `__init__.py` automatically
 via `[tool.setuptools.dynamic]` / `attr:` directive.
 
 ## Language Choices

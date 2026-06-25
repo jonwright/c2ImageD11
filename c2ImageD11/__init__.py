@@ -5,16 +5,17 @@ Provides:
   - All C functions re-exported from the arch-named .so
   - Blob property constants (s_1, s_I, NPROPERTY, etc.)
   - Allocation wrappers for f2py-compatible tuple returns
-  - __version__ (imported from _version.py)
+  - __version__
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from ._version import __version__  # noqa: F401 -- public, single source of truth
+__version__ = "0.2.0"
 
 import os
 import platform
 import sys
+import warnings
 
 # ---------------------------------------------------------------------------
 # Arch-aware .so loader
@@ -41,47 +42,95 @@ if not os.path.exists(_lib_path):
     _lib_path = os.path.join(_here, "_cImageD11" + _ext)
 
 if not os.path.exists(_lib_path):
-    raise ImportError("c2ImageD11: no binary at {} or {}".format(
-        os.path.join(_here, _lib_name), os.path.join(_here, "_cImageD11" + _ext)))
-
-if sys.version_info[0] >= 3:
-    import importlib.util
-    _spec = importlib.util.spec_from_file_location(
-        "c2ImageD11._cImageD11", _lib_path)
-    _mod = importlib.util.module_from_spec(_spec)
-    sys.modules["c2ImageD11._cImageD11"] = _mod
-    _spec.loader.exec_module(_mod)
+    # .so not built yet (e.g. during setuptools metadata reading).
+    # __version__ is still available; C functions will not be.
+    _mod = None
 else:
-    import imp
-    _mod = imp.load_dynamic("c2ImageD11._cImageD11", _lib_path)
+    if sys.version_info[0] >= 3:
+        import importlib.util
+        _spec = importlib.util.spec_from_file_location(
+            "c2ImageD11._cImageD11", _lib_path)
+        _mod = importlib.util.module_from_spec(_spec)
+        sys.modules["c2ImageD11._cImageD11"] = _mod
+        _spec.loader.exec_module(_mod)
+    else:
+        import imp
+        _mod = imp.load_dynamic("c2ImageD11._cImageD11", _lib_path)
 
-# Make _cImageD11 importable as c2ImageD11._cImageD11
-sys.modules[__name__]._cImageD11 = _mod
+if _mod is not None:
+    # Make _cImageD11 importable as c2ImageD11._cImageD11
+    sys.modules[__name__]._cImageD11 = _mod
 
-# Re-export all non-private names from the loaded module
-for _k in dir(_mod):
-    if not _k.startswith("_"):
-        globals()[_k] = getattr(_mod, _k)
+    # Re-export all non-private names from the loaded module
+    for _k in dir(_mod):
+        if not _k.startswith("_"):
+            globals()[_k] = getattr(_mod, _k)
 
 
-_blobproperties_c = _mod.blobproperties  # save raw C function
+    _blobproperties_c = _mod.blobproperties  # save raw C function
 
-def blobproperties(data, labels, npk, omega=0.0, verbose=0):
-    """Allocate results and call C blobproperties, matching f2py convention."""
-    import numpy as np
-    results = np.zeros((npk, 36), dtype=np.float64)
-    _blobproperties_c(data, labels, npk, results, omega, verbose)
-    return results
+    def blobproperties(data, labels, npk, omega=0.0, verbose=0):
+        """Allocate results and call C blobproperties, matching f2py convention."""
+        import numpy as np
+        results = np.zeros((npk, 36), dtype=np.float64)
+        _blobproperties_c(data, labels, npk, results, omega, verbose)
+        return results
 
-_sparse_blob2Dproperties_c = _mod.sparse_blob2Dproperties
+    _sparse_blob2Dproperties_c = _mod.sparse_blob2Dproperties
 
-def sparse_blob2Dproperties(v, i, j, labels, npk):
-    """Allocate results and call C sparse_blob2Dproperties, matching f2py convention."""
-    import numpy as np
-    results = np.zeros((npk, 11), dtype=np.float64)
-    _sparse_blob2Dproperties_c(v, i, j, labels, npk, results)
-    return results
+    def sparse_blob2Dproperties(v, i, j, labels, npk):
+        """Allocate results and call C sparse_blob2Dproperties, matching f2py convention."""
+        import numpy as np
+        results = np.zeros((npk, 11), dtype=np.float64)
+        _sparse_blob2Dproperties_c(v, i, j, labels, npk, results)
+        return results
 
-# Replace raw C functions on submodule with allocation wrappers
-_mod.blobproperties = blobproperties
-_mod.sparse_blob2Dproperties = sparse_blob2Dproperties
+    # Replace raw C functions on submodule with allocation wrappers
+    _mod.blobproperties = blobproperties
+    _mod.sparse_blob2Dproperties = sparse_blob2Dproperties
+
+
+    # -----------------------------------------------------------------------
+    # OpenMP safety
+    # -----------------------------------------------------------------------
+
+    def _check_multiprocessing(patch=False):
+        """Warn about fork+threads interaction with OpenMP.
+
+        You cannot safely use os.fork together with threads.
+        But the cImageD11 codes uses threads via openmp, and you are importing them.
+        So please use forkserver or spawn for multiprocessing.
+        """
+        if not hasattr(os, "fork"):
+            return
+        import multiprocessing
+        if not hasattr(multiprocessing, "get_start_method"):
+            warnings.warn(
+                "python2.7 with c2ImageD11: for multiprocessing use spawn\n"
+            )
+            return
+        method = multiprocessing.get_start_method(allow_none=True)
+        if method == "fork":
+            warnings.warn(_check_multiprocessing.__doc__)
+        parent = None
+        if hasattr(multiprocessing, "parent_process"):
+            parent = multiprocessing.parent_process()
+            if parent is not None:
+                if "OMP_NUM_THREADS" not in os.environ:
+                    cimaged11_omp_set_num_threads(1)
+
+
+    check_multiprocessing = _check_multiprocessing  # public alias (f2py compat)
+
+    if cimaged11_omp_get_max_threads() == 0:
+        OPENMP = False
+    else:
+        OPENMP = True
+        _check_multiprocessing()
+
+
+    # -----------------------------------------------------------------------
+    # Sanity check
+    # -----------------------------------------------------------------------
+
+    assert verify_rounding(20) == 0, "Problem with cImageD11 fast rounding code"
