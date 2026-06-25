@@ -651,7 +651,7 @@ functions:
     params: {u1: Orientation matrix U (9-element flattened double)., u2: Orientation matrix U (9-element flattened double).}
     checks: [u1.format == 'd', u1.n == 9, u2.format == 'd', u2.n == 9]
     c_overloads:
-    - sig: double misori_cubic(double u1[3][3], double u2[3][3]) -> double
+    - sig: double misori_cubic(const double u1[3][3], const double u2[3][3]) -> double
       map: {u1: u1.ptr, u2: u2.ptr}
 
   - py_sig: 'misori_orthorhombic(u1: buffer, u2: buffer) -> float'
@@ -659,7 +659,7 @@ functions:
     params: {u1: Orientation matrix U (9-element flattened double)., u2: Orientation matrix U (9-element flattened double).}
     checks: [u1.format == 'd', u1.n == 9, u2.format == 'd', u2.n == 9]
     c_overloads:
-    - sig: double misori_orthorhombic(double u1[3][3], double u2[3][3]) -> double
+    - sig: double misori_orthorhombic(const double u1[3][3], const double u2[3][3]) -> double
       map: {u1: u1.ptr, u2: u2.ptr}
 
   - py_sig: 'misori_tetragonal(u1: buffer, u2: buffer) -> float'
@@ -667,7 +667,7 @@ functions:
     params: {u1: Orientation matrix U (9-element flattened double)., u2: Orientation matrix U (9-element flattened double).}
     checks: [u1.format == 'd', u1.n == 9, u2.format == 'd', u2.n == 9]
     c_overloads:
-    - sig: double misori_tetragonal(double u1[3][3], double u2[3][3]) -> double
+    - sig: double misori_tetragonal(const double u1[3][3], const double u2[3][3]) -> double
       map: {u1: u1.ptr, u2: u2.ptr}
 
   - py_sig: 'misori_monoclinic(u1: buffer, u2: buffer) -> float'
@@ -675,7 +675,7 @@ functions:
     params: {u1: Orientation matrix U (9-element flattened double)., u2: Orientation matrix U (9-element flattened double).}
     checks: [u1.format == 'd', u1.n == 9, u2.format == 'd', u2.n == 9]
     c_overloads:
-    - sig: double misori_monoclinic(double u1[3][3], double u2[3][3]) -> double
+    - sig: double misori_monoclinic(const double u1[3][3], const double u2[3][3]) -> double
       map: {u1: u1.ptr, u2: u2.ptr}
 
   - py_sig: 'count_shared(pi: buffer, pj: buffer) -> int'

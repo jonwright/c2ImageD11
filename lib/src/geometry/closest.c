@@ -998,7 +998,7 @@ F2PY_WRAPPER_END */
  *         "u2.n == 9",
  *     ],
  *     "c_overloads": [{
- *         "sig": "double misori_cubic(double u1[3][3], double u2[3][3]) -> double",
+ *         "sig": "double misori_cubic(const double u1[3][3], const double u2[3][3]) -> double",
  *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
  *     }],
  * }
@@ -1081,7 +1081,7 @@ F2PY_WRAPPER_END */
  *         "u2.n == 9",
  *     ],
  *     "c_overloads": [{
- *         "sig": "double misori_orthorhombic(double u1[3][3], double u2[3][3]) -> double",
+ *         "sig": "double misori_orthorhombic(const double u1[3][3], const double u2[3][3]) -> double",
  *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
  *     }],
  * }
@@ -1140,7 +1140,7 @@ F2PY_WRAPPER_END */
  *         "u2.n == 9",
  *     ],
  *     "c_overloads": [{
- *         "sig": "double misori_tetragonal(double u1[3][3], double u2[3][3]) -> double",
+ *         "sig": "double misori_tetragonal(const double u1[3][3], const double u2[3][3]) -> double",
  *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
  *     }],
  * }
@@ -1211,7 +1211,7 @@ F2PY_WRAPPER_END */
  *         "u2.n == 9",
  *     ],
  *     "c_overloads": [{
- *         "sig": "double misori_monoclinic(double u1[3][3], double u2[3][3]) -> double",
+ *         "sig": "double misori_monoclinic(const double u1[3][3], const double u2[3][3]) -> double",
  *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
  *     }],
  * }
