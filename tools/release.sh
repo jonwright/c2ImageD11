@@ -106,6 +106,19 @@ for entry in "${WORKFLOWS[@]}"; do
   fi
 done
 
+# ---- Build sdist ----------------------------------------------------------
+echo ""
+echo "=========================================="
+echo "  Building source distribution"
+echo "=========================================="
+SDISTDIR="$OUTDIR/sdist"
+mkdir -p "$SDISTDIR"
+if python3 setup.py sdist --dist-dir "$SDISTDIR" 2>/dev/null; then
+  echo "  -> $SDISTDIR/"
+else
+  echo "  WARNING: sdist build failed — skipping"
+fi
+
 # ---- Show inventory -------------------------------------------------------
 echo ""
 echo "=========================================="
@@ -154,11 +167,13 @@ echo "       Environment: pypi-publish"
 echo ""
 echo "Then upload:"
 echo ""
-echo "  twine check $OUTDIR/*/*.whl"
-echo "  twine upload $OUTDIR/*/*.whl"
+echo "  twine check $OUTDIR/*/*.whl $OUTDIR/sdist/*.tar.gz"
+echo "  twine upload $OUTDIR/*/*.whl $OUTDIR/sdist/*.tar.gz"
 echo ""
-echo "Or upload per-arch:"
-for w in "${wheels[@]}"; do
+echo "Or upload per-file:"
+sdist_wheels=()
+while IFS= read -r w; do sdist_wheels+=("$w"); done < <(find "$OUTDIR" -name '*.whl' -o -name '*.tar.gz' | sort)
+for w in "${sdist_wheels[@]}"; do
   echo "  twine upload $w"
 done
 echo ""
