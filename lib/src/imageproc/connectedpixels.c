@@ -69,10 +69,10 @@ DLL_LOCAL
  *  "params": {"data": "Input float32 2D.", "labels": "Output int32 labels.", "threshold": "Threshold.",
  *      "verbose": "Print diagnostics.", "con8": "8-connected (1) or 4-connected (0)."},
  *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n"],
- *  "c_overloads": [{"sig": "int connectedpixels(float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
+ *  "c_overloads": [{"sig": "int connectedpixels(const float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
  *      "map": {"data": "data.ptr", "labels": "labels.ptr", "threshold": "threshold", "verbose": "verbose", "eightconnected": "con8", "ns": "data.shape[0]", "nf": "data.shape[1]"}}]}
 C2PY_END */
-int connectedpixels(float *data, int32_t *labels, float threshold, int verbose,
+int connectedpixels(const float *data, int32_t *labels, float threshold, int verbose,
                     int eightconnected, intptr_t ns, intptr_t nf) {
 
     intptr_t i, j, irp, ir, ipx;
@@ -228,10 +228,10 @@ F2PY_WRAPPER_END */
  *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n",
  *      "results.format == 'd'", "results.shape[0] == np", "results.shape[1] == 36"],
  *  "gil_release": true,
- *  "c_overloads": [{"sig": "void blobproperties(float *data, int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf, double *res)",
+ *  "c_overloads": [{"sig": "void blobproperties(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf, double *res)",
  *      "map": {"data": "data.ptr", "labels": "labels.ptr", "npk": "np", "omega": "omega", "verbose": "verbose", "ns": "data.shape[0]", "nf": "data.shape[1]", "res": "results.ptr"}}]}
 C2PY_END */
-void blobproperties(float *data, int32_t *labels, int32_t npk, float omega,
+void blobproperties(const float *data, const int32_t *labels, int32_t npk, float omega,
                     int verbose, intptr_t ns, intptr_t nf, double *res) {
     intptr_t i, j, ipx; int bad;
     double fval;
@@ -629,10 +629,10 @@ F2PY_WRAPPER_END */
  *  "params": {"img": "Input float32 2D.", "cut": "Threshold.", "msk": "Priority mask (int8).", "ret": "Output cleaned mask."},
  *  "checks": ["img.format == 'f'", "img.ndim == 2", "msk.format == 'b' or msk.format == 'B'", "msk.n == img.n",
  *      "ret.format == 'b' or ret.format == 'B'", "ret.n == img.n"],
- *  "c_overloads": [{"sig": "int make_clean_mask(float *img, float cut, int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int",
+ *  "c_overloads": [{"sig": "int make_clean_mask(const float *img, float cut, int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int",
  *      "map": {"img": "img.ptr", "cut": "cut", "msk": "msk.ptr", "ret": "ret.ptr", "ns": "img.shape[0]", "nf": "img.shape[1]"}}]}
 C2PY_END */
-int make_clean_mask(float *restrict img, float cut, int8_t *restrict msk,
+int make_clean_mask(const float *restrict img, float cut, int8_t *restrict msk,
                     int8_t *restrict ret, intptr_t ns, intptr_t nf) {
     /* cleans pixels with no 4 connected neighbors */
     intptr_t i;

@@ -31,10 +31,10 @@ F2PY_WRAPPER_END */
  *  "checks": ["rgba.format == 'B' or rgba.format == 'b'", "rgba.ndim >= 1",
  *      "gve.format == 'd'", "gve.ndim >= 1", "u.format == 'd'", "u.n == 9",
  *      "gve.slow_axis == 0", "gve.ndim == 2", "gve.shape[1] == 3"],
- *  "c_overloads": [{"sig": "void splat(uint8_t *rgba, intptr_t w, intptr_t h, double gve[][3], intptr_t ng, double *u, intptr_t npx)",
+ *  "c_overloads": [{"sig": "void splat(uint8_t *rgba, intptr_t w, intptr_t h, const double gve[][3], intptr_t ng, const double *u, intptr_t npx)",
  *      "map": {"rgba": "rgba.ptr", "w": "rgba.shape[1]", "h": "rgba.shape[0]", "gve": "gve.ptr", "ng": "gve.shape[0]", "u": "u.ptr", "npx": "npx"}}]}
 C2PY_END */
-void splat(uint8_t rgba[], intptr_t w, intptr_t h, double gve[][3], intptr_t ng, double u[9],
+void splat(uint8_t rgba[], intptr_t w, intptr_t h, const double gve[][3], intptr_t ng, const double u[9],
            intptr_t npx) {
     intptr_t i, j, k; int32_t imx, imy, imz, w2, h2;
     double s[9];

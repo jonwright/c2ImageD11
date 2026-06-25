@@ -171,10 +171,10 @@ F2PY_WRAPPER_END */
  * {"py_sig": "frelon_lines_sub(img: buffer, drk: buffer, cut: float) -> void",
  *  "doc": "Dark subtract then per-row baseline removal.",
  *  "checks": ["img.format == 'f'", "img.ndim == 2", "drk.format == 'f'", "drk.n == img.n"],
- *  "c_overloads": [{"sig": "void frelon_lines_sub(float *img, float *drk, intptr_t ns, intptr_t nf, float cut)",
+ *  "c_overloads": [{"sig": "void frelon_lines_sub(float *img, const float *drk, intptr_t ns, intptr_t nf, float cut)",
  *      "map": {"img": "img.ptr", "drk": "drk.ptr", "ns": "img.shape[0]", "nf": "img.shape[1]", "cut": "cut"}}]}
 C2PY_END */
-void frelon_lines_sub(float *restrict img, float *restrict drk, intptr_t ns, intptr_t nf,
+void frelon_lines_sub(float *restrict img, const float *restrict drk, intptr_t ns, intptr_t nf,
                       float cut) {
     intptr_t i, j, p, npx;
     float rowsum, avg;
@@ -222,11 +222,11 @@ F2PY_WRAPPER_END */
  * {"py_sig": "array_mean_var_cut(img: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
  *  "doc": "Sigma-clipped mean/var.",
  *  "checks": ["img.format == 'f'"],
- *  "c_overloads": [{"sig": "void array_mean_var_cut(float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
+ *  "c_overloads": [{"sig": "void array_mean_var_cut(const float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
  *      "map": {"img": "img.ptr", "npx": "img.n", "n": "n", "cut": "cut", "verbose": "verbose"},
  *      "outputs": {"mean": "float", "std": "float"}}]}
 C2PY_END */
-void array_mean_var_cut(float *restrict img, intptr_t npx, float *mean, float *std,
+void array_mean_var_cut(const float *restrict img, intptr_t npx, float *mean, float *std,
                         int n, float cut, int verbose) {
     intptr_t i; int nactive;
     float t, s1, s2, wt, y0;
@@ -296,11 +296,11 @@ F2PY_WRAPPER_END */
  * {"py_sig": "array_mean_var_msk(img: buffer, msk: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
  *  "doc": "Sigma-clipped mean/var with mask.",
  *  "checks": ["img.format == 'f'", "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n"],
- *  "c_overloads": [{"sig": "void array_mean_var_msk(float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
+ *  "c_overloads": [{"sig": "void array_mean_var_msk(const float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
  *      "map": {"img": "img.ptr", "msk": "msk.ptr", "npx": "img.n", "n": "n", "cut": "cut", "verbose": "verbose"},
  *      "outputs": {"mean": "float", "std": "float"}}]}
 C2PY_END */
-void array_mean_var_msk(float *restrict img, uint8_t *restrict msk, intptr_t npx,
+void array_mean_var_msk(const float *restrict img, uint8_t *restrict msk, intptr_t npx,
                         float *mean, float *std, int n, float cut,
                         int verbose) {
     intptr_t i; int nactive;
@@ -392,11 +392,11 @@ F2PY_WRAPPER_END */
  * {"py_sig": "array_stats(img: buffer) -> void",
  *  "doc": "Compute min, max, mean, variance.",
  *  "checks": ["img.format == 'f'"],
- *  "c_overloads": [{"sig": "void array_stats(float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)",
+ *  "c_overloads": [{"sig": "void array_stats(const float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)",
  *      "map": {"img": "img.ptr", "npx": "img.n"},
  *      "outputs": {"minval": "float", "maxval": "float", "mean": "float", "var": "float"}}]}
 C2PY_END */
-void array_stats(float img[], intptr_t npx, float *minval, float *maxval,
+void array_stats(const float img[], intptr_t npx, float *minval, float *maxval,
                  float *mean, float *var) {
     intptr_t i;
     /* Use double to reduce rounding and subtraction errors */
@@ -473,10 +473,10 @@ F2PY_WRAPPER_END */
  * {"py_sig": "array_histogram(img: buffer, low: float, high: float, hist: buffer) -> void",
  *  "doc": "Compute histogram of float array.",
  *  "checks": ["img.format == 'f'", "( hist.format == 'i' or hist.format == 'l' )"],
- *  "c_overloads": [{"sig": "void array_histogram(float *img, intptr_t npx, float low, float high, int32_t *hist, intptr_t nhist)",
+ *  "c_overloads": [{"sig": "void array_histogram(const float *img, intptr_t npx, float low, float high, int32_t *hist, intptr_t nhist)",
  *      "map": {"img": "img.ptr", "npx": "img.n", "low": "low", "high": "high", "hist": "hist.ptr", "nhist": "hist.n"}}]}
 C2PY_END */
-void array_histogram(float img[], intptr_t npx, float low, float high,
+void array_histogram(const float img[], intptr_t npx, float low, float high,
                      int32_t hist[], intptr_t nhist) {
     intptr_t i; int ibin;
     float ostep;
@@ -586,10 +586,10 @@ F2PY_WRAPPER_END */
  *      "adr.n == data.n", "out.format == 'H' or out.itemsize == 2", "out.n == data.n"],
  *  "gil_release": true,
  *  "c_overloads": [{"when": "adr.format == 'I' or adr.itemsize == 4",
- *      "sig": "void reorderlut_u16_a32(uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)",
+ *      "sig": "void reorderlut_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)",
  *      "map": {"data": "data.ptr", "adr": "adr.ptr", "out": "out.ptr", "N": "data.n"}}]}
 C2PY_END */
-void reorderlut_u16_a32(uint16_t *restrict data, uint32_t *restrict lut,
+void reorderlut_u16_a32(const uint16_t *restrict data, const uint32_t *restrict lut,
                         uint16_t *restrict out, intptr_t N) {
     intptr_t i;
     /*  printf("Hello, got N=%d\n",N);*/
@@ -622,7 +622,7 @@ F2PY_WRAPPER_END */
  *      "sig": "void reorderlut_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)",
  *      "map": {"data": "data.ptr", "adr": "adr.ptr", "out": "out.ptr", "N": "data.n"}}]}
 C2PY_END */
-void reorderlut_f32_a32(const float *restrict data, uint32_t *restrict lut,
+void reorderlut_f32_a32(const float *restrict data, const uint32_t *restrict lut,
                         float *restrict out, intptr_t N) {
     intptr_t i;
 #pragma omp parallel for
@@ -657,8 +657,8 @@ F2PY_WRAPPER_END */
  *  "c_overloads": [{"sig": "void reorder_u16_a32_a16(const uint16_t *data, const uint32_t *a0, const int16_t *a1, uint16_t *out, intptr_t ns, intptr_t nf)",
  *      "map": {"data": "data.ptr", "a0": "adr0.ptr", "a1": "adr1.ptr", "out": "out.ptr", "ns": "data.shape[0]", "nf": "data.shape[1]"}}]}
 C2PY_END */
-void reorder_u16_a32_a16(uint16_t *restrict data, uint32_t *restrict a0,
-                         int16_t *restrict a1, uint16_t *restrict out, intptr_t ns,
+void reorder_u16_a32_a16(const uint16_t *restrict data, const uint32_t *restrict a0,
+                         const int16_t *restrict a1, uint16_t *restrict out, intptr_t ns,
                          intptr_t nf) {
     intptr_t i, j; int p;
     /*  printf("Hello, got ns=%d nf=%d\n",ns, nf);*/

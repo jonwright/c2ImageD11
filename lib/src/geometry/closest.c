@@ -169,7 +169,7 @@ F2PY_WRAPPER_END */
  *         "ic.n == x.shape[0]",
  *     ],
  *     "c_overloads": [{
- *         "sig": "void closest_vec(double *x, intptr_t dim, intptr_t nv, int *ic)",
+ *         "sig": "void closest_vec(const double *x, intptr_t dim, intptr_t nv, int *ic)",
  *         "map": {"x": "x.ptr", "dim": "x.shape[1]", "nv": "x.shape[0]", "ic": "ic.ptr"},
  *     }],
  * }
@@ -241,14 +241,14 @@ F2PY_WRAPPER_END */
  *         "v.format == 'd'",
  *     ],
  *     "c_overloads": [{
- *         "sig": "void closest(double *x, double *v, int *ribest, double *rbest, intptr_t nx, intptr_t nv)",
+ *         "sig": "void closest(const double *x, const double *v, int *ribest, double *rbest, intptr_t nx, intptr_t nv)",
  *         "outputs": {"ribest": "int", "rbest": "double"},
  *         "doc": "Standard O(nx*nv) scan-find-closest.",
  *         "map": {"x": "x.ptr", "v": "v.ptr", "nx": "x.n", "nv": "v.n"},
  *     }],
  * }
 C2PY_END */
-void closest(double x[], double v[], int *ribest, double *rbest, intptr_t nx,
+void closest(const double x[], const double v[], int *ribest, double *rbest, intptr_t nx,
              intptr_t nv) {
     /*
      * Finds value and index in x closest to a value in v
@@ -306,12 +306,12 @@ F2PY_WRAPPER_END */
  *     "gil_release": true,
  *     "c_overloads": [{
  *         "when": "ubi.format == 'd' and gv.format == 'd'",
- *         "sig": "int score(double ubi[3][3], double gv[][3], double tol, intptr_t ng) -> int",
+ *         "sig": "int score(const double ubi[3][3], const double gv[][3], double tol, intptr_t ng) -> int",
  *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
  *     }],
  * }
 C2PY_END */
-int score(vec ubi[3], vec gv[], double tol, intptr_t ng) {
+int score(const vec ubi[3], const vec gv[], double tol, intptr_t ng) {
     /*
      * Counts g-vectors indexed by ubi within tol
      */
@@ -369,13 +369,13 @@ F2PY_WRAPPER_END */
  *     "gil_release": true,
  *     "c_overloads": [{
  *         "when": "ubi.format == 'd' and gv.format == 'd'",
- *         "sig": "void score_and_refine(double ubi[3][3], double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+ *         "sig": "void score_and_refine(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
  *         "outputs": {"n_arg": "int", "sumdrlv2_arg": "double"},
  *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
  *     }],
  * }
 C2PY_END */
-void score_and_refine(vec ubi[3], vec gv[], double tol, int *n_arg,
+void score_and_refine(vec ubi[3], const vec gv[], double tol, int *n_arg,
                       double *sumdrlv2_arg, intptr_t ng) {
     /* ng = number of g vectors */
     double h0, h1, h2, t0, t1, t2, ih[3];
@@ -499,12 +499,12 @@ F2PY_WRAPPER_END */
  *     "gil_release": true,
  *     "c_overloads": [{
  *         "when": "ubi.format == 'd' and gv.format == 'd'",
- *         "sig": "int score_and_assign(double ubi[3][3], double gv[][3], double tol, double *drlv2, int *labels, int label, intptr_t ng) -> int",
+ *         "sig": "int score_and_assign(const double ubi[3][3], const double gv[][3], double tol, double *drlv2, int *labels, int label, intptr_t ng) -> int",
  *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "drlv2": "drlv2.ptr", "labels": "labels.ptr", "label": "label", "ng": "gv.shape[0]"},
  *     }],
  * }
 C2PY_END */
-int score_and_assign(vec *restrict ubi, vec *restrict gv, double tol,
+int score_and_assign(const vec *restrict ubi, const vec *restrict gv, double tol,
                      double *restrict drlv2, int *restrict labels, int label,
                      intptr_t ng) {
 
@@ -573,13 +573,13 @@ F2PY_WRAPPER_END */
  *         "labels.n == gv.shape[0]",
  *     ],
  *     "c_overloads": [{
- *         "sig": "void refine_assigned(double ubi[3][3], double gv[][3], int *labels, int label, int *npk, double *drlv2, intptr_t ng)",
+ *         "sig": "void refine_assigned(double ubi[3][3], const double gv[][3], const int *labels, int label, int *npk, double *drlv2, intptr_t ng)",
  *         "outputs": {"npk": "int", "drlv2": "double"},
  *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "labels": "labels.ptr", "label": "label", "ng": "gv.shape[0]"},
  *     }],
  * }
 C2PY_END */
-void refine_assigned(vec ubi[3], vec gv[], int labels[], int label, int *npk,
+void refine_assigned(vec ubi[3], const vec gv[], const int labels[], int label, int *npk,
                      double *sumdrlv2, intptr_t ng) {
     /* Skip the part about weights, not used */
     double sumsqtot, sumsq, h[3], t[3], ih[3];
@@ -680,7 +680,7 @@ F2PY_WRAPPER_END */
  *     }],
  * }
 C2PY_END */
-void put_incr64(float data[], int64_t ind[], float vals[], int boundscheck,
+void put_incr64(float data[], const int64_t ind[], const float vals[], int boundscheck,
                 intptr_t n, intptr_t m) {
     int64_t k, ik;
     if (boundscheck == 0) {
@@ -742,7 +742,7 @@ F2PY_WRAPPER_END */
  *     }],
  * }
 C2PY_END */
-void put_incr32(float data[], int32_t ind[], float vals[], int boundscheck,
+void put_incr32(float data[], const int32_t ind[], const float vals[], int boundscheck,
                 intptr_t n, intptr_t m) {
     int32_t k, ik;
     if (boundscheck == 0) {
@@ -799,13 +799,13 @@ F2PY_WRAPPER_END */
  *         "avgs.n == ar.n",
  *     ],
  *     "c_overloads": [{
- *         "sig": "void cluster1d(double *ar, intptr_t n, int *order, double tol, int *nclusters, int *ids, double *avgs)",
+ *         "sig": "void cluster1d(const double *ar, intptr_t n, const int *order, double tol, int *nclusters, int *ids, double *avgs)",
  *         "map": {"ar": "ar.ptr", "n": "ar.n", "order": "order.ptr", "tol": "tol", "ids": "ids.ptr", "avgs": "avgs.ptr"},
  *         "outputs": {"nclusters": "int"},
  *     }],
  * }
 C2PY_END */
-void cluster1d(double ar[], intptr_t n, int order[], double tol, // IN
+void cluster1d(const double ar[], intptr_t n, const int order[], double tol, // IN
                int *nclusters, int ids[], double avgs[]) {  // OUT
     // Used in sandbox/friedel.py
     intptr_t i; int ncl;
@@ -890,14 +890,14 @@ F2PY_WRAPPER_END */
  *         "e.format == 'd'",
  *     ],
  *     "c_overloads": [{
- *         "sig": "void score_gvec_z(double ubi[3][3], double ub[3][3], double gv[][3], double g0[], double g1[], double g2[], double e[], int recompute, intptr_t n)",
+ *         "sig": "void score_gvec_z(const double ubi[3][3], const double ub[3][3], const double gv[][3], double g0[], double g1[], double g2[], double e[], int recompute, intptr_t n)",
  *         "map": {"ubi": "ubi.ptr", "ub": "ub.ptr", "gv": "gv.ptr", "g0": "g0.ptr", "g1": "g1.ptr", "g2": "g2.ptr", "e": "e.ptr", "recompute": "recompute", "n": "gv.shape[0]"},
  *     }],
  * }
 C2PY_END */
-void score_gvec_z(vec ubi[3],    // in
-                  vec ub[3],     // in
-                  vec gv[],      // in
+void score_gvec_z(const vec ubi[3],    // in
+                  const vec ub[3],     // in
+                  const vec gv[],      // in
                   vec g0[],      // inout  normed(g)
                   vec g1[],      // inout  normed(axis x g)
                   vec g2[],      // inout  normed(axis x (axis x g))
@@ -1271,12 +1271,12 @@ F2PY_WRAPPER_END */
  *         "( pj.format == 'i' or pj.format == 'l' )",
  *     ],
  *     "c_overloads": [{
- *         "sig": "int count_shared(int *pi, intptr_t ni, int *pj, intptr_t nj) -> int",
+ *         "sig": "int count_shared(const int *pi, intptr_t ni, const int *pj, intptr_t nj) -> int",
  *         "map": {"pi": "pi.ptr", "ni": "pi.n", "pj": "pj.ptr", "nj": "pj.n"},
  *     }],
  * }
 C2PY_END */
-int count_shared(int pi[], intptr_t ni, int pj[], intptr_t nj) {
+int count_shared(const int pi[], intptr_t ni, const int pj[], intptr_t nj) {
     /* Given two sorted arrays compute how many collisions
      * For comparing list of grain - peak indices for overlap
      */
