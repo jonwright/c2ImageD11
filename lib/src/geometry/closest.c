@@ -1003,7 +1003,7 @@ F2PY_WRAPPER_END */
  *     }],
  * }
 C2PY_END */
-double misori_cubic(vec u1[3], vec u2[3]) {
+double misori_cubic(const double u1[3][3], const double u2[3][3]) {
     /* Compute the trace of the smallest misorientation
      * for cubic symmetry
      *  u1 and u2 are both orientation matrices "U"
@@ -1086,7 +1086,7 @@ F2PY_WRAPPER_END */
  *     }],
  * }
 C2PY_END */
-double misori_orthorhombic(vec u1[3], vec u2[3]) {
+double misori_orthorhombic(const double u1[3][3], const double u2[3][3]) {
     /* Compute the trace of the smallest misorientation
      * for orthorhombic symmetry
      *  u1 and u2 are both orientation matrices "U"
@@ -1145,7 +1145,7 @@ F2PY_WRAPPER_END */
  *     }],
  * }
 C2PY_END */
-double misori_tetragonal(vec u1[3], vec u2[3]) {
+double misori_tetragonal(const double u1[3][3], const double u2[3][3]) {
     /* Compute the trace of the smallest misorientation
      * for orthorhombic symmetry
      *  u1 and u2 are both orientation matrices "U"
@@ -1216,7 +1216,7 @@ F2PY_WRAPPER_END */
  *     }],
  * }
 C2PY_END */
-double misori_monoclinic(vec u1[3], vec u2[3]) {
+double misori_monoclinic(const double u1[3][3], const double u2[3][3]) {
     /* Compute the trace of the smallest misorientation
      * for orthorhombic symmetry
      *  u1 and u2 are both orientation matrices "U"
