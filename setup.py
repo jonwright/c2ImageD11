@@ -30,8 +30,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # str() for Python 2.7 unicode_literals compatibility
 PKG_DIR = str(os.path.join(HERE, "c2ImageD11"))
 ARCH = str(platform.machine())
-EXT = ".pyd" if sys.platform == "win32" else ".so"
-SO_NAME = "_cImageD11_{}{}".format(ARCH, EXT)
+EXT = str(".pyd") if sys.platform == "win32" else str(".so")
+SO_NAME = str("_cImageD11_{}{}".format(ARCH, EXT))
 SO_PATH = os.path.join(PKG_DIR, SO_NAME)
 
 
