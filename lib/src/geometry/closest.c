@@ -998,12 +998,12 @@ F2PY_WRAPPER_END */
  *         "u2.n == 9",
  *     ],
  *     "c_overloads": [{
- *         "sig": "double misori_cubic(double u1[3][3], double u2[3][3]) -> double",
+ *         "sig": "double misori_cubic(const double u1[3][3], const double u2[3][3]) -> double",
  *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
  *     }],
  * }
 C2PY_END */
-double misori_cubic(vec u1[3], vec u2[3]) {
+double misori_cubic(const double u1[3][3], const double u2[3][3]) {
     /* Compute the trace of the smallest misorientation
      * for cubic symmetry
      *  u1 and u2 are both orientation matrices "U"
@@ -1081,12 +1081,12 @@ F2PY_WRAPPER_END */
  *         "u2.n == 9",
  *     ],
  *     "c_overloads": [{
- *         "sig": "double misori_orthorhombic(double u1[3][3], double u2[3][3]) -> double",
+ *         "sig": "double misori_orthorhombic(const double u1[3][3], const double u2[3][3]) -> double",
  *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
  *     }],
  * }
 C2PY_END */
-double misori_orthorhombic(vec u1[3], vec u2[3]) {
+double misori_orthorhombic(const double u1[3][3], const double u2[3][3]) {
     /* Compute the trace of the smallest misorientation
      * for orthorhombic symmetry
      *  u1 and u2 are both orientation matrices "U"
@@ -1140,12 +1140,12 @@ F2PY_WRAPPER_END */
  *         "u2.n == 9",
  *     ],
  *     "c_overloads": [{
- *         "sig": "double misori_tetragonal(double u1[3][3], double u2[3][3]) -> double",
+ *         "sig": "double misori_tetragonal(const double u1[3][3], const double u2[3][3]) -> double",
  *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
  *     }],
  * }
 C2PY_END */
-double misori_tetragonal(vec u1[3], vec u2[3]) {
+double misori_tetragonal(const double u1[3][3], const double u2[3][3]) {
     /* Compute the trace of the smallest misorientation
      * for orthorhombic symmetry
      *  u1 and u2 are both orientation matrices "U"
@@ -1173,7 +1173,7 @@ double misori_tetragonal(vec u1[3], vec u2[3]) {
     }
     m1 = fabs(r[0][0]) + fabs(r[1][1]);
     m2 = fabs(r[1][0]) + fabs(r[0][1]);
-    if (m2 > m3) {
+    if (m1 > m2) {
         return m1 + m3;
     } else {
         return m2 + m3;
@@ -1211,12 +1211,12 @@ F2PY_WRAPPER_END */
  *         "u2.n == 9",
  *     ],
  *     "c_overloads": [{
- *         "sig": "double misori_monoclinic(double u1[3][3], double u2[3][3]) -> double",
+ *         "sig": "double misori_monoclinic(const double u1[3][3], const double u2[3][3]) -> double",
  *         "map": {"u1": "u1.ptr", "u2": "u2.ptr"},
  *     }],
  * }
 C2PY_END */
-double misori_monoclinic(vec u1[3], vec u2[3]) {
+double misori_monoclinic(const double u1[3][3], const double u2[3][3]) {
     /* Compute the trace of the smallest misorientation
      * for orthorhombic symmetry
      *  u1 and u2 are both orientation matrices "U"

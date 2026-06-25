@@ -149,3 +149,29 @@ class TestToSparseBoolMask:
         nnz = ci.tosparse_u32(img, msk, row, col, val, 0.0)
         assert nnz >= 0
         assert nnz == ns * nf
+
+
+# ============================================================
+# misori aliasing (regression test for issue #9)
+# ============================================================
+
+class TestMisoriAliasing:
+    def test_cubic(self):
+        u = np.eye(3)
+        result = ci.misori_cubic(u, u)
+        assert result == 3.0
+
+    def test_orthorhombic(self):
+        u = np.eye(3)
+        result = ci.misori_orthorhombic(u, u)
+        assert result == 3.0
+
+    def test_tetragonal(self):
+        u = np.eye(3)
+        result = ci.misori_tetragonal(u, u)
+        assert result == 3.0
+
+    def test_monoclinic(self):
+        u = np.eye(3)
+        result = ci.misori_monoclinic(u, u)
+        assert result == 3.0

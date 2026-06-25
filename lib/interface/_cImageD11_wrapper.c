@@ -57,10 +57,10 @@ extern void put_incr64(float * data, const int64_t * ind, const float * vals, in
 extern void put_incr32(float * data, const int32_t * ind, const float * vals, int boundscheck, intptr_t n, intptr_t m);
 extern void cluster1d(double * ar, intptr_t n, int * order, double tol, int * nclusters, int * ids, double * avgs);
 extern void score_gvec_z(double (*ubi)[3], double (*ub)[3], double (*gv)[3], double g0[], double g1[], double g2[], double e[], int recompute, intptr_t n);
-extern double misori_cubic(double (*u1)[3], double (*u2)[3]);
-extern double misori_orthorhombic(double (*u1)[3], double (*u2)[3]);
-extern double misori_tetragonal(double (*u1)[3], double (*u2)[3]);
-extern double misori_monoclinic(double (*u1)[3], double (*u2)[3]);
+extern double misori_cubic(const double (*u1)[3], const double (*u2)[3]);
+extern double misori_orthorhombic(const double (*u1)[3], const double (*u2)[3]);
+extern double misori_tetragonal(const double (*u1)[3], const double (*u2)[3]);
+extern double misori_monoclinic(const double (*u1)[3], const double (*u2)[3]);
 extern int count_shared(int * pi, intptr_t ni, int * pj, intptr_t nj);
 extern void cimaged11_omp_set_num_threads(int n);
 extern int cimaged11_omp_get_max_threads();
@@ -869,26 +869,14 @@ _blobproperties_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_results = 1;
 
-    /* restrict check: labels vs results */
-    if ((char*)buf_labels.buf >= (char*)buf_results.buf && 
-        (char*)buf_labels.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: results vs labels */
     if ((char*)buf_results.buf >= (char*)buf_labels.buf && 
         (char*)buf_results.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: labels vs data */
-    if ((char*)buf_labels.buf >= (char*)buf_data.buf && 
-        (char*)buf_labels.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_data.buf >= (char*)buf_labels.buf && 
-        (char*)buf_data.buf < (char*)buf_labels.buf + buf_labels.len) {
+    if ((char*)buf_labels.buf >= (char*)buf_results.buf && 
+        (char*)buf_labels.buf < (char*)buf_results.buf + buf_results.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -901,6 +889,18 @@ _blobproperties_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_data.buf >= (char*)buf_results.buf && 
         (char*)buf_data.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs data */
+    if ((char*)buf_labels.buf >= (char*)buf_data.buf && 
+        (char*)buf_labels.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_data.buf >= (char*)buf_labels.buf && 
+        (char*)buf_data.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -994,26 +994,14 @@ _blobproperties_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs
         goto cleanup;
     acq_results = 1;
 
-    /* restrict check: labels vs results */
-    if ((char*)buf_labels.buf >= (char*)buf_results.buf && 
-        (char*)buf_labels.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: results vs labels */
     if ((char*)buf_results.buf >= (char*)buf_labels.buf && 
         (char*)buf_results.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: labels vs data */
-    if ((char*)buf_labels.buf >= (char*)buf_data.buf && 
-        (char*)buf_labels.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_data.buf >= (char*)buf_labels.buf && 
-        (char*)buf_data.buf < (char*)buf_labels.buf + buf_labels.len) {
+    if ((char*)buf_labels.buf >= (char*)buf_results.buf && 
+        (char*)buf_labels.buf < (char*)buf_results.buf + buf_results.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -1026,6 +1014,18 @@ _blobproperties_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs
     }
     if ((char*)buf_data.buf >= (char*)buf_results.buf && 
         (char*)buf_data.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs data */
+    if ((char*)buf_labels.buf >= (char*)buf_data.buf && 
+        (char*)buf_labels.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_data.buf >= (char*)buf_labels.buf && 
+        (char*)buf_data.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -1349,26 +1349,38 @@ _bloboverlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_results2 = 1;
 
-    /* restrict check: results2 vs labels1 */
-    if ((char*)buf_results2.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_results2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    /* restrict check: results1 vs results2 */
+    if ((char*)buf_results1.buf >= (char*)buf_results2.buf && 
+        (char*)buf_results1.buf < (char*)buf_results2.buf + buf_results2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_labels1.buf >= (char*)buf_results2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_results2.buf + buf_results2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results2 vs results1 */
     if ((char*)buf_results2.buf >= (char*)buf_results1.buf && 
         (char*)buf_results2.buf < (char*)buf_results1.buf + buf_results1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_results1.buf >= (char*)buf_results2.buf && 
-        (char*)buf_results1.buf < (char*)buf_results2.buf + buf_results2.len) {
+
+    /* restrict check: results1 vs labels2 */
+    if ((char*)buf_results1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_results1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels2.buf >= (char*)buf_results1.buf && 
+        (char*)buf_labels2.buf < (char*)buf_results1.buf + buf_results1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: results1 vs labels1 */
+    if ((char*)buf_results1.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_results1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_results1.buf && 
+        (char*)buf_labels1.buf < (char*)buf_results1.buf + buf_results1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -1385,38 +1397,26 @@ _bloboverlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: labels1 vs results1 */
-    if ((char*)buf_labels1.buf >= (char*)buf_results1.buf && 
-        (char*)buf_labels1.buf < (char*)buf_results1.buf + buf_results1.len) {
+    /* restrict check: results2 vs labels1 */
+    if ((char*)buf_results2.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_results2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_results1.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_results1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    if ((char*)buf_labels1.buf >= (char*)buf_results2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_results2.buf + buf_results2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: labels1 vs labels2 */
-    if ((char*)buf_labels1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: labels2 vs labels1 */
     if ((char*)buf_labels2.buf >= (char*)buf_labels1.buf && 
         (char*)buf_labels2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: results1 vs labels2 */
-    if ((char*)buf_results1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_results1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels2.buf >= (char*)buf_results1.buf && 
-        (char*)buf_labels2.buf < (char*)buf_results1.buf + buf_results1.len) {
+    if ((char*)buf_labels1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -1525,26 +1525,38 @@ _bloboverlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_results2 = 1;
 
-    /* restrict check: results2 vs labels1 */
-    if ((char*)buf_results2.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_results2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    /* restrict check: results1 vs results2 */
+    if ((char*)buf_results1.buf >= (char*)buf_results2.buf && 
+        (char*)buf_results1.buf < (char*)buf_results2.buf + buf_results2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_labels1.buf >= (char*)buf_results2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_results2.buf + buf_results2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results2 vs results1 */
     if ((char*)buf_results2.buf >= (char*)buf_results1.buf && 
         (char*)buf_results2.buf < (char*)buf_results1.buf + buf_results1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_results1.buf >= (char*)buf_results2.buf && 
-        (char*)buf_results1.buf < (char*)buf_results2.buf + buf_results2.len) {
+
+    /* restrict check: results1 vs labels2 */
+    if ((char*)buf_results1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_results1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels2.buf >= (char*)buf_results1.buf && 
+        (char*)buf_labels2.buf < (char*)buf_results1.buf + buf_results1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: results1 vs labels1 */
+    if ((char*)buf_results1.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_results1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_results1.buf && 
+        (char*)buf_labels1.buf < (char*)buf_results1.buf + buf_results1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -1561,38 +1573,26 @@ _bloboverlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: labels1 vs results1 */
-    if ((char*)buf_labels1.buf >= (char*)buf_results1.buf && 
-        (char*)buf_labels1.buf < (char*)buf_results1.buf + buf_results1.len) {
+    /* restrict check: results2 vs labels1 */
+    if ((char*)buf_results2.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_results2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_results1.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_results1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    if ((char*)buf_labels1.buf >= (char*)buf_results2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_results2.buf + buf_results2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: labels1 vs labels2 */
-    if ((char*)buf_labels1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: labels2 vs labels1 */
     if ((char*)buf_labels2.buf >= (char*)buf_labels1.buf && 
         (char*)buf_labels2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: results1 vs labels2 */
-    if ((char*)buf_results1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_results1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels2.buf >= (char*)buf_results1.buf && 
-        (char*)buf_labels2.buf < (char*)buf_results1.buf + buf_results1.len) {
+    if ((char*)buf_labels1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -2261,26 +2261,14 @@ _make_clean_mask_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_ret = 1;
 
-    /* restrict check: msk vs ret */
-    if ((char*)buf_msk.buf >= (char*)buf_ret.buf && 
-        (char*)buf_msk.buf < (char*)buf_ret.buf + buf_ret.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: ret vs msk */
     if ((char*)buf_ret.buf >= (char*)buf_msk.buf && 
         (char*)buf_ret.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: msk vs img */
-    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
-        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
-        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+    if ((char*)buf_msk.buf >= (char*)buf_ret.buf && 
+        (char*)buf_msk.buf < (char*)buf_ret.buf + buf_ret.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -2293,6 +2281,18 @@ _make_clean_mask_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_img.buf >= (char*)buf_ret.buf && 
         (char*)buf_img.buf < (char*)buf_ret.buf + buf_ret.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: msk vs img */
+    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
+        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
+        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -2362,26 +2362,14 @@ _make_clean_mask_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
         goto cleanup;
     acq_ret = 1;
 
-    /* restrict check: msk vs ret */
-    if ((char*)buf_msk.buf >= (char*)buf_ret.buf && 
-        (char*)buf_msk.buf < (char*)buf_ret.buf + buf_ret.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: ret vs msk */
     if ((char*)buf_ret.buf >= (char*)buf_msk.buf && 
         (char*)buf_ret.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: msk vs img */
-    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
-        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
-        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+    if ((char*)buf_msk.buf >= (char*)buf_ret.buf && 
+        (char*)buf_msk.buf < (char*)buf_ret.buf + buf_ret.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -2394,6 +2382,18 @@ _make_clean_mask_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
     }
     if ((char*)buf_img.buf >= (char*)buf_ret.buf && 
         (char*)buf_img.buf < (char*)buf_ret.buf + buf_ret.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: msk vs img */
+    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
+        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
+        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -2648,18 +2648,6 @@ _uint16_to_float_darksub_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_data = 1;
 
-    /* restrict check: img vs data */
-    if ((char*)buf_img.buf >= (char*)buf_data.buf && 
-        (char*)buf_img.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_data.buf >= (char*)buf_img.buf && 
-        (char*)buf_data.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: img vs drk */
     if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
         (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
@@ -2668,6 +2656,18 @@ _uint16_to_float_darksub_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
         (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: img vs data */
+    if ((char*)buf_img.buf >= (char*)buf_data.buf && 
+        (char*)buf_img.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_data.buf >= (char*)buf_img.buf && 
+        (char*)buf_data.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -2730,18 +2730,6 @@ _uint16_to_float_darksub_fastcall(PyObject *self, PyObject *const *args, Py_ssiz
         goto cleanup;
     acq_data = 1;
 
-    /* restrict check: img vs data */
-    if ((char*)buf_img.buf >= (char*)buf_data.buf && 
-        (char*)buf_img.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_data.buf >= (char*)buf_img.buf && 
-        (char*)buf_data.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: img vs drk */
     if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
         (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
@@ -2750,6 +2738,18 @@ _uint16_to_float_darksub_fastcall(PyObject *self, PyObject *const *args, Py_ssiz
     }
     if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
         (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: img vs data */
+    if ((char*)buf_img.buf >= (char*)buf_data.buf && 
+        (char*)buf_img.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_data.buf >= (char*)buf_img.buf && 
+        (char*)buf_data.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -3067,6 +3067,18 @@ _uint16_to_float_darkflm_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_data = 1;
 
+    /* restrict check: img vs drk */
+    if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
+        (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
+        (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: img vs flm */
     if ((char*)buf_img.buf >= (char*)buf_flm.buf && 
         (char*)buf_img.buf < (char*)buf_flm.buf + buf_flm.len) {
@@ -3087,18 +3099,6 @@ _uint16_to_float_darkflm_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_data.buf >= (char*)buf_img.buf && 
         (char*)buf_data.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: img vs drk */
-    if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
-        (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
-        (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -3171,6 +3171,18 @@ _uint16_to_float_darkflm_fastcall(PyObject *self, PyObject *const *args, Py_ssiz
         goto cleanup;
     acq_data = 1;
 
+    /* restrict check: img vs drk */
+    if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
+        (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
+        (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: img vs flm */
     if ((char*)buf_img.buf >= (char*)buf_flm.buf && 
         (char*)buf_img.buf < (char*)buf_flm.buf + buf_flm.len) {
@@ -3191,18 +3203,6 @@ _uint16_to_float_darkflm_fastcall(PyObject *self, PyObject *const *args, Py_ssiz
     }
     if ((char*)buf_data.buf >= (char*)buf_img.buf && 
         (char*)buf_data.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: img vs drk */
-    if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
-        (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
-        (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -3556,14 +3556,14 @@ _frelon_lines_sub_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_drk = 1;
 
-    /* restrict check: img vs drk */
-    if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
-        (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
+    /* restrict check: drk vs img */
+    if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
+        (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
-        (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
+    if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
+        (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -3623,14 +3623,14 @@ _frelon_lines_sub_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nar
         goto cleanup;
     acq_drk = 1;
 
-    /* restrict check: img vs drk */
-    if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
-        (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
+    /* restrict check: drk vs img */
+    if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
+        (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_drk.buf >= (char*)buf_img.buf && 
-        (char*)buf_drk.buf < (char*)buf_img.buf + buf_img.len) {
+    if ((char*)buf_img.buf >= (char*)buf_drk.buf && 
+        (char*)buf_img.buf < (char*)buf_drk.buf + buf_drk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -4840,18 +4840,6 @@ _reorder_u16_a32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_out = 1;
 
-    /* restrict check: out vs adr */
-    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
-        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
-        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: out vs data */
     if ((char*)buf_out.buf >= (char*)buf_data.buf && 
         (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
@@ -4860,6 +4848,18 @@ _reorder_u16_a32_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_data.buf >= (char*)buf_out.buf && 
         (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: out vs adr */
+    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
+        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
+        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -4922,18 +4922,6 @@ _reorder_u16_a32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
         goto cleanup;
     acq_out = 1;
 
-    /* restrict check: out vs adr */
-    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
-        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
-        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: out vs data */
     if ((char*)buf_out.buf >= (char*)buf_data.buf && 
         (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
@@ -4942,6 +4930,18 @@ _reorder_u16_a32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
     }
     if ((char*)buf_data.buf >= (char*)buf_out.buf && 
         (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: out vs adr */
+    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
+        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
+        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -5196,18 +5196,6 @@ _reorder_f32_a32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_out = 1;
 
-    /* restrict check: out vs adr */
-    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
-        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
-        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: out vs data */
     if ((char*)buf_out.buf >= (char*)buf_data.buf && 
         (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
@@ -5216,6 +5204,18 @@ _reorder_f32_a32_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_data.buf >= (char*)buf_out.buf && 
         (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: out vs adr */
+    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
+        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
+        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -5278,18 +5278,6 @@ _reorder_f32_a32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
         goto cleanup;
     acq_out = 1;
 
-    /* restrict check: out vs adr */
-    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
-        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
-        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: out vs data */
     if ((char*)buf_out.buf >= (char*)buf_data.buf && 
         (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
@@ -5298,6 +5286,18 @@ _reorder_f32_a32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
     }
     if ((char*)buf_data.buf >= (char*)buf_out.buf && 
         (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: out vs adr */
+    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
+        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
+        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -5552,26 +5552,14 @@ _reorderlut_u16_a32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_out = 1;
 
-    /* restrict check: data vs adr */
-    if ((char*)buf_data.buf >= (char*)buf_adr.buf && 
-        (char*)buf_data.buf < (char*)buf_adr.buf + buf_adr.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_adr.buf >= (char*)buf_data.buf && 
-        (char*)buf_adr.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: data vs out */
-    if ((char*)buf_data.buf >= (char*)buf_out.buf && 
-        (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: out vs data */
     if ((char*)buf_out.buf >= (char*)buf_data.buf && 
         (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_data.buf >= (char*)buf_out.buf && 
+        (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -5584,6 +5572,18 @@ _reorderlut_u16_a32_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
         (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: data vs adr */
+    if ((char*)buf_data.buf >= (char*)buf_adr.buf && 
+        (char*)buf_data.buf < (char*)buf_adr.buf + buf_adr.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_adr.buf >= (char*)buf_data.buf && 
+        (char*)buf_adr.buf < (char*)buf_data.buf + buf_data.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -5646,26 +5646,14 @@ _reorderlut_u16_a32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t n
         goto cleanup;
     acq_out = 1;
 
-    /* restrict check: data vs adr */
-    if ((char*)buf_data.buf >= (char*)buf_adr.buf && 
-        (char*)buf_data.buf < (char*)buf_adr.buf + buf_adr.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_adr.buf >= (char*)buf_data.buf && 
-        (char*)buf_adr.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: data vs out */
-    if ((char*)buf_data.buf >= (char*)buf_out.buf && 
-        (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: out vs data */
     if ((char*)buf_out.buf >= (char*)buf_data.buf && 
         (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_data.buf >= (char*)buf_out.buf && 
+        (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -5678,6 +5666,18 @@ _reorderlut_u16_a32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t n
     }
     if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
         (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: data vs adr */
+    if ((char*)buf_data.buf >= (char*)buf_adr.buf && 
+        (char*)buf_data.buf < (char*)buf_adr.buf + buf_adr.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_adr.buf >= (char*)buf_data.buf && 
+        (char*)buf_adr.buf < (char*)buf_data.buf + buf_data.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -5932,18 +5932,6 @@ _reorderlut_f32_a32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_out = 1;
 
-    /* restrict check: out vs adr */
-    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
-        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
-        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: out vs data */
     if ((char*)buf_out.buf >= (char*)buf_data.buf && 
         (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
@@ -5952,6 +5940,18 @@ _reorderlut_f32_a32_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_data.buf >= (char*)buf_out.buf && 
         (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: out vs adr */
+    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
+        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
+        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -6014,18 +6014,6 @@ _reorderlut_f32_a32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t n
         goto cleanup;
     acq_out = 1;
 
-    /* restrict check: out vs adr */
-    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
-        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
-        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: out vs data */
     if ((char*)buf_out.buf >= (char*)buf_data.buf && 
         (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
@@ -6034,6 +6022,18 @@ _reorderlut_f32_a32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t n
     }
     if ((char*)buf_data.buf >= (char*)buf_out.buf && 
         (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: out vs adr */
+    if ((char*)buf_out.buf >= (char*)buf_adr.buf && 
+        (char*)buf_out.buf < (char*)buf_adr.buf + buf_adr.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_adr.buf >= (char*)buf_out.buf && 
+        (char*)buf_adr.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -6358,18 +6358,6 @@ _reorder_u16_a32_a16_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: out vs data */
-    if ((char*)buf_out.buf >= (char*)buf_data.buf && 
-        (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_data.buf >= (char*)buf_out.buf && 
-        (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: out vs adr1 */
     if ((char*)buf_out.buf >= (char*)buf_adr1.buf && 
         (char*)buf_out.buf < (char*)buf_adr1.buf + buf_adr1.len) {
@@ -6378,6 +6366,18 @@ _reorder_u16_a32_a16_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_adr1.buf >= (char*)buf_out.buf && 
         (char*)buf_adr1.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: out vs data */
+    if ((char*)buf_out.buf >= (char*)buf_data.buf && 
+        (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_data.buf >= (char*)buf_out.buf && 
+        (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -6462,18 +6462,6 @@ _reorder_u16_a32_a16_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t 
         goto cleanup;
     }
 
-    /* restrict check: out vs data */
-    if ((char*)buf_out.buf >= (char*)buf_data.buf && 
-        (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_data.buf >= (char*)buf_out.buf && 
-        (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: out vs adr1 */
     if ((char*)buf_out.buf >= (char*)buf_adr1.buf && 
         (char*)buf_out.buf < (char*)buf_adr1.buf + buf_adr1.len) {
@@ -6482,6 +6470,18 @@ _reorder_u16_a32_a16_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t 
     }
     if ((char*)buf_adr1.buf >= (char*)buf_out.buf && 
         (char*)buf_adr1.buf < (char*)buf_out.buf + buf_out.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: out vs data */
+    if ((char*)buf_out.buf >= (char*)buf_data.buf && 
+        (char*)buf_out.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_data.buf >= (char*)buf_out.buf && 
+        (char*)buf_data.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -6737,30 +6737,6 @@ _bgcalc_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_msk = 1;
 
-    /* restrict check: bg vs img */
-    if ((char*)buf_bg.buf >= (char*)buf_img.buf && 
-        (char*)buf_bg.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_bg.buf && 
-        (char*)buf_img.buf < (char*)buf_bg.buf + buf_bg.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: bg vs msk */
-    if ((char*)buf_bg.buf >= (char*)buf_msk.buf && 
-        (char*)buf_bg.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_msk.buf >= (char*)buf_bg.buf && 
-        (char*)buf_msk.buf < (char*)buf_bg.buf + buf_bg.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: msk vs img */
     if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
         (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
@@ -6769,6 +6745,30 @@ _bgcalc_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
         (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: msk vs bg */
+    if ((char*)buf_msk.buf >= (char*)buf_bg.buf && 
+        (char*)buf_msk.buf < (char*)buf_bg.buf + buf_bg.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_bg.buf >= (char*)buf_msk.buf && 
+        (char*)buf_bg.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: bg vs img */
+    if ((char*)buf_bg.buf >= (char*)buf_img.buf && 
+        (char*)buf_bg.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_bg.buf && 
+        (char*)buf_img.buf < (char*)buf_bg.buf + buf_bg.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -6852,30 +6852,6 @@ _bgcalc_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_msk = 1;
 
-    /* restrict check: bg vs img */
-    if ((char*)buf_bg.buf >= (char*)buf_img.buf && 
-        (char*)buf_bg.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_bg.buf && 
-        (char*)buf_img.buf < (char*)buf_bg.buf + buf_bg.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: bg vs msk */
-    if ((char*)buf_bg.buf >= (char*)buf_msk.buf && 
-        (char*)buf_bg.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_msk.buf >= (char*)buf_bg.buf && 
-        (char*)buf_msk.buf < (char*)buf_bg.buf + buf_bg.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: msk vs img */
     if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
         (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
@@ -6884,6 +6860,30 @@ _bgcalc_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
         (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: msk vs bg */
+    if ((char*)buf_msk.buf >= (char*)buf_bg.buf && 
+        (char*)buf_msk.buf < (char*)buf_bg.buf + buf_bg.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_bg.buf >= (char*)buf_msk.buf && 
+        (char*)buf_bg.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: bg vs img */
+    if ((char*)buf_bg.buf >= (char*)buf_img.buf && 
+        (char*)buf_bg.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_bg.buf && 
+        (char*)buf_img.buf < (char*)buf_bg.buf + buf_bg.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -7135,18 +7135,6 @@ _localmaxlabel_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_wrk = 1;
 
-    /* restrict check: labels vs wrk */
-    if ((char*)buf_labels.buf >= (char*)buf_wrk.buf && 
-        (char*)buf_labels.buf < (char*)buf_wrk.buf + buf_wrk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_wrk.buf >= (char*)buf_labels.buf && 
-        (char*)buf_wrk.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: labels vs data */
     if ((char*)buf_labels.buf >= (char*)buf_data.buf && 
         (char*)buf_labels.buf < (char*)buf_data.buf + buf_data.len) {
@@ -7155,6 +7143,18 @@ _localmaxlabel_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_data.buf >= (char*)buf_labels.buf && 
         (char*)buf_data.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs wrk */
+    if ((char*)buf_labels.buf >= (char*)buf_wrk.buf && 
+        (char*)buf_labels.buf < (char*)buf_wrk.buf + buf_wrk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_wrk.buf >= (char*)buf_labels.buf && 
+        (char*)buf_wrk.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -7229,18 +7229,6 @@ _localmaxlabel_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_wrk = 1;
 
-    /* restrict check: labels vs wrk */
-    if ((char*)buf_labels.buf >= (char*)buf_wrk.buf && 
-        (char*)buf_labels.buf < (char*)buf_wrk.buf + buf_wrk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_wrk.buf >= (char*)buf_labels.buf && 
-        (char*)buf_wrk.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: labels vs data */
     if ((char*)buf_labels.buf >= (char*)buf_data.buf && 
         (char*)buf_labels.buf < (char*)buf_data.buf + buf_data.len) {
@@ -7249,6 +7237,18 @@ _localmaxlabel_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_data.buf >= (char*)buf_labels.buf && 
         (char*)buf_data.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs wrk */
+    if ((char*)buf_labels.buf >= (char*)buf_wrk.buf && 
+        (char*)buf_labels.buf < (char*)buf_wrk.buf + buf_wrk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_wrk.buf >= (char*)buf_labels.buf && 
+        (char*)buf_wrk.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -7571,42 +7571,6 @@ _mask_to_coo_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_w = 1;
 
-    /* restrict check: msk vs i */
-    if ((char*)buf_msk.buf >= (char*)buf_i.buf && 
-        (char*)buf_msk.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_i.buf >= (char*)buf_msk.buf && 
-        (char*)buf_i.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: msk vs w */
-    if ((char*)buf_msk.buf >= (char*)buf_w.buf && 
-        (char*)buf_msk.buf < (char*)buf_w.buf + buf_w.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_w.buf >= (char*)buf_msk.buf && 
-        (char*)buf_w.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: msk vs j */
-    if ((char*)buf_msk.buf >= (char*)buf_j.buf && 
-        (char*)buf_msk.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_msk.buf && 
-        (char*)buf_j.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: i vs w */
     if ((char*)buf_i.buf >= (char*)buf_w.buf && 
         (char*)buf_i.buf < (char*)buf_w.buf + buf_w.len) {
@@ -7631,6 +7595,18 @@ _mask_to_coo_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
+    /* restrict check: i vs msk */
+    if ((char*)buf_i.buf >= (char*)buf_msk.buf && 
+        (char*)buf_i.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_msk.buf >= (char*)buf_i.buf && 
+        (char*)buf_msk.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: w vs j */
     if ((char*)buf_w.buf >= (char*)buf_j.buf && 
         (char*)buf_w.buf < (char*)buf_j.buf + buf_j.len) {
@@ -7639,6 +7615,30 @@ _mask_to_coo_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_j.buf >= (char*)buf_w.buf && 
         (char*)buf_j.buf < (char*)buf_w.buf + buf_w.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: w vs msk */
+    if ((char*)buf_w.buf >= (char*)buf_msk.buf && 
+        (char*)buf_w.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_msk.buf >= (char*)buf_w.buf && 
+        (char*)buf_msk.buf < (char*)buf_w.buf + buf_w.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs msk */
+    if ((char*)buf_j.buf >= (char*)buf_msk.buf && 
+        (char*)buf_j.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_msk.buf >= (char*)buf_j.buf && 
+        (char*)buf_msk.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -7711,42 +7711,6 @@ _mask_to_coo_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_w = 1;
 
-    /* restrict check: msk vs i */
-    if ((char*)buf_msk.buf >= (char*)buf_i.buf && 
-        (char*)buf_msk.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_i.buf >= (char*)buf_msk.buf && 
-        (char*)buf_i.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: msk vs w */
-    if ((char*)buf_msk.buf >= (char*)buf_w.buf && 
-        (char*)buf_msk.buf < (char*)buf_w.buf + buf_w.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_w.buf >= (char*)buf_msk.buf && 
-        (char*)buf_w.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: msk vs j */
-    if ((char*)buf_msk.buf >= (char*)buf_j.buf && 
-        (char*)buf_msk.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_msk.buf && 
-        (char*)buf_j.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: i vs w */
     if ((char*)buf_i.buf >= (char*)buf_w.buf && 
         (char*)buf_i.buf < (char*)buf_w.buf + buf_w.len) {
@@ -7771,6 +7735,18 @@ _mask_to_coo_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
+    /* restrict check: i vs msk */
+    if ((char*)buf_i.buf >= (char*)buf_msk.buf && 
+        (char*)buf_i.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_msk.buf >= (char*)buf_i.buf && 
+        (char*)buf_msk.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: w vs j */
     if ((char*)buf_w.buf >= (char*)buf_j.buf && 
         (char*)buf_w.buf < (char*)buf_j.buf + buf_j.len) {
@@ -7779,6 +7755,30 @@ _mask_to_coo_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_j.buf >= (char*)buf_w.buf && 
         (char*)buf_j.buf < (char*)buf_w.buf + buf_w.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: w vs msk */
+    if ((char*)buf_w.buf >= (char*)buf_msk.buf && 
+        (char*)buf_w.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_msk.buf >= (char*)buf_w.buf && 
+        (char*)buf_msk.buf < (char*)buf_w.buf + buf_w.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs msk */
+    if ((char*)buf_j.buf >= (char*)buf_msk.buf && 
+        (char*)buf_j.buf < (char*)buf_msk.buf + buf_msk.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_msk.buf >= (char*)buf_j.buf && 
+        (char*)buf_msk.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -8346,42 +8346,6 @@ _sparse_connectedpixels_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_labels = 1;
 
-    /* restrict check: labels vs v */
-    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
-        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
-        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs i */
-    if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
-        (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
-        (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs j */
-    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
-        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
-        (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: v vs i */
     if ((char*)buf_v.buf >= (char*)buf_i.buf && 
         (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
@@ -8390,6 +8354,18 @@ _sparse_connectedpixels_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_i.buf >= (char*)buf_v.buf && 
         (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs labels */
+    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
+        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
+        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -8406,6 +8382,18 @@ _sparse_connectedpixels_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
+    /* restrict check: i vs labels */
+    if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
+        (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
+        (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: i vs j */
     if ((char*)buf_i.buf >= (char*)buf_j.buf && 
         (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
@@ -8414,6 +8402,18 @@ _sparse_connectedpixels_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_j.buf >= (char*)buf_i.buf && 
         (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs j */
+    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
+        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
+        (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -8493,42 +8493,6 @@ _sparse_connectedpixels_fastcall(PyObject *self, PyObject *const *args, Py_ssize
         goto cleanup;
     acq_labels = 1;
 
-    /* restrict check: labels vs v */
-    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
-        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
-        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs i */
-    if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
-        (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
-        (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs j */
-    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
-        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
-        (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: v vs i */
     if ((char*)buf_v.buf >= (char*)buf_i.buf && 
         (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
@@ -8537,6 +8501,18 @@ _sparse_connectedpixels_fastcall(PyObject *self, PyObject *const *args, Py_ssize
     }
     if ((char*)buf_i.buf >= (char*)buf_v.buf && 
         (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs labels */
+    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
+        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
+        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -8553,6 +8529,18 @@ _sparse_connectedpixels_fastcall(PyObject *self, PyObject *const *args, Py_ssize
         goto cleanup;
     }
 
+    /* restrict check: i vs labels */
+    if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
+        (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
+        (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: i vs j */
     if ((char*)buf_i.buf >= (char*)buf_j.buf && 
         (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
@@ -8561,6 +8549,18 @@ _sparse_connectedpixels_fastcall(PyObject *self, PyObject *const *args, Py_ssize
     }
     if ((char*)buf_j.buf >= (char*)buf_i.buf && 
         (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs j */
+    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
+        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
+        (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -8933,86 +8933,74 @@ _sparse_connectedpixels_splat_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_Z = 1;
 
-    /* restrict check: i vs lbl */
-    if ((char*)buf_i.buf >= (char*)buf_lbl.buf && 
-        (char*)buf_i.buf < (char*)buf_lbl.buf + buf_lbl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_lbl.buf >= (char*)buf_i.buf && 
-        (char*)buf_lbl.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs v */
-    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
-        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
-        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs Z */
-    if ((char*)buf_i.buf >= (char*)buf_Z.buf && 
-        (char*)buf_i.buf < (char*)buf_Z.buf + buf_Z.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_Z.buf >= (char*)buf_i.buf && 
-        (char*)buf_Z.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs j */
-    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
-        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: j vs i */
     if ((char*)buf_j.buf >= (char*)buf_i.buf && 
         (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: lbl vs v */
-    if ((char*)buf_lbl.buf >= (char*)buf_v.buf && 
-        (char*)buf_lbl.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_lbl.buf && 
-        (char*)buf_v.buf < (char*)buf_lbl.buf + buf_lbl.len) {
+    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
+        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: lbl vs Z */
-    if ((char*)buf_lbl.buf >= (char*)buf_Z.buf && 
-        (char*)buf_lbl.buf < (char*)buf_Z.buf + buf_Z.len) {
+    /* restrict check: j vs lbl */
+    if ((char*)buf_j.buf >= (char*)buf_lbl.buf && 
+        (char*)buf_j.buf < (char*)buf_lbl.buf + buf_lbl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_Z.buf >= (char*)buf_lbl.buf && 
-        (char*)buf_Z.buf < (char*)buf_lbl.buf + buf_lbl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: lbl vs j */
     if ((char*)buf_lbl.buf >= (char*)buf_j.buf && 
         (char*)buf_lbl.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_lbl.buf && 
-        (char*)buf_j.buf < (char*)buf_lbl.buf + buf_lbl.len) {
+
+    /* restrict check: j vs v */
+    if ((char*)buf_j.buf >= (char*)buf_v.buf && 
+        (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_v.buf >= (char*)buf_j.buf && 
+        (char*)buf_v.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs Z */
+    if ((char*)buf_j.buf >= (char*)buf_Z.buf && 
+        (char*)buf_j.buf < (char*)buf_Z.buf + buf_Z.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_Z.buf >= (char*)buf_j.buf && 
+        (char*)buf_Z.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs i */
+    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
+        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
+        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs lbl */
+    if ((char*)buf_v.buf >= (char*)buf_lbl.buf && 
+        (char*)buf_v.buf < (char*)buf_lbl.buf + buf_lbl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_lbl.buf >= (char*)buf_v.buf && 
+        (char*)buf_lbl.buf < (char*)buf_v.buf + buf_v.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -9029,26 +9017,38 @@ _sparse_connectedpixels_splat_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: v vs j */
-    if ((char*)buf_v.buf >= (char*)buf_j.buf && 
-        (char*)buf_v.buf < (char*)buf_j.buf + buf_j.len) {
+    /* restrict check: i vs lbl */
+    if ((char*)buf_i.buf >= (char*)buf_lbl.buf && 
+        (char*)buf_i.buf < (char*)buf_lbl.buf + buf_lbl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_v.buf && 
-        (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
+    if ((char*)buf_lbl.buf >= (char*)buf_i.buf && 
+        (char*)buf_lbl.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: Z vs j */
-    if ((char*)buf_Z.buf >= (char*)buf_j.buf && 
-        (char*)buf_Z.buf < (char*)buf_j.buf + buf_j.len) {
+    /* restrict check: i vs Z */
+    if ((char*)buf_i.buf >= (char*)buf_Z.buf && 
+        (char*)buf_i.buf < (char*)buf_Z.buf + buf_Z.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_Z.buf && 
-        (char*)buf_j.buf < (char*)buf_Z.buf + buf_Z.len) {
+    if ((char*)buf_Z.buf >= (char*)buf_i.buf && 
+        (char*)buf_Z.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: lbl vs Z */
+    if ((char*)buf_lbl.buf >= (char*)buf_Z.buf && 
+        (char*)buf_lbl.buf < (char*)buf_Z.buf + buf_Z.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_Z.buf >= (char*)buf_lbl.buf && 
+        (char*)buf_Z.buf < (char*)buf_lbl.buf + buf_lbl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -9162,86 +9162,74 @@ _sparse_connectedpixels_splat_fastcall(PyObject *self, PyObject *const *args, Py
         goto cleanup;
     acq_Z = 1;
 
-    /* restrict check: i vs lbl */
-    if ((char*)buf_i.buf >= (char*)buf_lbl.buf && 
-        (char*)buf_i.buf < (char*)buf_lbl.buf + buf_lbl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_lbl.buf >= (char*)buf_i.buf && 
-        (char*)buf_lbl.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs v */
-    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
-        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
-        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs Z */
-    if ((char*)buf_i.buf >= (char*)buf_Z.buf && 
-        (char*)buf_i.buf < (char*)buf_Z.buf + buf_Z.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_Z.buf >= (char*)buf_i.buf && 
-        (char*)buf_Z.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs j */
-    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
-        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: j vs i */
     if ((char*)buf_j.buf >= (char*)buf_i.buf && 
         (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: lbl vs v */
-    if ((char*)buf_lbl.buf >= (char*)buf_v.buf && 
-        (char*)buf_lbl.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_lbl.buf && 
-        (char*)buf_v.buf < (char*)buf_lbl.buf + buf_lbl.len) {
+    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
+        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: lbl vs Z */
-    if ((char*)buf_lbl.buf >= (char*)buf_Z.buf && 
-        (char*)buf_lbl.buf < (char*)buf_Z.buf + buf_Z.len) {
+    /* restrict check: j vs lbl */
+    if ((char*)buf_j.buf >= (char*)buf_lbl.buf && 
+        (char*)buf_j.buf < (char*)buf_lbl.buf + buf_lbl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_Z.buf >= (char*)buf_lbl.buf && 
-        (char*)buf_Z.buf < (char*)buf_lbl.buf + buf_lbl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: lbl vs j */
     if ((char*)buf_lbl.buf >= (char*)buf_j.buf && 
         (char*)buf_lbl.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_lbl.buf && 
-        (char*)buf_j.buf < (char*)buf_lbl.buf + buf_lbl.len) {
+
+    /* restrict check: j vs v */
+    if ((char*)buf_j.buf >= (char*)buf_v.buf && 
+        (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_v.buf >= (char*)buf_j.buf && 
+        (char*)buf_v.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs Z */
+    if ((char*)buf_j.buf >= (char*)buf_Z.buf && 
+        (char*)buf_j.buf < (char*)buf_Z.buf + buf_Z.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_Z.buf >= (char*)buf_j.buf && 
+        (char*)buf_Z.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs i */
+    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
+        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
+        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs lbl */
+    if ((char*)buf_v.buf >= (char*)buf_lbl.buf && 
+        (char*)buf_v.buf < (char*)buf_lbl.buf + buf_lbl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_lbl.buf >= (char*)buf_v.buf && 
+        (char*)buf_lbl.buf < (char*)buf_v.buf + buf_v.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -9258,26 +9246,38 @@ _sparse_connectedpixels_splat_fastcall(PyObject *self, PyObject *const *args, Py
         goto cleanup;
     }
 
-    /* restrict check: v vs j */
-    if ((char*)buf_v.buf >= (char*)buf_j.buf && 
-        (char*)buf_v.buf < (char*)buf_j.buf + buf_j.len) {
+    /* restrict check: i vs lbl */
+    if ((char*)buf_i.buf >= (char*)buf_lbl.buf && 
+        (char*)buf_i.buf < (char*)buf_lbl.buf + buf_lbl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_v.buf && 
-        (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
+    if ((char*)buf_lbl.buf >= (char*)buf_i.buf && 
+        (char*)buf_lbl.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: Z vs j */
-    if ((char*)buf_Z.buf >= (char*)buf_j.buf && 
-        (char*)buf_Z.buf < (char*)buf_j.buf + buf_j.len) {
+    /* restrict check: i vs Z */
+    if ((char*)buf_i.buf >= (char*)buf_Z.buf && 
+        (char*)buf_i.buf < (char*)buf_Z.buf + buf_Z.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_Z.buf && 
-        (char*)buf_j.buf < (char*)buf_Z.buf + buf_Z.len) {
+    if ((char*)buf_Z.buf >= (char*)buf_i.buf && 
+        (char*)buf_Z.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: lbl vs Z */
+    if ((char*)buf_lbl.buf >= (char*)buf_Z.buf && 
+        (char*)buf_lbl.buf < (char*)buf_Z.buf + buf_Z.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_Z.buf >= (char*)buf_lbl.buf && 
+        (char*)buf_Z.buf < (char*)buf_lbl.buf + buf_lbl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -9659,6 +9659,90 @@ _sparse_blob2Dproperties_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_results = 1;
 
+    /* restrict check: j vs i */
+    if ((char*)buf_j.buf >= (char*)buf_i.buf && 
+        (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
+        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs labels */
+    if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
+        (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
+        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs v */
+    if ((char*)buf_j.buf >= (char*)buf_v.buf && 
+        (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_v.buf >= (char*)buf_j.buf && 
+        (char*)buf_v.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs results */
+    if ((char*)buf_j.buf >= (char*)buf_results.buf && 
+        (char*)buf_j.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_j.buf && 
+        (char*)buf_results.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs i */
+    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
+        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
+        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs labels */
+    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
+        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
+        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs results */
+    if ((char*)buf_v.buf >= (char*)buf_results.buf && 
+        (char*)buf_v.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_v.buf && 
+        (char*)buf_results.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: i vs labels */
     if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
         (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
@@ -9667,18 +9751,6 @@ _sparse_blob2Dproperties_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
         (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs v */
-    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
-        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
-        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -9695,86 +9767,14 @@ _sparse_blob2Dproperties_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: i vs j */
-    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
-        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_i.buf && 
-        (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs v */
-    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
-        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
-        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs results */
-    if ((char*)buf_labels.buf >= (char*)buf_results.buf && 
-        (char*)buf_labels.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: results vs labels */
     if ((char*)buf_results.buf >= (char*)buf_labels.buf && 
         (char*)buf_results.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: labels vs j */
-    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
-        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
-        (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs v */
-    if ((char*)buf_results.buf >= (char*)buf_v.buf && 
-        (char*)buf_results.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_results.buf && 
-        (char*)buf_v.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs j */
-    if ((char*)buf_results.buf >= (char*)buf_j.buf && 
-        (char*)buf_results.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_results.buf && 
-        (char*)buf_j.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: v vs j */
-    if ((char*)buf_v.buf >= (char*)buf_j.buf && 
-        (char*)buf_v.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_v.buf && 
-        (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
+    if ((char*)buf_labels.buf >= (char*)buf_results.buf && 
+        (char*)buf_labels.buf < (char*)buf_results.buf + buf_results.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -9869,6 +9869,90 @@ _sparse_blob2Dproperties_fastcall(PyObject *self, PyObject *const *args, Py_ssiz
         goto cleanup;
     acq_results = 1;
 
+    /* restrict check: j vs i */
+    if ((char*)buf_j.buf >= (char*)buf_i.buf && 
+        (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
+        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs labels */
+    if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
+        (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
+        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs v */
+    if ((char*)buf_j.buf >= (char*)buf_v.buf && 
+        (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_v.buf >= (char*)buf_j.buf && 
+        (char*)buf_v.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs results */
+    if ((char*)buf_j.buf >= (char*)buf_results.buf && 
+        (char*)buf_j.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_j.buf && 
+        (char*)buf_results.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs i */
+    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
+        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
+        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs labels */
+    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
+        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
+        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs results */
+    if ((char*)buf_v.buf >= (char*)buf_results.buf && 
+        (char*)buf_v.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_v.buf && 
+        (char*)buf_results.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: i vs labels */
     if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
         (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
@@ -9877,18 +9961,6 @@ _sparse_blob2Dproperties_fastcall(PyObject *self, PyObject *const *args, Py_ssiz
     }
     if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
         (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs v */
-    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
-        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
-        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -9905,86 +9977,14 @@ _sparse_blob2Dproperties_fastcall(PyObject *self, PyObject *const *args, Py_ssiz
         goto cleanup;
     }
 
-    /* restrict check: i vs j */
-    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
-        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_i.buf && 
-        (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs v */
-    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
-        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
-        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs results */
-    if ((char*)buf_labels.buf >= (char*)buf_results.buf && 
-        (char*)buf_labels.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: results vs labels */
     if ((char*)buf_results.buf >= (char*)buf_labels.buf && 
         (char*)buf_results.buf < (char*)buf_labels.buf + buf_labels.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: labels vs j */
-    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
-        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
-        (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs v */
-    if ((char*)buf_results.buf >= (char*)buf_v.buf && 
-        (char*)buf_results.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_results.buf && 
-        (char*)buf_v.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs j */
-    if ((char*)buf_results.buf >= (char*)buf_j.buf && 
-        (char*)buf_results.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_results.buf && 
-        (char*)buf_j.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: v vs j */
-    if ((char*)buf_v.buf >= (char*)buf_j.buf && 
-        (char*)buf_v.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_v.buf && 
-        (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
+    if ((char*)buf_labels.buf >= (char*)buf_results.buf && 
+        (char*)buf_labels.buf < (char*)buf_results.buf + buf_results.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -10946,146 +10946,26 @@ _sparse_localmaxlabel_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_labels = 1;
 
-    /* restrict check: i vs MV */
-    if ((char*)buf_i.buf >= (char*)buf_MV.buf && 
-        (char*)buf_i.buf < (char*)buf_MV.buf + buf_MV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_MV.buf >= (char*)buf_i.buf && 
-        (char*)buf_MV.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs v */
-    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
-        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
-        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs labels */
-    if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
-        (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
-        (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs iMV */
-    if ((char*)buf_i.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_i.buf < (char*)buf_iMV.buf + buf_iMV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_iMV.buf >= (char*)buf_i.buf && 
-        (char*)buf_iMV.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs j */
-    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
-        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: j vs i */
     if ((char*)buf_j.buf >= (char*)buf_i.buf && 
         (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: iMV vs MV */
-    if ((char*)buf_iMV.buf >= (char*)buf_MV.buf && 
-        (char*)buf_iMV.buf < (char*)buf_MV.buf + buf_MV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_MV.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_MV.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
+        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: iMV vs v */
-    if ((char*)buf_iMV.buf >= (char*)buf_v.buf && 
-        (char*)buf_iMV.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_v.buf < (char*)buf_iMV.buf + buf_iMV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: iMV vs labels */
-    if ((char*)buf_iMV.buf >= (char*)buf_labels.buf && 
-        (char*)buf_iMV.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_labels.buf < (char*)buf_iMV.buf + buf_iMV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: iMV vs j */
-    if ((char*)buf_iMV.buf >= (char*)buf_j.buf && 
-        (char*)buf_iMV.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_j.buf < (char*)buf_iMV.buf + buf_iMV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs MV */
-    if ((char*)buf_labels.buf >= (char*)buf_MV.buf && 
-        (char*)buf_labels.buf < (char*)buf_MV.buf + buf_MV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_MV.buf >= (char*)buf_labels.buf && 
-        (char*)buf_MV.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs v */
-    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
-        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
-        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs j */
-    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
-        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: j vs labels */
     if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
         (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
+        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -11102,6 +10982,18 @@ _sparse_localmaxlabel_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
+    /* restrict check: j vs iMV */
+    if ((char*)buf_j.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_j.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_j.buf && 
+        (char*)buf_iMV.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: j vs v */
     if ((char*)buf_j.buf >= (char*)buf_v.buf && 
         (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
@@ -11114,6 +11006,30 @@ _sparse_localmaxlabel_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
+    /* restrict check: v vs i */
+    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
+        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
+        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs labels */
+    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
+        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
+        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: v vs MV */
     if ((char*)buf_v.buf >= (char*)buf_MV.buf && 
         (char*)buf_v.buf < (char*)buf_MV.buf + buf_MV.len) {
@@ -11122,6 +11038,90 @@ _sparse_localmaxlabel_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_MV.buf >= (char*)buf_v.buf && 
         (char*)buf_MV.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs iMV */
+    if ((char*)buf_v.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_v.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_v.buf && 
+        (char*)buf_iMV.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i vs labels */
+    if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
+        (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
+        (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i vs MV */
+    if ((char*)buf_i.buf >= (char*)buf_MV.buf && 
+        (char*)buf_i.buf < (char*)buf_MV.buf + buf_MV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_MV.buf >= (char*)buf_i.buf && 
+        (char*)buf_MV.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i vs iMV */
+    if ((char*)buf_i.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_i.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_i.buf && 
+        (char*)buf_iMV.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs MV */
+    if ((char*)buf_labels.buf >= (char*)buf_MV.buf && 
+        (char*)buf_labels.buf < (char*)buf_MV.buf + buf_MV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_MV.buf >= (char*)buf_labels.buf && 
+        (char*)buf_MV.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs iMV */
+    if ((char*)buf_labels.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_labels.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_labels.buf && 
+        (char*)buf_iMV.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: MV vs iMV */
+    if ((char*)buf_MV.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_MV.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_MV.buf && 
+        (char*)buf_iMV.buf < (char*)buf_MV.buf + buf_MV.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -11214,146 +11214,26 @@ _sparse_localmaxlabel_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t
         goto cleanup;
     acq_labels = 1;
 
-    /* restrict check: i vs MV */
-    if ((char*)buf_i.buf >= (char*)buf_MV.buf && 
-        (char*)buf_i.buf < (char*)buf_MV.buf + buf_MV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_MV.buf >= (char*)buf_i.buf && 
-        (char*)buf_MV.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs v */
-    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
-        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
-        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs labels */
-    if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
-        (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
-        (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs iMV */
-    if ((char*)buf_i.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_i.buf < (char*)buf_iMV.buf + buf_iMV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_iMV.buf >= (char*)buf_i.buf && 
-        (char*)buf_iMV.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs j */
-    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
-        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: j vs i */
     if ((char*)buf_j.buf >= (char*)buf_i.buf && 
         (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: iMV vs MV */
-    if ((char*)buf_iMV.buf >= (char*)buf_MV.buf && 
-        (char*)buf_iMV.buf < (char*)buf_MV.buf + buf_MV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_MV.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_MV.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
+        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: iMV vs v */
-    if ((char*)buf_iMV.buf >= (char*)buf_v.buf && 
-        (char*)buf_iMV.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_v.buf < (char*)buf_iMV.buf + buf_iMV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: iMV vs labels */
-    if ((char*)buf_iMV.buf >= (char*)buf_labels.buf && 
-        (char*)buf_iMV.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_labels.buf < (char*)buf_iMV.buf + buf_iMV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: iMV vs j */
-    if ((char*)buf_iMV.buf >= (char*)buf_j.buf && 
-        (char*)buf_iMV.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_iMV.buf && 
-        (char*)buf_j.buf < (char*)buf_iMV.buf + buf_iMV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs MV */
-    if ((char*)buf_labels.buf >= (char*)buf_MV.buf && 
-        (char*)buf_labels.buf < (char*)buf_MV.buf + buf_MV.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_MV.buf >= (char*)buf_labels.buf && 
-        (char*)buf_MV.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs v */
-    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
-        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
-        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs j */
-    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
-        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: j vs labels */
     if ((char*)buf_j.buf >= (char*)buf_labels.buf && 
         (char*)buf_j.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_j.buf && 
+        (char*)buf_labels.buf < (char*)buf_j.buf + buf_j.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -11370,6 +11250,18 @@ _sparse_localmaxlabel_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t
         goto cleanup;
     }
 
+    /* restrict check: j vs iMV */
+    if ((char*)buf_j.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_j.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_j.buf && 
+        (char*)buf_iMV.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: j vs v */
     if ((char*)buf_j.buf >= (char*)buf_v.buf && 
         (char*)buf_j.buf < (char*)buf_v.buf + buf_v.len) {
@@ -11382,6 +11274,30 @@ _sparse_localmaxlabel_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t
         goto cleanup;
     }
 
+    /* restrict check: v vs i */
+    if ((char*)buf_v.buf >= (char*)buf_i.buf && 
+        (char*)buf_v.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_v.buf && 
+        (char*)buf_i.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs labels */
+    if ((char*)buf_v.buf >= (char*)buf_labels.buf && 
+        (char*)buf_v.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_v.buf && 
+        (char*)buf_labels.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: v vs MV */
     if ((char*)buf_v.buf >= (char*)buf_MV.buf && 
         (char*)buf_v.buf < (char*)buf_MV.buf + buf_MV.len) {
@@ -11390,6 +11306,90 @@ _sparse_localmaxlabel_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t
     }
     if ((char*)buf_MV.buf >= (char*)buf_v.buf && 
         (char*)buf_MV.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: v vs iMV */
+    if ((char*)buf_v.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_v.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_v.buf && 
+        (char*)buf_iMV.buf < (char*)buf_v.buf + buf_v.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i vs labels */
+    if ((char*)buf_i.buf >= (char*)buf_labels.buf && 
+        (char*)buf_i.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_i.buf && 
+        (char*)buf_labels.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i vs MV */
+    if ((char*)buf_i.buf >= (char*)buf_MV.buf && 
+        (char*)buf_i.buf < (char*)buf_MV.buf + buf_MV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_MV.buf >= (char*)buf_i.buf && 
+        (char*)buf_MV.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i vs iMV */
+    if ((char*)buf_i.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_i.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_i.buf && 
+        (char*)buf_iMV.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs MV */
+    if ((char*)buf_labels.buf >= (char*)buf_MV.buf && 
+        (char*)buf_labels.buf < (char*)buf_MV.buf + buf_MV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_MV.buf >= (char*)buf_labels.buf && 
+        (char*)buf_MV.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels vs iMV */
+    if ((char*)buf_labels.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_labels.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_labels.buf && 
+        (char*)buf_iMV.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: MV vs iMV */
+    if ((char*)buf_MV.buf >= (char*)buf_iMV.buf && 
+        (char*)buf_MV.buf < (char*)buf_iMV.buf + buf_iMV.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_iMV.buf >= (char*)buf_MV.buf && 
+        (char*)buf_iMV.buf < (char*)buf_MV.buf + buf_MV.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -11829,14 +11829,14 @@ _sparse_overlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_k2 = 1;
 
-    /* restrict check: j1 vs i2 */
-    if ((char*)buf_j1.buf >= (char*)buf_i2.buf && 
-        (char*)buf_j1.buf < (char*)buf_i2.buf + buf_i2.len) {
+    /* restrict check: j1 vs k2 */
+    if ((char*)buf_j1.buf >= (char*)buf_k2.buf && 
+        (char*)buf_j1.buf < (char*)buf_k2.buf + buf_k2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_i2.buf >= (char*)buf_j1.buf && 
-        (char*)buf_i2.buf < (char*)buf_j1.buf + buf_j1.len) {
+    if ((char*)buf_k2.buf >= (char*)buf_j1.buf && 
+        (char*)buf_k2.buf < (char*)buf_j1.buf + buf_j1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -11853,14 +11853,14 @@ _sparse_overlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: j1 vs k2 */
-    if ((char*)buf_j1.buf >= (char*)buf_k2.buf && 
-        (char*)buf_j1.buf < (char*)buf_k2.buf + buf_k2.len) {
+    /* restrict check: j1 vs i2 */
+    if ((char*)buf_j1.buf >= (char*)buf_i2.buf && 
+        (char*)buf_j1.buf < (char*)buf_i2.buf + buf_i2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_k2.buf >= (char*)buf_j1.buf && 
-        (char*)buf_k2.buf < (char*)buf_j1.buf + buf_j1.len) {
+    if ((char*)buf_i2.buf >= (char*)buf_j1.buf && 
+        (char*)buf_i2.buf < (char*)buf_j1.buf + buf_j1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -11889,110 +11889,38 @@ _sparse_overlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: i2 vs k1 */
-    if ((char*)buf_i2.buf >= (char*)buf_k1.buf && 
-        (char*)buf_i2.buf < (char*)buf_k1.buf + buf_k1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_k1.buf >= (char*)buf_i2.buf && 
-        (char*)buf_k1.buf < (char*)buf_i2.buf + buf_i2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i2 vs k2 */
-    if ((char*)buf_i2.buf >= (char*)buf_k2.buf && 
-        (char*)buf_i2.buf < (char*)buf_k2.buf + buf_k2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_k2.buf >= (char*)buf_i2.buf && 
-        (char*)buf_k2.buf < (char*)buf_i2.buf + buf_i2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i2 vs j2 */
-    if ((char*)buf_i2.buf >= (char*)buf_j2.buf && 
-        (char*)buf_i2.buf < (char*)buf_j2.buf + buf_j2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j2.buf >= (char*)buf_i2.buf && 
-        (char*)buf_j2.buf < (char*)buf_i2.buf + buf_i2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i2 vs i1 */
-    if ((char*)buf_i2.buf >= (char*)buf_i1.buf && 
-        (char*)buf_i2.buf < (char*)buf_i1.buf + buf_i1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_i1.buf >= (char*)buf_i2.buf && 
-        (char*)buf_i1.buf < (char*)buf_i2.buf + buf_i2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: k1 vs k2 */
-    if ((char*)buf_k1.buf >= (char*)buf_k2.buf && 
-        (char*)buf_k1.buf < (char*)buf_k2.buf + buf_k2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_k2.buf >= (char*)buf_k1.buf && 
-        (char*)buf_k2.buf < (char*)buf_k1.buf + buf_k1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: k1 vs j2 */
-    if ((char*)buf_k1.buf >= (char*)buf_j2.buf && 
-        (char*)buf_k1.buf < (char*)buf_j2.buf + buf_j2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j2.buf >= (char*)buf_k1.buf && 
-        (char*)buf_j2.buf < (char*)buf_k1.buf + buf_k1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: k1 vs i1 */
-    if ((char*)buf_k1.buf >= (char*)buf_i1.buf && 
-        (char*)buf_k1.buf < (char*)buf_i1.buf + buf_i1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_i1.buf >= (char*)buf_k1.buf && 
-        (char*)buf_i1.buf < (char*)buf_k1.buf + buf_k1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: k2 vs j2 */
-    if ((char*)buf_k2.buf >= (char*)buf_j2.buf && 
-        (char*)buf_k2.buf < (char*)buf_j2.buf + buf_j2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: j2 vs k2 */
     if ((char*)buf_j2.buf >= (char*)buf_k2.buf && 
         (char*)buf_j2.buf < (char*)buf_k2.buf + buf_k2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: k2 vs i1 */
-    if ((char*)buf_k2.buf >= (char*)buf_i1.buf && 
-        (char*)buf_k2.buf < (char*)buf_i1.buf + buf_i1.len) {
+    if ((char*)buf_k2.buf >= (char*)buf_j2.buf && 
+        (char*)buf_k2.buf < (char*)buf_j2.buf + buf_j2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_i1.buf >= (char*)buf_k2.buf && 
-        (char*)buf_i1.buf < (char*)buf_k2.buf + buf_k2.len) {
+
+    /* restrict check: j2 vs k1 */
+    if ((char*)buf_j2.buf >= (char*)buf_k1.buf && 
+        (char*)buf_j2.buf < (char*)buf_k1.buf + buf_k1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_k1.buf >= (char*)buf_j2.buf && 
+        (char*)buf_k1.buf < (char*)buf_j2.buf + buf_j2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j2 vs i2 */
+    if ((char*)buf_j2.buf >= (char*)buf_i2.buf && 
+        (char*)buf_j2.buf < (char*)buf_i2.buf + buf_i2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i2.buf >= (char*)buf_j2.buf && 
+        (char*)buf_i2.buf < (char*)buf_j2.buf + buf_j2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12005,6 +11933,78 @@ _sparse_overlaps_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_i1.buf >= (char*)buf_j2.buf && 
         (char*)buf_i1.buf < (char*)buf_j2.buf + buf_j2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i1 vs k2 */
+    if ((char*)buf_i1.buf >= (char*)buf_k2.buf && 
+        (char*)buf_i1.buf < (char*)buf_k2.buf + buf_k2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_k2.buf >= (char*)buf_i1.buf && 
+        (char*)buf_k2.buf < (char*)buf_i1.buf + buf_i1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i1 vs k1 */
+    if ((char*)buf_i1.buf >= (char*)buf_k1.buf && 
+        (char*)buf_i1.buf < (char*)buf_k1.buf + buf_k1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_k1.buf >= (char*)buf_i1.buf && 
+        (char*)buf_k1.buf < (char*)buf_i1.buf + buf_i1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i1 vs i2 */
+    if ((char*)buf_i1.buf >= (char*)buf_i2.buf && 
+        (char*)buf_i1.buf < (char*)buf_i2.buf + buf_i2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i2.buf >= (char*)buf_i1.buf && 
+        (char*)buf_i2.buf < (char*)buf_i1.buf + buf_i1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: k2 vs k1 */
+    if ((char*)buf_k2.buf >= (char*)buf_k1.buf && 
+        (char*)buf_k2.buf < (char*)buf_k1.buf + buf_k1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_k1.buf >= (char*)buf_k2.buf && 
+        (char*)buf_k1.buf < (char*)buf_k2.buf + buf_k2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: k2 vs i2 */
+    if ((char*)buf_k2.buf >= (char*)buf_i2.buf && 
+        (char*)buf_k2.buf < (char*)buf_i2.buf + buf_i2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i2.buf >= (char*)buf_k2.buf && 
+        (char*)buf_i2.buf < (char*)buf_k2.buf + buf_k2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: k1 vs i2 */
+    if ((char*)buf_k1.buf >= (char*)buf_i2.buf && 
+        (char*)buf_k1.buf < (char*)buf_i2.buf + buf_i2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i2.buf >= (char*)buf_k1.buf && 
+        (char*)buf_i2.buf < (char*)buf_k1.buf + buf_k1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12097,14 +12097,14 @@ _sparse_overlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
         goto cleanup;
     acq_k2 = 1;
 
-    /* restrict check: j1 vs i2 */
-    if ((char*)buf_j1.buf >= (char*)buf_i2.buf && 
-        (char*)buf_j1.buf < (char*)buf_i2.buf + buf_i2.len) {
+    /* restrict check: j1 vs k2 */
+    if ((char*)buf_j1.buf >= (char*)buf_k2.buf && 
+        (char*)buf_j1.buf < (char*)buf_k2.buf + buf_k2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_i2.buf >= (char*)buf_j1.buf && 
-        (char*)buf_i2.buf < (char*)buf_j1.buf + buf_j1.len) {
+    if ((char*)buf_k2.buf >= (char*)buf_j1.buf && 
+        (char*)buf_k2.buf < (char*)buf_j1.buf + buf_j1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12121,14 +12121,14 @@ _sparse_overlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
         goto cleanup;
     }
 
-    /* restrict check: j1 vs k2 */
-    if ((char*)buf_j1.buf >= (char*)buf_k2.buf && 
-        (char*)buf_j1.buf < (char*)buf_k2.buf + buf_k2.len) {
+    /* restrict check: j1 vs i2 */
+    if ((char*)buf_j1.buf >= (char*)buf_i2.buf && 
+        (char*)buf_j1.buf < (char*)buf_i2.buf + buf_i2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_k2.buf >= (char*)buf_j1.buf && 
-        (char*)buf_k2.buf < (char*)buf_j1.buf + buf_j1.len) {
+    if ((char*)buf_i2.buf >= (char*)buf_j1.buf && 
+        (char*)buf_i2.buf < (char*)buf_j1.buf + buf_j1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12157,110 +12157,38 @@ _sparse_overlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
         goto cleanup;
     }
 
-    /* restrict check: i2 vs k1 */
-    if ((char*)buf_i2.buf >= (char*)buf_k1.buf && 
-        (char*)buf_i2.buf < (char*)buf_k1.buf + buf_k1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_k1.buf >= (char*)buf_i2.buf && 
-        (char*)buf_k1.buf < (char*)buf_i2.buf + buf_i2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i2 vs k2 */
-    if ((char*)buf_i2.buf >= (char*)buf_k2.buf && 
-        (char*)buf_i2.buf < (char*)buf_k2.buf + buf_k2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_k2.buf >= (char*)buf_i2.buf && 
-        (char*)buf_k2.buf < (char*)buf_i2.buf + buf_i2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i2 vs j2 */
-    if ((char*)buf_i2.buf >= (char*)buf_j2.buf && 
-        (char*)buf_i2.buf < (char*)buf_j2.buf + buf_j2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j2.buf >= (char*)buf_i2.buf && 
-        (char*)buf_j2.buf < (char*)buf_i2.buf + buf_i2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i2 vs i1 */
-    if ((char*)buf_i2.buf >= (char*)buf_i1.buf && 
-        (char*)buf_i2.buf < (char*)buf_i1.buf + buf_i1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_i1.buf >= (char*)buf_i2.buf && 
-        (char*)buf_i1.buf < (char*)buf_i2.buf + buf_i2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: k1 vs k2 */
-    if ((char*)buf_k1.buf >= (char*)buf_k2.buf && 
-        (char*)buf_k1.buf < (char*)buf_k2.buf + buf_k2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_k2.buf >= (char*)buf_k1.buf && 
-        (char*)buf_k2.buf < (char*)buf_k1.buf + buf_k1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: k1 vs j2 */
-    if ((char*)buf_k1.buf >= (char*)buf_j2.buf && 
-        (char*)buf_k1.buf < (char*)buf_j2.buf + buf_j2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j2.buf >= (char*)buf_k1.buf && 
-        (char*)buf_j2.buf < (char*)buf_k1.buf + buf_k1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: k1 vs i1 */
-    if ((char*)buf_k1.buf >= (char*)buf_i1.buf && 
-        (char*)buf_k1.buf < (char*)buf_i1.buf + buf_i1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_i1.buf >= (char*)buf_k1.buf && 
-        (char*)buf_i1.buf < (char*)buf_k1.buf + buf_k1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: k2 vs j2 */
-    if ((char*)buf_k2.buf >= (char*)buf_j2.buf && 
-        (char*)buf_k2.buf < (char*)buf_j2.buf + buf_j2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: j2 vs k2 */
     if ((char*)buf_j2.buf >= (char*)buf_k2.buf && 
         (char*)buf_j2.buf < (char*)buf_k2.buf + buf_k2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: k2 vs i1 */
-    if ((char*)buf_k2.buf >= (char*)buf_i1.buf && 
-        (char*)buf_k2.buf < (char*)buf_i1.buf + buf_i1.len) {
+    if ((char*)buf_k2.buf >= (char*)buf_j2.buf && 
+        (char*)buf_k2.buf < (char*)buf_j2.buf + buf_j2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_i1.buf >= (char*)buf_k2.buf && 
-        (char*)buf_i1.buf < (char*)buf_k2.buf + buf_k2.len) {
+
+    /* restrict check: j2 vs k1 */
+    if ((char*)buf_j2.buf >= (char*)buf_k1.buf && 
+        (char*)buf_j2.buf < (char*)buf_k1.buf + buf_k1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_k1.buf >= (char*)buf_j2.buf && 
+        (char*)buf_k1.buf < (char*)buf_j2.buf + buf_j2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j2 vs i2 */
+    if ((char*)buf_j2.buf >= (char*)buf_i2.buf && 
+        (char*)buf_j2.buf < (char*)buf_i2.buf + buf_i2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i2.buf >= (char*)buf_j2.buf && 
+        (char*)buf_i2.buf < (char*)buf_j2.buf + buf_j2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12273,6 +12201,78 @@ _sparse_overlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
     }
     if ((char*)buf_i1.buf >= (char*)buf_j2.buf && 
         (char*)buf_i1.buf < (char*)buf_j2.buf + buf_j2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i1 vs k2 */
+    if ((char*)buf_i1.buf >= (char*)buf_k2.buf && 
+        (char*)buf_i1.buf < (char*)buf_k2.buf + buf_k2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_k2.buf >= (char*)buf_i1.buf && 
+        (char*)buf_k2.buf < (char*)buf_i1.buf + buf_i1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i1 vs k1 */
+    if ((char*)buf_i1.buf >= (char*)buf_k1.buf && 
+        (char*)buf_i1.buf < (char*)buf_k1.buf + buf_k1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_k1.buf >= (char*)buf_i1.buf && 
+        (char*)buf_k1.buf < (char*)buf_i1.buf + buf_i1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: i1 vs i2 */
+    if ((char*)buf_i1.buf >= (char*)buf_i2.buf && 
+        (char*)buf_i1.buf < (char*)buf_i2.buf + buf_i2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i2.buf >= (char*)buf_i1.buf && 
+        (char*)buf_i2.buf < (char*)buf_i1.buf + buf_i1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: k2 vs k1 */
+    if ((char*)buf_k2.buf >= (char*)buf_k1.buf && 
+        (char*)buf_k2.buf < (char*)buf_k1.buf + buf_k1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_k1.buf >= (char*)buf_k2.buf && 
+        (char*)buf_k1.buf < (char*)buf_k2.buf + buf_k2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: k2 vs i2 */
+    if ((char*)buf_k2.buf >= (char*)buf_i2.buf && 
+        (char*)buf_k2.buf < (char*)buf_i2.buf + buf_i2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i2.buf >= (char*)buf_k2.buf && 
+        (char*)buf_i2.buf < (char*)buf_k2.buf + buf_k2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: k1 vs i2 */
+    if ((char*)buf_k1.buf >= (char*)buf_i2.buf && 
+        (char*)buf_k1.buf < (char*)buf_i2.buf + buf_i2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i2.buf >= (char*)buf_k1.buf && 
+        (char*)buf_i2.buf < (char*)buf_k1.buf + buf_k1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12649,6 +12649,54 @@ _compress_duplicates_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_tmp = 1;
 
+    /* restrict check: j vs oj */
+    if ((char*)buf_j.buf >= (char*)buf_oj.buf && 
+        (char*)buf_j.buf < (char*)buf_oj.buf + buf_oj.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_oj.buf >= (char*)buf_j.buf && 
+        (char*)buf_oj.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs i */
+    if ((char*)buf_j.buf >= (char*)buf_i.buf && 
+        (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
+        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs oi */
+    if ((char*)buf_j.buf >= (char*)buf_oi.buf && 
+        (char*)buf_j.buf < (char*)buf_oi.buf + buf_oi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_oi.buf >= (char*)buf_j.buf && 
+        (char*)buf_oi.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs tmp */
+    if ((char*)buf_j.buf >= (char*)buf_tmp.buf && 
+        (char*)buf_j.buf < (char*)buf_tmp.buf + buf_tmp.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_tmp.buf >= (char*)buf_j.buf && 
+        (char*)buf_tmp.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: i vs oj */
     if ((char*)buf_i.buf >= (char*)buf_oj.buf && 
         (char*)buf_i.buf < (char*)buf_oj.buf + buf_oj.len) {
@@ -12657,18 +12705,6 @@ _compress_duplicates_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_oj.buf >= (char*)buf_i.buf && 
         (char*)buf_oj.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs tmp */
-    if ((char*)buf_i.buf >= (char*)buf_tmp.buf && 
-        (char*)buf_i.buf < (char*)buf_tmp.buf + buf_tmp.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_tmp.buf >= (char*)buf_i.buf && 
-        (char*)buf_tmp.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12685,26 +12721,14 @@ _compress_duplicates_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: i vs j */
-    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
-        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
+    /* restrict check: i vs tmp */
+    if ((char*)buf_i.buf >= (char*)buf_tmp.buf && 
+        (char*)buf_i.buf < (char*)buf_tmp.buf + buf_tmp.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_i.buf && 
-        (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: oj vs tmp */
-    if ((char*)buf_oj.buf >= (char*)buf_tmp.buf && 
-        (char*)buf_oj.buf < (char*)buf_tmp.buf + buf_tmp.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_tmp.buf >= (char*)buf_oj.buf && 
-        (char*)buf_tmp.buf < (char*)buf_oj.buf + buf_oj.len) {
+    if ((char*)buf_tmp.buf >= (char*)buf_i.buf && 
+        (char*)buf_tmp.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12721,50 +12745,26 @@ _compress_duplicates_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: oj vs j */
-    if ((char*)buf_oj.buf >= (char*)buf_j.buf && 
-        (char*)buf_oj.buf < (char*)buf_j.buf + buf_j.len) {
+    /* restrict check: oj vs tmp */
+    if ((char*)buf_oj.buf >= (char*)buf_tmp.buf && 
+        (char*)buf_oj.buf < (char*)buf_tmp.buf + buf_tmp.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_oj.buf && 
-        (char*)buf_j.buf < (char*)buf_oj.buf + buf_oj.len) {
+    if ((char*)buf_tmp.buf >= (char*)buf_oj.buf && 
+        (char*)buf_tmp.buf < (char*)buf_oj.buf + buf_oj.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: tmp vs oi */
-    if ((char*)buf_tmp.buf >= (char*)buf_oi.buf && 
-        (char*)buf_tmp.buf < (char*)buf_oi.buf + buf_oi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: oi vs tmp */
     if ((char*)buf_oi.buf >= (char*)buf_tmp.buf && 
         (char*)buf_oi.buf < (char*)buf_tmp.buf + buf_tmp.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: tmp vs j */
-    if ((char*)buf_tmp.buf >= (char*)buf_j.buf && 
-        (char*)buf_tmp.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_tmp.buf && 
-        (char*)buf_j.buf < (char*)buf_tmp.buf + buf_tmp.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: oi vs j */
-    if ((char*)buf_oi.buf >= (char*)buf_j.buf && 
-        (char*)buf_oi.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_oi.buf && 
-        (char*)buf_j.buf < (char*)buf_oi.buf + buf_oi.len) {
+    if ((char*)buf_tmp.buf >= (char*)buf_oi.buf && 
+        (char*)buf_tmp.buf < (char*)buf_oi.buf + buf_oi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12847,6 +12847,54 @@ _compress_duplicates_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t 
         goto cleanup;
     acq_tmp = 1;
 
+    /* restrict check: j vs oj */
+    if ((char*)buf_j.buf >= (char*)buf_oj.buf && 
+        (char*)buf_j.buf < (char*)buf_oj.buf + buf_oj.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_oj.buf >= (char*)buf_j.buf && 
+        (char*)buf_oj.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs i */
+    if ((char*)buf_j.buf >= (char*)buf_i.buf && 
+        (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
+        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs oi */
+    if ((char*)buf_j.buf >= (char*)buf_oi.buf && 
+        (char*)buf_j.buf < (char*)buf_oi.buf + buf_oi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_oi.buf >= (char*)buf_j.buf && 
+        (char*)buf_oi.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: j vs tmp */
+    if ((char*)buf_j.buf >= (char*)buf_tmp.buf && 
+        (char*)buf_j.buf < (char*)buf_tmp.buf + buf_tmp.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_tmp.buf >= (char*)buf_j.buf && 
+        (char*)buf_tmp.buf < (char*)buf_j.buf + buf_j.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: i vs oj */
     if ((char*)buf_i.buf >= (char*)buf_oj.buf && 
         (char*)buf_i.buf < (char*)buf_oj.buf + buf_oj.len) {
@@ -12855,18 +12903,6 @@ _compress_duplicates_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t 
     }
     if ((char*)buf_oj.buf >= (char*)buf_i.buf && 
         (char*)buf_oj.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: i vs tmp */
-    if ((char*)buf_i.buf >= (char*)buf_tmp.buf && 
-        (char*)buf_i.buf < (char*)buf_tmp.buf + buf_tmp.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_tmp.buf >= (char*)buf_i.buf && 
-        (char*)buf_tmp.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12883,26 +12919,14 @@ _compress_duplicates_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t 
         goto cleanup;
     }
 
-    /* restrict check: i vs j */
-    if ((char*)buf_i.buf >= (char*)buf_j.buf && 
-        (char*)buf_i.buf < (char*)buf_j.buf + buf_j.len) {
+    /* restrict check: i vs tmp */
+    if ((char*)buf_i.buf >= (char*)buf_tmp.buf && 
+        (char*)buf_i.buf < (char*)buf_tmp.buf + buf_tmp.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_i.buf && 
-        (char*)buf_j.buf < (char*)buf_i.buf + buf_i.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: oj vs tmp */
-    if ((char*)buf_oj.buf >= (char*)buf_tmp.buf && 
-        (char*)buf_oj.buf < (char*)buf_tmp.buf + buf_tmp.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_tmp.buf >= (char*)buf_oj.buf && 
-        (char*)buf_tmp.buf < (char*)buf_oj.buf + buf_oj.len) {
+    if ((char*)buf_tmp.buf >= (char*)buf_i.buf && 
+        (char*)buf_tmp.buf < (char*)buf_i.buf + buf_i.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -12919,50 +12943,26 @@ _compress_duplicates_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t 
         goto cleanup;
     }
 
-    /* restrict check: oj vs j */
-    if ((char*)buf_oj.buf >= (char*)buf_j.buf && 
-        (char*)buf_oj.buf < (char*)buf_j.buf + buf_j.len) {
+    /* restrict check: oj vs tmp */
+    if ((char*)buf_oj.buf >= (char*)buf_tmp.buf && 
+        (char*)buf_oj.buf < (char*)buf_tmp.buf + buf_tmp.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_j.buf >= (char*)buf_oj.buf && 
-        (char*)buf_j.buf < (char*)buf_oj.buf + buf_oj.len) {
+    if ((char*)buf_tmp.buf >= (char*)buf_oj.buf && 
+        (char*)buf_tmp.buf < (char*)buf_oj.buf + buf_oj.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: tmp vs oi */
-    if ((char*)buf_tmp.buf >= (char*)buf_oi.buf && 
-        (char*)buf_tmp.buf < (char*)buf_oi.buf + buf_oi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: oi vs tmp */
     if ((char*)buf_oi.buf >= (char*)buf_tmp.buf && 
         (char*)buf_oi.buf < (char*)buf_tmp.buf + buf_tmp.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: tmp vs j */
-    if ((char*)buf_tmp.buf >= (char*)buf_j.buf && 
-        (char*)buf_tmp.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_tmp.buf && 
-        (char*)buf_j.buf < (char*)buf_tmp.buf + buf_tmp.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: oi vs j */
-    if ((char*)buf_oi.buf >= (char*)buf_j.buf && 
-        (char*)buf_oi.buf < (char*)buf_j.buf + buf_j.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_j.buf >= (char*)buf_oi.buf && 
-        (char*)buf_j.buf < (char*)buf_oi.buf + buf_oi.len) {
+    if ((char*)buf_tmp.buf >= (char*)buf_oi.buf && 
+        (char*)buf_tmp.buf < (char*)buf_oi.buf + buf_oi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -13520,114 +13520,6 @@ _coverlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_results = 1;
 
-    /* restrict check: labels2 vs col2 */
-    if ((char*)buf_labels2.buf >= (char*)buf_col2.buf && 
-        (char*)buf_labels2.buf < (char*)buf_col2.buf + buf_col2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_col2.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_col2.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs col1 */
-    if ((char*)buf_labels2.buf >= (char*)buf_col1.buf && 
-        (char*)buf_labels2.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_col1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_col1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs results */
-    if ((char*)buf_labels2.buf >= (char*)buf_results.buf && 
-        (char*)buf_labels2.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_results.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_results.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs row1 */
-    if ((char*)buf_labels2.buf >= (char*)buf_row1.buf && 
-        (char*)buf_labels2.buf < (char*)buf_row1.buf + buf_row1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_row1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs labels1 */
-    if ((char*)buf_labels2.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_labels2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs mat */
-    if ((char*)buf_labels2.buf >= (char*)buf_mat.buf && 
-        (char*)buf_labels2.buf < (char*)buf_mat.buf + buf_mat.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_mat.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_mat.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs row2 */
-    if ((char*)buf_labels2.buf >= (char*)buf_row2.buf && 
-        (char*)buf_labels2.buf < (char*)buf_row2.buf + buf_row2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row2.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_row2.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col2 vs col1 */
-    if ((char*)buf_col2.buf >= (char*)buf_col1.buf && 
-        (char*)buf_col2.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_col1.buf >= (char*)buf_col2.buf && 
-        (char*)buf_col1.buf < (char*)buf_col2.buf + buf_col2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col2 vs results */
-    if ((char*)buf_col2.buf >= (char*)buf_results.buf && 
-        (char*)buf_col2.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_results.buf >= (char*)buf_col2.buf && 
-        (char*)buf_results.buf < (char*)buf_col2.buf + buf_col2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: col2 vs row1 */
     if ((char*)buf_col2.buf >= (char*)buf_row1.buf && 
         (char*)buf_col2.buf < (char*)buf_row1.buf + buf_row1.len) {
@@ -13640,14 +13532,14 @@ _coverlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: col2 vs labels1 */
-    if ((char*)buf_col2.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_col2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    /* restrict check: col2 vs labels2 */
+    if ((char*)buf_col2.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_col2.buf < (char*)buf_labels2.buf + buf_labels2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_labels1.buf >= (char*)buf_col2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_col2.buf + buf_col2.len) {
+    if ((char*)buf_labels2.buf >= (char*)buf_col2.buf && 
+        (char*)buf_labels2.buf < (char*)buf_col2.buf + buf_col2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -13664,6 +13556,18 @@ _coverlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
+    /* restrict check: col2 vs results */
+    if ((char*)buf_col2.buf >= (char*)buf_results.buf && 
+        (char*)buf_col2.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_col2.buf && 
+        (char*)buf_results.buf < (char*)buf_col2.buf + buf_col2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: col2 vs row2 */
     if ((char*)buf_col2.buf >= (char*)buf_row2.buf && 
         (char*)buf_col2.buf < (char*)buf_row2.buf + buf_row2.len) {
@@ -13676,122 +13580,38 @@ _coverlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: col1 vs results */
-    if ((char*)buf_col1.buf >= (char*)buf_results.buf && 
-        (char*)buf_col1.buf < (char*)buf_results.buf + buf_results.len) {
+    /* restrict check: col2 vs col1 */
+    if ((char*)buf_col2.buf >= (char*)buf_col1.buf && 
+        (char*)buf_col2.buf < (char*)buf_col1.buf + buf_col1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_results.buf >= (char*)buf_col1.buf && 
-        (char*)buf_results.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col1 vs row1 */
-    if ((char*)buf_col1.buf >= (char*)buf_row1.buf && 
-        (char*)buf_col1.buf < (char*)buf_row1.buf + buf_row1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row1.buf >= (char*)buf_col1.buf && 
-        (char*)buf_row1.buf < (char*)buf_col1.buf + buf_col1.len) {
+    if ((char*)buf_col1.buf >= (char*)buf_col2.buf && 
+        (char*)buf_col1.buf < (char*)buf_col2.buf + buf_col2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: col1 vs labels1 */
-    if ((char*)buf_col1.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_col1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    /* restrict check: col2 vs labels1 */
+    if ((char*)buf_col2.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_col2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_labels1.buf >= (char*)buf_col1.buf && 
-        (char*)buf_labels1.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col1 vs mat */
-    if ((char*)buf_col1.buf >= (char*)buf_mat.buf && 
-        (char*)buf_col1.buf < (char*)buf_mat.buf + buf_mat.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_mat.buf >= (char*)buf_col1.buf && 
-        (char*)buf_mat.buf < (char*)buf_col1.buf + buf_col1.len) {
+    if ((char*)buf_labels1.buf >= (char*)buf_col2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_col2.buf + buf_col2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: col1 vs row2 */
-    if ((char*)buf_col1.buf >= (char*)buf_row2.buf && 
-        (char*)buf_col1.buf < (char*)buf_row2.buf + buf_row2.len) {
+    /* restrict check: row1 vs labels2 */
+    if ((char*)buf_row1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_row1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_row2.buf >= (char*)buf_col1.buf && 
-        (char*)buf_row2.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs row1 */
-    if ((char*)buf_results.buf >= (char*)buf_row1.buf && 
-        (char*)buf_results.buf < (char*)buf_row1.buf + buf_row1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row1.buf >= (char*)buf_results.buf && 
-        (char*)buf_row1.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs labels1 */
-    if ((char*)buf_results.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_results.buf < (char*)buf_labels1.buf + buf_labels1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels1.buf >= (char*)buf_results.buf && 
-        (char*)buf_labels1.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs mat */
-    if ((char*)buf_results.buf >= (char*)buf_mat.buf && 
-        (char*)buf_results.buf < (char*)buf_mat.buf + buf_mat.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_mat.buf >= (char*)buf_results.buf && 
-        (char*)buf_mat.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs row2 */
-    if ((char*)buf_results.buf >= (char*)buf_row2.buf && 
-        (char*)buf_results.buf < (char*)buf_row2.buf + buf_row2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row2.buf >= (char*)buf_results.buf && 
-        (char*)buf_row2.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: row1 vs labels1 */
-    if ((char*)buf_row1.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_row1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels1.buf >= (char*)buf_row1.buf && 
-        (char*)buf_labels1.buf < (char*)buf_row1.buf + buf_row1.len) {
+    if ((char*)buf_labels2.buf >= (char*)buf_row1.buf && 
+        (char*)buf_labels2.buf < (char*)buf_row1.buf + buf_row1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -13808,6 +13628,18 @@ _coverlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
+    /* restrict check: row1 vs results */
+    if ((char*)buf_row1.buf >= (char*)buf_results.buf && 
+        (char*)buf_row1.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_row1.buf && 
+        (char*)buf_results.buf < (char*)buf_row1.buf + buf_row1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: row1 vs row2 */
     if ((char*)buf_row1.buf >= (char*)buf_row2.buf && 
         (char*)buf_row1.buf < (char*)buf_row2.buf + buf_row2.len) {
@@ -13820,26 +13652,98 @@ _coverlaps_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: labels1 vs mat */
-    if ((char*)buf_labels1.buf >= (char*)buf_mat.buf && 
-        (char*)buf_labels1.buf < (char*)buf_mat.buf + buf_mat.len) {
+    /* restrict check: row1 vs col1 */
+    if ((char*)buf_row1.buf >= (char*)buf_col1.buf && 
+        (char*)buf_row1.buf < (char*)buf_col1.buf + buf_col1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_mat.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_mat.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    if ((char*)buf_col1.buf >= (char*)buf_row1.buf && 
+        (char*)buf_col1.buf < (char*)buf_row1.buf + buf_row1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: labels1 vs row2 */
-    if ((char*)buf_labels1.buf >= (char*)buf_row2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_row2.buf + buf_row2.len) {
+    /* restrict check: row1 vs labels1 */
+    if ((char*)buf_row1.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_row1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_row2.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_row2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    if ((char*)buf_labels1.buf >= (char*)buf_row1.buf && 
+        (char*)buf_labels1.buf < (char*)buf_row1.buf + buf_row1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs mat */
+    if ((char*)buf_labels2.buf >= (char*)buf_mat.buf && 
+        (char*)buf_labels2.buf < (char*)buf_mat.buf + buf_mat.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_mat.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_mat.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs results */
+    if ((char*)buf_labels2.buf >= (char*)buf_results.buf && 
+        (char*)buf_labels2.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_results.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs row2 */
+    if ((char*)buf_labels2.buf >= (char*)buf_row2.buf && 
+        (char*)buf_labels2.buf < (char*)buf_row2.buf + buf_row2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row2.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_row2.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs col1 */
+    if ((char*)buf_labels2.buf >= (char*)buf_col1.buf && 
+        (char*)buf_labels2.buf < (char*)buf_col1.buf + buf_col1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_col1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_col1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs labels1 */
+    if ((char*)buf_labels2.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_labels2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: mat vs results */
+    if ((char*)buf_mat.buf >= (char*)buf_results.buf && 
+        (char*)buf_mat.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_mat.buf && 
+        (char*)buf_results.buf < (char*)buf_mat.buf + buf_mat.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -13852,6 +13756,102 @@ _coverlaps_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_row2.buf >= (char*)buf_mat.buf && 
         (char*)buf_row2.buf < (char*)buf_mat.buf + buf_mat.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: mat vs col1 */
+    if ((char*)buf_mat.buf >= (char*)buf_col1.buf && 
+        (char*)buf_mat.buf < (char*)buf_col1.buf + buf_col1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_col1.buf >= (char*)buf_mat.buf && 
+        (char*)buf_col1.buf < (char*)buf_mat.buf + buf_mat.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: mat vs labels1 */
+    if ((char*)buf_mat.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_mat.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_mat.buf && 
+        (char*)buf_labels1.buf < (char*)buf_mat.buf + buf_mat.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: results vs row2 */
+    if ((char*)buf_results.buf >= (char*)buf_row2.buf && 
+        (char*)buf_results.buf < (char*)buf_row2.buf + buf_row2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row2.buf >= (char*)buf_results.buf && 
+        (char*)buf_row2.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: results vs col1 */
+    if ((char*)buf_results.buf >= (char*)buf_col1.buf && 
+        (char*)buf_results.buf < (char*)buf_col1.buf + buf_col1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_col1.buf >= (char*)buf_results.buf && 
+        (char*)buf_col1.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: results vs labels1 */
+    if ((char*)buf_results.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_results.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_results.buf && 
+        (char*)buf_labels1.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row2 vs col1 */
+    if ((char*)buf_row2.buf >= (char*)buf_col1.buf && 
+        (char*)buf_row2.buf < (char*)buf_col1.buf + buf_col1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_col1.buf >= (char*)buf_row2.buf && 
+        (char*)buf_col1.buf < (char*)buf_row2.buf + buf_row2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row2 vs labels1 */
+    if ((char*)buf_row2.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_row2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_row2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_row2.buf + buf_row2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: col1 vs labels1 */
+    if ((char*)buf_col1.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_col1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_col1.buf && 
+        (char*)buf_labels1.buf < (char*)buf_col1.buf + buf_col1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -13964,114 +13964,6 @@ _coverlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_results = 1;
 
-    /* restrict check: labels2 vs col2 */
-    if ((char*)buf_labels2.buf >= (char*)buf_col2.buf && 
-        (char*)buf_labels2.buf < (char*)buf_col2.buf + buf_col2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_col2.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_col2.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs col1 */
-    if ((char*)buf_labels2.buf >= (char*)buf_col1.buf && 
-        (char*)buf_labels2.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_col1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_col1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs results */
-    if ((char*)buf_labels2.buf >= (char*)buf_results.buf && 
-        (char*)buf_labels2.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_results.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_results.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs row1 */
-    if ((char*)buf_labels2.buf >= (char*)buf_row1.buf && 
-        (char*)buf_labels2.buf < (char*)buf_row1.buf + buf_row1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_row1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs labels1 */
-    if ((char*)buf_labels2.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_labels2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels1.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs mat */
-    if ((char*)buf_labels2.buf >= (char*)buf_mat.buf && 
-        (char*)buf_labels2.buf < (char*)buf_mat.buf + buf_mat.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_mat.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_mat.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels2 vs row2 */
-    if ((char*)buf_labels2.buf >= (char*)buf_row2.buf && 
-        (char*)buf_labels2.buf < (char*)buf_row2.buf + buf_row2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row2.buf >= (char*)buf_labels2.buf && 
-        (char*)buf_row2.buf < (char*)buf_labels2.buf + buf_labels2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col2 vs col1 */
-    if ((char*)buf_col2.buf >= (char*)buf_col1.buf && 
-        (char*)buf_col2.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_col1.buf >= (char*)buf_col2.buf && 
-        (char*)buf_col1.buf < (char*)buf_col2.buf + buf_col2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col2 vs results */
-    if ((char*)buf_col2.buf >= (char*)buf_results.buf && 
-        (char*)buf_col2.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_results.buf >= (char*)buf_col2.buf && 
-        (char*)buf_results.buf < (char*)buf_col2.buf + buf_col2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: col2 vs row1 */
     if ((char*)buf_col2.buf >= (char*)buf_row1.buf && 
         (char*)buf_col2.buf < (char*)buf_row1.buf + buf_row1.len) {
@@ -14084,14 +13976,14 @@ _coverlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: col2 vs labels1 */
-    if ((char*)buf_col2.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_col2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    /* restrict check: col2 vs labels2 */
+    if ((char*)buf_col2.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_col2.buf < (char*)buf_labels2.buf + buf_labels2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_labels1.buf >= (char*)buf_col2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_col2.buf + buf_col2.len) {
+    if ((char*)buf_labels2.buf >= (char*)buf_col2.buf && 
+        (char*)buf_labels2.buf < (char*)buf_col2.buf + buf_col2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14108,6 +14000,18 @@ _coverlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
+    /* restrict check: col2 vs results */
+    if ((char*)buf_col2.buf >= (char*)buf_results.buf && 
+        (char*)buf_col2.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_col2.buf && 
+        (char*)buf_results.buf < (char*)buf_col2.buf + buf_col2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: col2 vs row2 */
     if ((char*)buf_col2.buf >= (char*)buf_row2.buf && 
         (char*)buf_col2.buf < (char*)buf_row2.buf + buf_row2.len) {
@@ -14120,122 +14024,38 @@ _coverlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: col1 vs results */
-    if ((char*)buf_col1.buf >= (char*)buf_results.buf && 
-        (char*)buf_col1.buf < (char*)buf_results.buf + buf_results.len) {
+    /* restrict check: col2 vs col1 */
+    if ((char*)buf_col2.buf >= (char*)buf_col1.buf && 
+        (char*)buf_col2.buf < (char*)buf_col1.buf + buf_col1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_results.buf >= (char*)buf_col1.buf && 
-        (char*)buf_results.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col1 vs row1 */
-    if ((char*)buf_col1.buf >= (char*)buf_row1.buf && 
-        (char*)buf_col1.buf < (char*)buf_row1.buf + buf_row1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row1.buf >= (char*)buf_col1.buf && 
-        (char*)buf_row1.buf < (char*)buf_col1.buf + buf_col1.len) {
+    if ((char*)buf_col1.buf >= (char*)buf_col2.buf && 
+        (char*)buf_col1.buf < (char*)buf_col2.buf + buf_col2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: col1 vs labels1 */
-    if ((char*)buf_col1.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_col1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    /* restrict check: col2 vs labels1 */
+    if ((char*)buf_col2.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_col2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_labels1.buf >= (char*)buf_col1.buf && 
-        (char*)buf_labels1.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col1 vs mat */
-    if ((char*)buf_col1.buf >= (char*)buf_mat.buf && 
-        (char*)buf_col1.buf < (char*)buf_mat.buf + buf_mat.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_mat.buf >= (char*)buf_col1.buf && 
-        (char*)buf_mat.buf < (char*)buf_col1.buf + buf_col1.len) {
+    if ((char*)buf_labels1.buf >= (char*)buf_col2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_col2.buf + buf_col2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: col1 vs row2 */
-    if ((char*)buf_col1.buf >= (char*)buf_row2.buf && 
-        (char*)buf_col1.buf < (char*)buf_row2.buf + buf_row2.len) {
+    /* restrict check: row1 vs labels2 */
+    if ((char*)buf_row1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_row1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_row2.buf >= (char*)buf_col1.buf && 
-        (char*)buf_row2.buf < (char*)buf_col1.buf + buf_col1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs row1 */
-    if ((char*)buf_results.buf >= (char*)buf_row1.buf && 
-        (char*)buf_results.buf < (char*)buf_row1.buf + buf_row1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row1.buf >= (char*)buf_results.buf && 
-        (char*)buf_row1.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs labels1 */
-    if ((char*)buf_results.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_results.buf < (char*)buf_labels1.buf + buf_labels1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels1.buf >= (char*)buf_results.buf && 
-        (char*)buf_labels1.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs mat */
-    if ((char*)buf_results.buf >= (char*)buf_mat.buf && 
-        (char*)buf_results.buf < (char*)buf_mat.buf + buf_mat.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_mat.buf >= (char*)buf_results.buf && 
-        (char*)buf_mat.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: results vs row2 */
-    if ((char*)buf_results.buf >= (char*)buf_row2.buf && 
-        (char*)buf_results.buf < (char*)buf_row2.buf + buf_row2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_row2.buf >= (char*)buf_results.buf && 
-        (char*)buf_row2.buf < (char*)buf_results.buf + buf_results.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: row1 vs labels1 */
-    if ((char*)buf_row1.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_row1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_labels1.buf >= (char*)buf_row1.buf && 
-        (char*)buf_labels1.buf < (char*)buf_row1.buf + buf_row1.len) {
+    if ((char*)buf_labels2.buf >= (char*)buf_row1.buf && 
+        (char*)buf_labels2.buf < (char*)buf_row1.buf + buf_row1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14252,6 +14072,18 @@ _coverlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
+    /* restrict check: row1 vs results */
+    if ((char*)buf_row1.buf >= (char*)buf_results.buf && 
+        (char*)buf_row1.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_row1.buf && 
+        (char*)buf_results.buf < (char*)buf_row1.buf + buf_row1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: row1 vs row2 */
     if ((char*)buf_row1.buf >= (char*)buf_row2.buf && 
         (char*)buf_row1.buf < (char*)buf_row2.buf + buf_row2.len) {
@@ -14264,26 +14096,98 @@ _coverlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: labels1 vs mat */
-    if ((char*)buf_labels1.buf >= (char*)buf_mat.buf && 
-        (char*)buf_labels1.buf < (char*)buf_mat.buf + buf_mat.len) {
+    /* restrict check: row1 vs col1 */
+    if ((char*)buf_row1.buf >= (char*)buf_col1.buf && 
+        (char*)buf_row1.buf < (char*)buf_col1.buf + buf_col1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_mat.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_mat.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    if ((char*)buf_col1.buf >= (char*)buf_row1.buf && 
+        (char*)buf_col1.buf < (char*)buf_row1.buf + buf_row1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: labels1 vs row2 */
-    if ((char*)buf_labels1.buf >= (char*)buf_row2.buf && 
-        (char*)buf_labels1.buf < (char*)buf_row2.buf + buf_row2.len) {
+    /* restrict check: row1 vs labels1 */
+    if ((char*)buf_row1.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_row1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_row2.buf >= (char*)buf_labels1.buf && 
-        (char*)buf_row2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+    if ((char*)buf_labels1.buf >= (char*)buf_row1.buf && 
+        (char*)buf_labels1.buf < (char*)buf_row1.buf + buf_row1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs mat */
+    if ((char*)buf_labels2.buf >= (char*)buf_mat.buf && 
+        (char*)buf_labels2.buf < (char*)buf_mat.buf + buf_mat.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_mat.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_mat.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs results */
+    if ((char*)buf_labels2.buf >= (char*)buf_results.buf && 
+        (char*)buf_labels2.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_results.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs row2 */
+    if ((char*)buf_labels2.buf >= (char*)buf_row2.buf && 
+        (char*)buf_labels2.buf < (char*)buf_row2.buf + buf_row2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row2.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_row2.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs col1 */
+    if ((char*)buf_labels2.buf >= (char*)buf_col1.buf && 
+        (char*)buf_labels2.buf < (char*)buf_col1.buf + buf_col1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_col1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_col1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: labels2 vs labels1 */
+    if ((char*)buf_labels2.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_labels2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_labels2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_labels2.buf + buf_labels2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: mat vs results */
+    if ((char*)buf_mat.buf >= (char*)buf_results.buf && 
+        (char*)buf_mat.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_results.buf >= (char*)buf_mat.buf && 
+        (char*)buf_results.buf < (char*)buf_mat.buf + buf_mat.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14296,6 +14200,102 @@ _coverlaps_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_row2.buf >= (char*)buf_mat.buf && 
         (char*)buf_row2.buf < (char*)buf_mat.buf + buf_mat.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: mat vs col1 */
+    if ((char*)buf_mat.buf >= (char*)buf_col1.buf && 
+        (char*)buf_mat.buf < (char*)buf_col1.buf + buf_col1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_col1.buf >= (char*)buf_mat.buf && 
+        (char*)buf_col1.buf < (char*)buf_mat.buf + buf_mat.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: mat vs labels1 */
+    if ((char*)buf_mat.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_mat.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_mat.buf && 
+        (char*)buf_labels1.buf < (char*)buf_mat.buf + buf_mat.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: results vs row2 */
+    if ((char*)buf_results.buf >= (char*)buf_row2.buf && 
+        (char*)buf_results.buf < (char*)buf_row2.buf + buf_row2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row2.buf >= (char*)buf_results.buf && 
+        (char*)buf_row2.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: results vs col1 */
+    if ((char*)buf_results.buf >= (char*)buf_col1.buf && 
+        (char*)buf_results.buf < (char*)buf_col1.buf + buf_col1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_col1.buf >= (char*)buf_results.buf && 
+        (char*)buf_col1.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: results vs labels1 */
+    if ((char*)buf_results.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_results.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_results.buf && 
+        (char*)buf_labels1.buf < (char*)buf_results.buf + buf_results.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row2 vs col1 */
+    if ((char*)buf_row2.buf >= (char*)buf_col1.buf && 
+        (char*)buf_row2.buf < (char*)buf_col1.buf + buf_col1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_col1.buf >= (char*)buf_row2.buf && 
+        (char*)buf_col1.buf < (char*)buf_row2.buf + buf_row2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row2 vs labels1 */
+    if ((char*)buf_row2.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_row2.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_row2.buf && 
+        (char*)buf_labels1.buf < (char*)buf_row2.buf + buf_row2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: col1 vs labels1 */
+    if ((char*)buf_col1.buf >= (char*)buf_labels1.buf && 
+        (char*)buf_col1.buf < (char*)buf_labels1.buf + buf_labels1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels1.buf >= (char*)buf_col1.buf && 
+        (char*)buf_labels1.buf < (char*)buf_col1.buf + buf_col1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14658,18 +14658,6 @@ _tosparse_u16_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_val = 1;
 
-    /* restrict check: col vs img */
-    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
-        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
-        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: col vs val */
     if ((char*)buf_col.buf >= (char*)buf_val.buf && 
         (char*)buf_col.buf < (char*)buf_val.buf + buf_val.len) {
@@ -14678,18 +14666,6 @@ _tosparse_u16_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_val.buf >= (char*)buf_col.buf && 
         (char*)buf_val.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col vs msk */
-    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
-        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
-        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14706,14 +14682,26 @@ _tosparse_u16_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: msk vs img */
-    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
-        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: col vs msk */
+    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
+        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
-        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
+        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: col vs img */
+    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
+        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
+        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14742,26 +14730,14 @@ _tosparse_u16_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: row vs img */
-    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
-        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: msk vs img */
+    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
+        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
-        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: row vs val */
-    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
-        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
-        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
+    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
+        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14774,6 +14750,30 @@ _tosparse_u16_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_val.buf >= (char*)buf_img.buf && 
         (char*)buf_val.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: img vs row */
+    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
+        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
+        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row vs val */
+    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
+        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
+        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14868,18 +14868,6 @@ _tosparse_u16_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_val = 1;
 
-    /* restrict check: col vs img */
-    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
-        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
-        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: col vs val */
     if ((char*)buf_col.buf >= (char*)buf_val.buf && 
         (char*)buf_col.buf < (char*)buf_val.buf + buf_val.len) {
@@ -14888,18 +14876,6 @@ _tosparse_u16_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_val.buf >= (char*)buf_col.buf && 
         (char*)buf_val.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col vs msk */
-    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
-        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
-        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14916,14 +14892,26 @@ _tosparse_u16_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: msk vs img */
-    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
-        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: col vs msk */
+    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
+        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
-        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
+        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: col vs img */
+    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
+        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
+        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14952,26 +14940,14 @@ _tosparse_u16_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: row vs img */
-    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
-        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: msk vs img */
+    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
+        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
-        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: row vs val */
-    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
-        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
-        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
+    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
+        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -14984,6 +14960,30 @@ _tosparse_u16_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_val.buf >= (char*)buf_img.buf && 
         (char*)buf_val.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: img vs row */
+    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
+        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
+        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row vs val */
+    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
+        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
+        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -15343,18 +15343,6 @@ _tosparse_u32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_val = 1;
 
-    /* restrict check: col vs img */
-    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
-        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
-        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: col vs val */
     if ((char*)buf_col.buf >= (char*)buf_val.buf && 
         (char*)buf_col.buf < (char*)buf_val.buf + buf_val.len) {
@@ -15363,18 +15351,6 @@ _tosparse_u32_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_val.buf >= (char*)buf_col.buf && 
         (char*)buf_val.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col vs msk */
-    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
-        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
-        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -15391,14 +15367,26 @@ _tosparse_u32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: msk vs img */
-    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
-        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: col vs msk */
+    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
+        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
-        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
+        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: col vs img */
+    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
+        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
+        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -15427,26 +15415,14 @@ _tosparse_u32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: row vs img */
-    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
-        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: msk vs img */
+    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
+        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
-        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: row vs val */
-    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
-        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
-        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
+    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
+        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -15459,6 +15435,30 @@ _tosparse_u32_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_val.buf >= (char*)buf_img.buf && 
         (char*)buf_val.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: img vs row */
+    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
+        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
+        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row vs val */
+    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
+        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
+        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -15548,18 +15548,6 @@ _tosparse_u32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_val = 1;
 
-    /* restrict check: col vs img */
-    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
-        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
-        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: col vs val */
     if ((char*)buf_col.buf >= (char*)buf_val.buf && 
         (char*)buf_col.buf < (char*)buf_val.buf + buf_val.len) {
@@ -15568,18 +15556,6 @@ _tosparse_u32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_val.buf >= (char*)buf_col.buf && 
         (char*)buf_val.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col vs msk */
-    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
-        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
-        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -15596,14 +15572,26 @@ _tosparse_u32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: msk vs img */
-    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
-        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: col vs msk */
+    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
+        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
-        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
+        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: col vs img */
+    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
+        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
+        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -15632,26 +15620,14 @@ _tosparse_u32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: row vs img */
-    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
-        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: msk vs img */
+    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
+        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
-        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: row vs val */
-    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
-        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
-        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
+    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
+        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -15664,6 +15640,30 @@ _tosparse_u32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_val.buf >= (char*)buf_img.buf && 
         (char*)buf_val.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: img vs row */
+    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
+        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
+        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row vs val */
+    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
+        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
+        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16023,18 +16023,6 @@ _tosparse_f32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_val = 1;
 
-    /* restrict check: col vs img */
-    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
-        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
-        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: col vs val */
     if ((char*)buf_col.buf >= (char*)buf_val.buf && 
         (char*)buf_col.buf < (char*)buf_val.buf + buf_val.len) {
@@ -16043,18 +16031,6 @@ _tosparse_f32_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_val.buf >= (char*)buf_col.buf && 
         (char*)buf_val.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col vs msk */
-    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
-        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
-        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16071,14 +16047,26 @@ _tosparse_f32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: msk vs img */
-    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
-        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: col vs msk */
+    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
+        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
-        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
+        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: col vs img */
+    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
+        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
+        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16107,26 +16095,14 @@ _tosparse_f32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: row vs img */
-    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
-        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: msk vs img */
+    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
+        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
-        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: row vs val */
-    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
-        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
-        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
+    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
+        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16139,6 +16115,30 @@ _tosparse_f32_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_val.buf >= (char*)buf_img.buf && 
         (char*)buf_val.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: img vs row */
+    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
+        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
+        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row vs val */
+    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
+        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
+        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16228,18 +16228,6 @@ _tosparse_f32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_val = 1;
 
-    /* restrict check: col vs img */
-    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
-        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
-        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: col vs val */
     if ((char*)buf_col.buf >= (char*)buf_val.buf && 
         (char*)buf_col.buf < (char*)buf_val.buf + buf_val.len) {
@@ -16248,18 +16236,6 @@ _tosparse_f32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_val.buf >= (char*)buf_col.buf && 
         (char*)buf_val.buf < (char*)buf_col.buf + buf_col.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: col vs msk */
-    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
-        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
-        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16276,14 +16252,26 @@ _tosparse_f32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: msk vs img */
-    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
-        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: col vs msk */
+    if ((char*)buf_col.buf >= (char*)buf_msk.buf && 
+        (char*)buf_col.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
-        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
+    if ((char*)buf_msk.buf >= (char*)buf_col.buf && 
+        (char*)buf_msk.buf < (char*)buf_col.buf + buf_col.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: col vs img */
+    if ((char*)buf_col.buf >= (char*)buf_img.buf && 
+        (char*)buf_col.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_img.buf >= (char*)buf_col.buf && 
+        (char*)buf_img.buf < (char*)buf_col.buf + buf_col.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16312,26 +16300,14 @@ _tosparse_f32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: row vs img */
-    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
-        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+    /* restrict check: msk vs img */
+    if ((char*)buf_msk.buf >= (char*)buf_img.buf && 
+        (char*)buf_msk.buf < (char*)buf_img.buf + buf_img.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
-        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: row vs val */
-    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
-        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
-        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
+    if ((char*)buf_img.buf >= (char*)buf_msk.buf && 
+        (char*)buf_img.buf < (char*)buf_msk.buf + buf_msk.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16344,6 +16320,30 @@ _tosparse_f32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_val.buf >= (char*)buf_img.buf && 
         (char*)buf_val.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: img vs row */
+    if ((char*)buf_img.buf >= (char*)buf_row.buf && 
+        (char*)buf_img.buf < (char*)buf_row.buf + buf_row.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_row.buf >= (char*)buf_img.buf && 
+        (char*)buf_row.buf < (char*)buf_img.buf + buf_img.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: row vs val */
+    if ((char*)buf_row.buf >= (char*)buf_val.buf && 
+        (char*)buf_row.buf < (char*)buf_val.buf + buf_val.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_val.buf >= (char*)buf_row.buf && 
+        (char*)buf_val.buf < (char*)buf_row.buf + buf_row.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16617,26 +16617,14 @@ _splat_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_u = 1;
 
-    /* restrict check: rgba vs u */
-    if ((char*)buf_rgba.buf >= (char*)buf_u.buf && 
-        (char*)buf_rgba.buf < (char*)buf_u.buf + buf_u.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: u vs rgba */
     if ((char*)buf_u.buf >= (char*)buf_rgba.buf && 
         (char*)buf_u.buf < (char*)buf_rgba.buf + buf_rgba.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: rgba vs gve */
-    if ((char*)buf_rgba.buf >= (char*)buf_gve.buf && 
-        (char*)buf_rgba.buf < (char*)buf_gve.buf + buf_gve.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gve.buf >= (char*)buf_rgba.buf && 
-        (char*)buf_gve.buf < (char*)buf_rgba.buf + buf_rgba.len) {
+    if ((char*)buf_rgba.buf >= (char*)buf_u.buf && 
+        (char*)buf_rgba.buf < (char*)buf_u.buf + buf_u.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16649,6 +16637,18 @@ _splat_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_gve.buf >= (char*)buf_u.buf && 
         (char*)buf_gve.buf < (char*)buf_u.buf + buf_u.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: rgba vs gve */
+    if ((char*)buf_rgba.buf >= (char*)buf_gve.buf && 
+        (char*)buf_rgba.buf < (char*)buf_gve.buf + buf_gve.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_gve.buf >= (char*)buf_rgba.buf && 
+        (char*)buf_gve.buf < (char*)buf_rgba.buf + buf_rgba.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16723,26 +16723,14 @@ _splat_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_u = 1;
 
-    /* restrict check: rgba vs u */
-    if ((char*)buf_rgba.buf >= (char*)buf_u.buf && 
-        (char*)buf_rgba.buf < (char*)buf_u.buf + buf_u.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: u vs rgba */
     if ((char*)buf_u.buf >= (char*)buf_rgba.buf && 
         (char*)buf_u.buf < (char*)buf_rgba.buf + buf_rgba.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: rgba vs gve */
-    if ((char*)buf_rgba.buf >= (char*)buf_gve.buf && 
-        (char*)buf_rgba.buf < (char*)buf_gve.buf + buf_gve.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gve.buf >= (char*)buf_rgba.buf && 
-        (char*)buf_gve.buf < (char*)buf_rgba.buf + buf_rgba.len) {
+    if ((char*)buf_rgba.buf >= (char*)buf_u.buf && 
+        (char*)buf_rgba.buf < (char*)buf_u.buf + buf_u.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -16755,6 +16743,18 @@ _splat_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_gve.buf >= (char*)buf_u.buf && 
         (char*)buf_gve.buf < (char*)buf_u.buf + buf_u.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: rgba vs gve */
+    if ((char*)buf_rgba.buf >= (char*)buf_gve.buf && 
+        (char*)buf_rgba.buf < (char*)buf_gve.buf + buf_gve.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_gve.buf >= (char*)buf_rgba.buf && 
+        (char*)buf_gve.buf < (char*)buf_rgba.buf + buf_rgba.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -17124,6 +17124,18 @@ _compute_geometry_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_out = 1;
 
+    /* restrict check: omega vs t */
+    if ((char*)buf_omega.buf >= (char*)buf_t.buf && 
+        (char*)buf_omega.buf < (char*)buf_t.buf + buf_t.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_t.buf >= (char*)buf_omega.buf && 
+        (char*)buf_t.buf < (char*)buf_omega.buf + buf_omega.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: omega vs out */
     if ((char*)buf_omega.buf >= (char*)buf_out.buf && 
         (char*)buf_omega.buf < (char*)buf_out.buf + buf_out.len) {
@@ -17148,14 +17160,26 @@ _compute_geometry_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: omega vs t */
-    if ((char*)buf_omega.buf >= (char*)buf_t.buf && 
-        (char*)buf_omega.buf < (char*)buf_t.buf + buf_t.len) {
+    /* restrict check: t vs out */
+    if ((char*)buf_t.buf >= (char*)buf_out.buf && 
+        (char*)buf_t.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_t.buf >= (char*)buf_omega.buf && 
-        (char*)buf_t.buf < (char*)buf_omega.buf + buf_omega.len) {
+    if ((char*)buf_out.buf >= (char*)buf_t.buf && 
+        (char*)buf_out.buf < (char*)buf_t.buf + buf_t.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: t vs xlylzl */
+    if ((char*)buf_t.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_t.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_t.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_t.buf + buf_t.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -17168,30 +17192,6 @@ _compute_geometry_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_xlylzl.buf >= (char*)buf_out.buf && 
         (char*)buf_xlylzl.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: out vs t */
-    if ((char*)buf_out.buf >= (char*)buf_t.buf && 
-        (char*)buf_out.buf < (char*)buf_t.buf + buf_t.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_t.buf >= (char*)buf_out.buf && 
-        (char*)buf_t.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs t */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_t.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_t.buf + buf_t.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_t.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_t.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -17292,6 +17292,18 @@ _compute_geometry_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nar
         goto cleanup;
     acq_out = 1;
 
+    /* restrict check: omega vs t */
+    if ((char*)buf_omega.buf >= (char*)buf_t.buf && 
+        (char*)buf_omega.buf < (char*)buf_t.buf + buf_t.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_t.buf >= (char*)buf_omega.buf && 
+        (char*)buf_t.buf < (char*)buf_omega.buf + buf_omega.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: omega vs out */
     if ((char*)buf_omega.buf >= (char*)buf_out.buf && 
         (char*)buf_omega.buf < (char*)buf_out.buf + buf_out.len) {
@@ -17316,14 +17328,26 @@ _compute_geometry_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nar
         goto cleanup;
     }
 
-    /* restrict check: omega vs t */
-    if ((char*)buf_omega.buf >= (char*)buf_t.buf && 
-        (char*)buf_omega.buf < (char*)buf_t.buf + buf_t.len) {
+    /* restrict check: t vs out */
+    if ((char*)buf_t.buf >= (char*)buf_out.buf && 
+        (char*)buf_t.buf < (char*)buf_out.buf + buf_out.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_t.buf >= (char*)buf_omega.buf && 
-        (char*)buf_t.buf < (char*)buf_omega.buf + buf_omega.len) {
+    if ((char*)buf_out.buf >= (char*)buf_t.buf && 
+        (char*)buf_out.buf < (char*)buf_t.buf + buf_t.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: t vs xlylzl */
+    if ((char*)buf_t.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_t.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_t.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_t.buf + buf_t.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -17336,30 +17360,6 @@ _compute_geometry_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nar
     }
     if ((char*)buf_xlylzl.buf >= (char*)buf_out.buf && 
         (char*)buf_xlylzl.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: out vs t */
-    if ((char*)buf_out.buf >= (char*)buf_t.buf && 
-        (char*)buf_out.buf < (char*)buf_t.buf + buf_t.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_t.buf >= (char*)buf_out.buf && 
-        (char*)buf_t.buf < (char*)buf_out.buf + buf_out.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs t */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_t.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_t.buf + buf_t.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_t.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_t.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -17730,6 +17730,18 @@ _compute_gv_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_gv = 1;
 
+    /* restrict check: omega vs t */
+    if ((char*)buf_omega.buf >= (char*)buf_t.buf && 
+        (char*)buf_omega.buf < (char*)buf_t.buf + buf_t.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_t.buf >= (char*)buf_omega.buf && 
+        (char*)buf_t.buf < (char*)buf_omega.buf + buf_omega.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: omega vs gv */
     if ((char*)buf_omega.buf >= (char*)buf_gv.buf && 
         (char*)buf_omega.buf < (char*)buf_gv.buf + buf_gv.len) {
@@ -17754,14 +17766,26 @@ _compute_gv_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: omega vs t */
-    if ((char*)buf_omega.buf >= (char*)buf_t.buf && 
-        (char*)buf_omega.buf < (char*)buf_t.buf + buf_t.len) {
+    /* restrict check: t vs gv */
+    if ((char*)buf_t.buf >= (char*)buf_gv.buf && 
+        (char*)buf_t.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_t.buf >= (char*)buf_omega.buf && 
-        (char*)buf_t.buf < (char*)buf_omega.buf + buf_omega.len) {
+    if ((char*)buf_gv.buf >= (char*)buf_t.buf && 
+        (char*)buf_gv.buf < (char*)buf_t.buf + buf_t.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: t vs xlylzl */
+    if ((char*)buf_t.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_t.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_t.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_t.buf + buf_t.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -17774,30 +17798,6 @@ _compute_gv_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_xlylzl.buf >= (char*)buf_gv.buf && 
         (char*)buf_xlylzl.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: gv vs t */
-    if ((char*)buf_gv.buf >= (char*)buf_t.buf && 
-        (char*)buf_gv.buf < (char*)buf_t.buf + buf_t.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_t.buf >= (char*)buf_gv.buf && 
-        (char*)buf_t.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs t */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_t.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_t.buf + buf_t.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_t.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_t.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -17898,6 +17898,18 @@ _compute_gv_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_gv = 1;
 
+    /* restrict check: omega vs t */
+    if ((char*)buf_omega.buf >= (char*)buf_t.buf && 
+        (char*)buf_omega.buf < (char*)buf_t.buf + buf_t.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_t.buf >= (char*)buf_omega.buf && 
+        (char*)buf_t.buf < (char*)buf_omega.buf + buf_omega.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: omega vs gv */
     if ((char*)buf_omega.buf >= (char*)buf_gv.buf && 
         (char*)buf_omega.buf < (char*)buf_gv.buf + buf_gv.len) {
@@ -17922,14 +17934,26 @@ _compute_gv_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: omega vs t */
-    if ((char*)buf_omega.buf >= (char*)buf_t.buf && 
-        (char*)buf_omega.buf < (char*)buf_t.buf + buf_t.len) {
+    /* restrict check: t vs gv */
+    if ((char*)buf_t.buf >= (char*)buf_gv.buf && 
+        (char*)buf_t.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_t.buf >= (char*)buf_omega.buf && 
-        (char*)buf_t.buf < (char*)buf_omega.buf + buf_omega.len) {
+    if ((char*)buf_gv.buf >= (char*)buf_t.buf && 
+        (char*)buf_gv.buf < (char*)buf_t.buf + buf_t.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: t vs xlylzl */
+    if ((char*)buf_t.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_t.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_t.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_t.buf + buf_t.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -17942,30 +17966,6 @@ _compute_gv_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_xlylzl.buf >= (char*)buf_gv.buf && 
         (char*)buf_xlylzl.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: gv vs t */
-    if ((char*)buf_gv.buf >= (char*)buf_t.buf && 
-        (char*)buf_gv.buf < (char*)buf_t.buf + buf_t.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_t.buf >= (char*)buf_gv.buf && 
-        (char*)buf_t.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs t */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_t.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_t.buf + buf_t.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_t.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_t.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -18479,6 +18479,90 @@ _compute_xlylzl_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_xlylzl = 1;
 
+    /* restrict check: f vs r */
+    if ((char*)buf_f.buf >= (char*)buf_r.buf && 
+        (char*)buf_f.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_f.buf && 
+        (char*)buf_r.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs dist */
+    if ((char*)buf_f.buf >= (char*)buf_dist.buf && 
+        (char*)buf_f.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_dist.buf >= (char*)buf_f.buf && 
+        (char*)buf_dist.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs xlylzl */
+    if ((char*)buf_f.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_f.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_f.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs p */
+    if ((char*)buf_f.buf >= (char*)buf_p.buf && 
+        (char*)buf_f.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_f.buf && 
+        (char*)buf_p.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs s */
+    if ((char*)buf_f.buf >= (char*)buf_s.buf && 
+        (char*)buf_f.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_s.buf >= (char*)buf_f.buf && 
+        (char*)buf_s.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs r */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_r.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_r.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs dist */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_dist.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_dist.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_dist.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: xlylzl vs p */
     if ((char*)buf_xlylzl.buf >= (char*)buf_p.buf && 
         (char*)buf_xlylzl.buf < (char*)buf_p.buf + buf_p.len) {
@@ -18503,146 +18587,26 @@ _compute_xlylzl_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: xlylzl vs f */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_f.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_f.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs dist */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_dist.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_dist.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs r */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_r.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_r.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_r.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs p */
-    if ((char*)buf_r.buf >= (char*)buf_p.buf && 
-        (char*)buf_r.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_p.buf >= (char*)buf_r.buf && 
-        (char*)buf_p.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs s */
-    if ((char*)buf_r.buf >= (char*)buf_s.buf && 
-        (char*)buf_r.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_r.buf && 
-        (char*)buf_s.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs f */
-    if ((char*)buf_r.buf >= (char*)buf_f.buf && 
-        (char*)buf_r.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_r.buf && 
-        (char*)buf_f.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs dist */
-    if ((char*)buf_r.buf >= (char*)buf_dist.buf && 
-        (char*)buf_r.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: dist vs r */
     if ((char*)buf_dist.buf >= (char*)buf_r.buf && 
         (char*)buf_dist.buf < (char*)buf_r.buf + buf_r.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: p vs s */
-    if ((char*)buf_p.buf >= (char*)buf_s.buf && 
-        (char*)buf_p.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_p.buf && 
-        (char*)buf_s.buf < (char*)buf_p.buf + buf_p.len) {
+    if ((char*)buf_r.buf >= (char*)buf_dist.buf && 
+        (char*)buf_r.buf < (char*)buf_dist.buf + buf_dist.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: p vs f */
-    if ((char*)buf_p.buf >= (char*)buf_f.buf && 
-        (char*)buf_p.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_p.buf && 
-        (char*)buf_f.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs dist */
-    if ((char*)buf_p.buf >= (char*)buf_dist.buf && 
-        (char*)buf_p.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: dist vs p */
     if ((char*)buf_dist.buf >= (char*)buf_p.buf && 
         (char*)buf_dist.buf < (char*)buf_p.buf + buf_p.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: f vs s */
-    if ((char*)buf_f.buf >= (char*)buf_s.buf && 
-        (char*)buf_f.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_f.buf && 
-        (char*)buf_s.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: f vs dist */
-    if ((char*)buf_f.buf >= (char*)buf_dist.buf && 
-        (char*)buf_f.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_f.buf && 
-        (char*)buf_dist.buf < (char*)buf_f.buf + buf_f.len) {
+    if ((char*)buf_p.buf >= (char*)buf_dist.buf && 
+        (char*)buf_p.buf < (char*)buf_dist.buf + buf_dist.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -18655,6 +18619,42 @@ _compute_xlylzl_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_s.buf >= (char*)buf_dist.buf && 
         (char*)buf_s.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: s vs r */
+    if ((char*)buf_s.buf >= (char*)buf_r.buf && 
+        (char*)buf_s.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_s.buf && 
+        (char*)buf_r.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: s vs p */
+    if ((char*)buf_s.buf >= (char*)buf_p.buf && 
+        (char*)buf_s.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_s.buf && 
+        (char*)buf_p.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: p vs r */
+    if ((char*)buf_p.buf >= (char*)buf_r.buf && 
+        (char*)buf_p.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_p.buf && 
+        (char*)buf_r.buf < (char*)buf_p.buf + buf_p.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -18747,6 +18747,90 @@ _compute_xlylzl_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs
         goto cleanup;
     acq_xlylzl = 1;
 
+    /* restrict check: f vs r */
+    if ((char*)buf_f.buf >= (char*)buf_r.buf && 
+        (char*)buf_f.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_f.buf && 
+        (char*)buf_r.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs dist */
+    if ((char*)buf_f.buf >= (char*)buf_dist.buf && 
+        (char*)buf_f.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_dist.buf >= (char*)buf_f.buf && 
+        (char*)buf_dist.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs xlylzl */
+    if ((char*)buf_f.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_f.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_f.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs p */
+    if ((char*)buf_f.buf >= (char*)buf_p.buf && 
+        (char*)buf_f.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_f.buf && 
+        (char*)buf_p.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs s */
+    if ((char*)buf_f.buf >= (char*)buf_s.buf && 
+        (char*)buf_f.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_s.buf >= (char*)buf_f.buf && 
+        (char*)buf_s.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs r */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_r.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_r.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs dist */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_dist.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_dist.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_dist.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: xlylzl vs p */
     if ((char*)buf_xlylzl.buf >= (char*)buf_p.buf && 
         (char*)buf_xlylzl.buf < (char*)buf_p.buf + buf_p.len) {
@@ -18771,146 +18855,26 @@ _compute_xlylzl_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs
         goto cleanup;
     }
 
-    /* restrict check: xlylzl vs f */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_f.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_f.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs dist */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_dist.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_dist.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs r */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_r.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_r.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_r.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs p */
-    if ((char*)buf_r.buf >= (char*)buf_p.buf && 
-        (char*)buf_r.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_p.buf >= (char*)buf_r.buf && 
-        (char*)buf_p.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs s */
-    if ((char*)buf_r.buf >= (char*)buf_s.buf && 
-        (char*)buf_r.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_r.buf && 
-        (char*)buf_s.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs f */
-    if ((char*)buf_r.buf >= (char*)buf_f.buf && 
-        (char*)buf_r.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_r.buf && 
-        (char*)buf_f.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs dist */
-    if ((char*)buf_r.buf >= (char*)buf_dist.buf && 
-        (char*)buf_r.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: dist vs r */
     if ((char*)buf_dist.buf >= (char*)buf_r.buf && 
         (char*)buf_dist.buf < (char*)buf_r.buf + buf_r.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: p vs s */
-    if ((char*)buf_p.buf >= (char*)buf_s.buf && 
-        (char*)buf_p.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_p.buf && 
-        (char*)buf_s.buf < (char*)buf_p.buf + buf_p.len) {
+    if ((char*)buf_r.buf >= (char*)buf_dist.buf && 
+        (char*)buf_r.buf < (char*)buf_dist.buf + buf_dist.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: p vs f */
-    if ((char*)buf_p.buf >= (char*)buf_f.buf && 
-        (char*)buf_p.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_p.buf && 
-        (char*)buf_f.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs dist */
-    if ((char*)buf_p.buf >= (char*)buf_dist.buf && 
-        (char*)buf_p.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: dist vs p */
     if ((char*)buf_dist.buf >= (char*)buf_p.buf && 
         (char*)buf_dist.buf < (char*)buf_p.buf + buf_p.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: f vs s */
-    if ((char*)buf_f.buf >= (char*)buf_s.buf && 
-        (char*)buf_f.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_f.buf && 
-        (char*)buf_s.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: f vs dist */
-    if ((char*)buf_f.buf >= (char*)buf_dist.buf && 
-        (char*)buf_f.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_f.buf && 
-        (char*)buf_dist.buf < (char*)buf_f.buf + buf_f.len) {
+    if ((char*)buf_p.buf >= (char*)buf_dist.buf && 
+        (char*)buf_p.buf < (char*)buf_dist.buf + buf_dist.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -18923,6 +18887,42 @@ _compute_xlylzl_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs
     }
     if ((char*)buf_s.buf >= (char*)buf_dist.buf && 
         (char*)buf_s.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: s vs r */
+    if ((char*)buf_s.buf >= (char*)buf_r.buf && 
+        (char*)buf_s.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_s.buf && 
+        (char*)buf_r.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: s vs p */
+    if ((char*)buf_s.buf >= (char*)buf_p.buf && 
+        (char*)buf_s.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_s.buf && 
+        (char*)buf_p.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: p vs r */
+    if ((char*)buf_p.buf >= (char*)buf_r.buf && 
+        (char*)buf_p.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_p.buf && 
+        (char*)buf_r.buf < (char*)buf_p.buf + buf_p.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -19508,206 +19508,14 @@ _compute_xlylzl_xpos_variable_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_xlylzl = 1;
 
-    /* restrict check: xlylzl vs p */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_p.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_p.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_p.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs xpos */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_xpos.buf + buf_xpos.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_xpos.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_xpos.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs f */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_f.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_f.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs s */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_s.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_s.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs dist */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_dist.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_dist.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs r */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_r.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_r.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_r.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs p */
-    if ((char*)buf_r.buf >= (char*)buf_p.buf && 
-        (char*)buf_r.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_p.buf >= (char*)buf_r.buf && 
-        (char*)buf_p.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs xpos */
-    if ((char*)buf_r.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_r.buf < (char*)buf_xpos.buf + buf_xpos.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_xpos.buf >= (char*)buf_r.buf && 
-        (char*)buf_xpos.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs f */
-    if ((char*)buf_r.buf >= (char*)buf_f.buf && 
-        (char*)buf_r.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: f vs r */
     if ((char*)buf_f.buf >= (char*)buf_r.buf && 
         (char*)buf_f.buf < (char*)buf_r.buf + buf_r.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: r vs s */
-    if ((char*)buf_r.buf >= (char*)buf_s.buf && 
-        (char*)buf_r.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_r.buf && 
-        (char*)buf_s.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs dist */
-    if ((char*)buf_r.buf >= (char*)buf_dist.buf && 
-        (char*)buf_r.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_r.buf && 
-        (char*)buf_dist.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs xpos */
-    if ((char*)buf_p.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_p.buf < (char*)buf_xpos.buf + buf_xpos.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_xpos.buf >= (char*)buf_p.buf && 
-        (char*)buf_xpos.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs f */
-    if ((char*)buf_p.buf >= (char*)buf_f.buf && 
-        (char*)buf_p.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_p.buf && 
-        (char*)buf_f.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs s */
-    if ((char*)buf_p.buf >= (char*)buf_s.buf && 
-        (char*)buf_p.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_p.buf && 
-        (char*)buf_s.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs dist */
-    if ((char*)buf_p.buf >= (char*)buf_dist.buf && 
-        (char*)buf_p.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_p.buf && 
-        (char*)buf_dist.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: f vs xpos */
-    if ((char*)buf_f.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_f.buf < (char*)buf_xpos.buf + buf_xpos.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_xpos.buf >= (char*)buf_f.buf && 
-        (char*)buf_xpos.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: f vs s */
-    if ((char*)buf_f.buf >= (char*)buf_s.buf && 
-        (char*)buf_f.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_f.buf && 
-        (char*)buf_s.buf < (char*)buf_f.buf + buf_f.len) {
+    if ((char*)buf_r.buf >= (char*)buf_f.buf && 
+        (char*)buf_r.buf < (char*)buf_f.buf + buf_f.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -19724,14 +19532,182 @@ _compute_xlylzl_xpos_variable_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: dist vs xpos */
+    /* restrict check: f vs xpos */
+    if ((char*)buf_f.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_f.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xpos.buf >= (char*)buf_f.buf && 
+        (char*)buf_xpos.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs xlylzl */
+    if ((char*)buf_f.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_f.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_f.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs p */
+    if ((char*)buf_f.buf >= (char*)buf_p.buf && 
+        (char*)buf_f.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_f.buf && 
+        (char*)buf_p.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs s */
+    if ((char*)buf_f.buf >= (char*)buf_s.buf && 
+        (char*)buf_f.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_s.buf >= (char*)buf_f.buf && 
+        (char*)buf_s.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xpos vs r */
+    if ((char*)buf_xpos.buf >= (char*)buf_r.buf && 
+        (char*)buf_xpos.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_r.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xpos vs dist */
+    if ((char*)buf_xpos.buf >= (char*)buf_dist.buf && 
+        (char*)buf_xpos.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
     if ((char*)buf_dist.buf >= (char*)buf_xpos.buf && 
         (char*)buf_dist.buf < (char*)buf_xpos.buf + buf_xpos.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_xpos.buf >= (char*)buf_dist.buf && 
-        (char*)buf_xpos.buf < (char*)buf_dist.buf + buf_dist.len) {
+
+    /* restrict check: xpos vs xlylzl */
+    if ((char*)buf_xpos.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_xpos.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xpos vs p */
+    if ((char*)buf_xpos.buf >= (char*)buf_p.buf && 
+        (char*)buf_xpos.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_p.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xpos vs s */
+    if ((char*)buf_xpos.buf >= (char*)buf_s.buf && 
+        (char*)buf_xpos.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_s.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_s.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs r */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_r.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_r.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs dist */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_dist.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_dist.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_dist.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs p */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_p.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_p.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs s */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_s.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_s.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_s.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: dist vs r */
+    if ((char*)buf_dist.buf >= (char*)buf_r.buf && 
+        (char*)buf_dist.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_dist.buf && 
+        (char*)buf_r.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: dist vs p */
+    if ((char*)buf_dist.buf >= (char*)buf_p.buf && 
+        (char*)buf_dist.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_dist.buf && 
+        (char*)buf_p.buf < (char*)buf_dist.buf + buf_dist.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -19748,14 +19724,38 @@ _compute_xlylzl_xpos_variable_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: xpos vs s */
-    if ((char*)buf_xpos.buf >= (char*)buf_s.buf && 
-        (char*)buf_xpos.buf < (char*)buf_s.buf + buf_s.len) {
+    /* restrict check: s vs r */
+    if ((char*)buf_s.buf >= (char*)buf_r.buf && 
+        (char*)buf_s.buf < (char*)buf_r.buf + buf_r.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_s.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_s.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+    if ((char*)buf_r.buf >= (char*)buf_s.buf && 
+        (char*)buf_r.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: s vs p */
+    if ((char*)buf_s.buf >= (char*)buf_p.buf && 
+        (char*)buf_s.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_s.buf && 
+        (char*)buf_p.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: p vs r */
+    if ((char*)buf_p.buf >= (char*)buf_r.buf && 
+        (char*)buf_p.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_p.buf && 
+        (char*)buf_r.buf < (char*)buf_p.buf + buf_p.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -19858,206 +19858,14 @@ _compute_xlylzl_xpos_variable_fastcall(PyObject *self, PyObject *const *args, Py
         goto cleanup;
     acq_xlylzl = 1;
 
-    /* restrict check: xlylzl vs p */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_p.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_p.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_p.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs xpos */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_xpos.buf + buf_xpos.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_xpos.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_xpos.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs f */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_f.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_f.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs s */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_s.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_s.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs dist */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_dist.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_dist.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: xlylzl vs r */
-    if ((char*)buf_xlylzl.buf >= (char*)buf_r.buf && 
-        (char*)buf_xlylzl.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_r.buf >= (char*)buf_xlylzl.buf && 
-        (char*)buf_r.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs p */
-    if ((char*)buf_r.buf >= (char*)buf_p.buf && 
-        (char*)buf_r.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_p.buf >= (char*)buf_r.buf && 
-        (char*)buf_p.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs xpos */
-    if ((char*)buf_r.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_r.buf < (char*)buf_xpos.buf + buf_xpos.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_xpos.buf >= (char*)buf_r.buf && 
-        (char*)buf_xpos.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs f */
-    if ((char*)buf_r.buf >= (char*)buf_f.buf && 
-        (char*)buf_r.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: f vs r */
     if ((char*)buf_f.buf >= (char*)buf_r.buf && 
         (char*)buf_f.buf < (char*)buf_r.buf + buf_r.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: r vs s */
-    if ((char*)buf_r.buf >= (char*)buf_s.buf && 
-        (char*)buf_r.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_r.buf && 
-        (char*)buf_s.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: r vs dist */
-    if ((char*)buf_r.buf >= (char*)buf_dist.buf && 
-        (char*)buf_r.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_r.buf && 
-        (char*)buf_dist.buf < (char*)buf_r.buf + buf_r.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs xpos */
-    if ((char*)buf_p.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_p.buf < (char*)buf_xpos.buf + buf_xpos.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_xpos.buf >= (char*)buf_p.buf && 
-        (char*)buf_xpos.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs f */
-    if ((char*)buf_p.buf >= (char*)buf_f.buf && 
-        (char*)buf_p.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_f.buf >= (char*)buf_p.buf && 
-        (char*)buf_f.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs s */
-    if ((char*)buf_p.buf >= (char*)buf_s.buf && 
-        (char*)buf_p.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_p.buf && 
-        (char*)buf_s.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: p vs dist */
-    if ((char*)buf_p.buf >= (char*)buf_dist.buf && 
-        (char*)buf_p.buf < (char*)buf_dist.buf + buf_dist.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_dist.buf >= (char*)buf_p.buf && 
-        (char*)buf_dist.buf < (char*)buf_p.buf + buf_p.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: f vs xpos */
-    if ((char*)buf_f.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_f.buf < (char*)buf_xpos.buf + buf_xpos.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_xpos.buf >= (char*)buf_f.buf && 
-        (char*)buf_xpos.buf < (char*)buf_f.buf + buf_f.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: f vs s */
-    if ((char*)buf_f.buf >= (char*)buf_s.buf && 
-        (char*)buf_f.buf < (char*)buf_s.buf + buf_s.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_s.buf >= (char*)buf_f.buf && 
-        (char*)buf_s.buf < (char*)buf_f.buf + buf_f.len) {
+    if ((char*)buf_r.buf >= (char*)buf_f.buf && 
+        (char*)buf_r.buf < (char*)buf_f.buf + buf_f.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -20074,14 +19882,182 @@ _compute_xlylzl_xpos_variable_fastcall(PyObject *self, PyObject *const *args, Py
         goto cleanup;
     }
 
-    /* restrict check: dist vs xpos */
+    /* restrict check: f vs xpos */
+    if ((char*)buf_f.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_f.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xpos.buf >= (char*)buf_f.buf && 
+        (char*)buf_xpos.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs xlylzl */
+    if ((char*)buf_f.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_f.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_f.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs p */
+    if ((char*)buf_f.buf >= (char*)buf_p.buf && 
+        (char*)buf_f.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_f.buf && 
+        (char*)buf_p.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: f vs s */
+    if ((char*)buf_f.buf >= (char*)buf_s.buf && 
+        (char*)buf_f.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_s.buf >= (char*)buf_f.buf && 
+        (char*)buf_s.buf < (char*)buf_f.buf + buf_f.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xpos vs r */
+    if ((char*)buf_xpos.buf >= (char*)buf_r.buf && 
+        (char*)buf_xpos.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_r.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xpos vs dist */
+    if ((char*)buf_xpos.buf >= (char*)buf_dist.buf && 
+        (char*)buf_xpos.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
     if ((char*)buf_dist.buf >= (char*)buf_xpos.buf && 
         (char*)buf_dist.buf < (char*)buf_xpos.buf + buf_xpos.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_xpos.buf >= (char*)buf_dist.buf && 
-        (char*)buf_xpos.buf < (char*)buf_dist.buf + buf_dist.len) {
+
+    /* restrict check: xpos vs xlylzl */
+    if ((char*)buf_xpos.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_xpos.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_xlylzl.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xpos vs p */
+    if ((char*)buf_xpos.buf >= (char*)buf_p.buf && 
+        (char*)buf_xpos.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_p.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xpos vs s */
+    if ((char*)buf_xpos.buf >= (char*)buf_s.buf && 
+        (char*)buf_xpos.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_s.buf >= (char*)buf_xpos.buf && 
+        (char*)buf_s.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs r */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_r.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_r.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs dist */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_dist.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_dist.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_dist.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs p */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_p.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_p.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: xlylzl vs s */
+    if ((char*)buf_xlylzl.buf >= (char*)buf_s.buf && 
+        (char*)buf_xlylzl.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_s.buf >= (char*)buf_xlylzl.buf && 
+        (char*)buf_s.buf < (char*)buf_xlylzl.buf + buf_xlylzl.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: dist vs r */
+    if ((char*)buf_dist.buf >= (char*)buf_r.buf && 
+        (char*)buf_dist.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_dist.buf && 
+        (char*)buf_r.buf < (char*)buf_dist.buf + buf_dist.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: dist vs p */
+    if ((char*)buf_dist.buf >= (char*)buf_p.buf && 
+        (char*)buf_dist.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_dist.buf && 
+        (char*)buf_p.buf < (char*)buf_dist.buf + buf_dist.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -20098,14 +20074,38 @@ _compute_xlylzl_xpos_variable_fastcall(PyObject *self, PyObject *const *args, Py
         goto cleanup;
     }
 
-    /* restrict check: xpos vs s */
-    if ((char*)buf_xpos.buf >= (char*)buf_s.buf && 
-        (char*)buf_xpos.buf < (char*)buf_s.buf + buf_s.len) {
+    /* restrict check: s vs r */
+    if ((char*)buf_s.buf >= (char*)buf_r.buf && 
+        (char*)buf_s.buf < (char*)buf_r.buf + buf_r.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_s.buf >= (char*)buf_xpos.buf && 
-        (char*)buf_s.buf < (char*)buf_xpos.buf + buf_xpos.len) {
+    if ((char*)buf_r.buf >= (char*)buf_s.buf && 
+        (char*)buf_r.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: s vs p */
+    if ((char*)buf_s.buf >= (char*)buf_p.buf && 
+        (char*)buf_s.buf < (char*)buf_p.buf + buf_p.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_p.buf >= (char*)buf_s.buf && 
+        (char*)buf_p.buf < (char*)buf_s.buf + buf_s.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: p vs r */
+    if ((char*)buf_p.buf >= (char*)buf_r.buf && 
+        (char*)buf_p.buf < (char*)buf_r.buf + buf_r.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_r.buf >= (char*)buf_p.buf && 
+        (char*)buf_r.buf < (char*)buf_p.buf + buf_p.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -20684,14 +20684,14 @@ _closest_vec_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_ic = 1;
 
-    /* restrict check: x vs ic */
-    if ((char*)buf_x.buf >= (char*)buf_ic.buf && 
-        (char*)buf_x.buf < (char*)buf_ic.buf + buf_ic.len) {
+    /* restrict check: ic vs x */
+    if ((char*)buf_ic.buf >= (char*)buf_x.buf && 
+        (char*)buf_ic.buf < (char*)buf_x.buf + buf_x.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_ic.buf >= (char*)buf_x.buf && 
-        (char*)buf_ic.buf < (char*)buf_x.buf + buf_x.len) {
+    if ((char*)buf_x.buf >= (char*)buf_ic.buf && 
+        (char*)buf_x.buf < (char*)buf_ic.buf + buf_ic.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -20744,14 +20744,14 @@ _closest_vec_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_ic = 1;
 
-    /* restrict check: x vs ic */
-    if ((char*)buf_x.buf >= (char*)buf_ic.buf && 
-        (char*)buf_x.buf < (char*)buf_ic.buf + buf_ic.len) {
+    /* restrict check: ic vs x */
+    if ((char*)buf_ic.buf >= (char*)buf_x.buf && 
+        (char*)buf_ic.buf < (char*)buf_x.buf + buf_x.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_ic.buf >= (char*)buf_x.buf && 
-        (char*)buf_ic.buf < (char*)buf_x.buf + buf_x.len) {
+    if ((char*)buf_x.buf >= (char*)buf_ic.buf && 
+        (char*)buf_x.buf < (char*)buf_ic.buf + buf_ic.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -21255,14 +21255,14 @@ _score_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_gv = 1;
 
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -21322,14 +21322,14 @@ _score_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_gv = 1;
 
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -21582,14 +21582,14 @@ _score_and_refine_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_gv = 1;
 
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -21649,14 +21649,14 @@ _score_and_refine_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nar
         goto cleanup;
     acq_gv = 1;
 
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -22009,6 +22009,66 @@ _score_and_assign_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_labels = 1;
 
+    /* restrict check: drlv2 vs gv */
+    if ((char*)buf_drlv2.buf >= (char*)buf_gv.buf && 
+        (char*)buf_drlv2.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_gv.buf >= (char*)buf_drlv2.buf && 
+        (char*)buf_gv.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: drlv2 vs labels */
+    if ((char*)buf_drlv2.buf >= (char*)buf_labels.buf && 
+        (char*)buf_drlv2.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_drlv2.buf && 
+        (char*)buf_labels.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: drlv2 vs ubi */
+    if ((char*)buf_drlv2.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_drlv2.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_drlv2.buf && 
+        (char*)buf_ubi.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs labels */
+    if ((char*)buf_gv.buf >= (char*)buf_labels.buf && 
+        (char*)buf_gv.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_gv.buf && 
+        (char*)buf_labels.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: labels vs ubi */
     if ((char*)buf_labels.buf >= (char*)buf_ubi.buf && 
         (char*)buf_labels.buf < (char*)buf_ubi.buf + buf_ubi.len) {
@@ -22017,66 +22077,6 @@ _score_and_assign_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_ubi.buf >= (char*)buf_labels.buf && 
         (char*)buf_ubi.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs gv */
-    if ((char*)buf_labels.buf >= (char*)buf_gv.buf && 
-        (char*)buf_labels.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_labels.buf && 
-        (char*)buf_gv.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs drlv2 */
-    if ((char*)buf_labels.buf >= (char*)buf_drlv2.buf && 
-        (char*)buf_labels.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_drlv2.buf >= (char*)buf_labels.buf && 
-        (char*)buf_drlv2.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ubi vs drlv2 */
-    if ((char*)buf_ubi.buf >= (char*)buf_drlv2.buf && 
-        (char*)buf_ubi.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_drlv2.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_drlv2.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: gv vs drlv2 */
-    if ((char*)buf_gv.buf >= (char*)buf_drlv2.buf && 
-        (char*)buf_gv.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_drlv2.buf >= (char*)buf_gv.buf && 
-        (char*)buf_drlv2.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -22168,6 +22168,66 @@ _score_and_assign_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nar
         goto cleanup;
     acq_labels = 1;
 
+    /* restrict check: drlv2 vs gv */
+    if ((char*)buf_drlv2.buf >= (char*)buf_gv.buf && 
+        (char*)buf_drlv2.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_gv.buf >= (char*)buf_drlv2.buf && 
+        (char*)buf_gv.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: drlv2 vs labels */
+    if ((char*)buf_drlv2.buf >= (char*)buf_labels.buf && 
+        (char*)buf_drlv2.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_drlv2.buf && 
+        (char*)buf_labels.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: drlv2 vs ubi */
+    if ((char*)buf_drlv2.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_drlv2.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_drlv2.buf && 
+        (char*)buf_ubi.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs labels */
+    if ((char*)buf_gv.buf >= (char*)buf_labels.buf && 
+        (char*)buf_gv.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_gv.buf && 
+        (char*)buf_labels.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: labels vs ubi */
     if ((char*)buf_labels.buf >= (char*)buf_ubi.buf && 
         (char*)buf_labels.buf < (char*)buf_ubi.buf + buf_ubi.len) {
@@ -22176,66 +22236,6 @@ _score_and_assign_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nar
     }
     if ((char*)buf_ubi.buf >= (char*)buf_labels.buf && 
         (char*)buf_ubi.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs gv */
-    if ((char*)buf_labels.buf >= (char*)buf_gv.buf && 
-        (char*)buf_labels.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_labels.buf && 
-        (char*)buf_gv.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs drlv2 */
-    if ((char*)buf_labels.buf >= (char*)buf_drlv2.buf && 
-        (char*)buf_labels.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_drlv2.buf >= (char*)buf_labels.buf && 
-        (char*)buf_drlv2.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ubi vs drlv2 */
-    if ((char*)buf_ubi.buf >= (char*)buf_drlv2.buf && 
-        (char*)buf_ubi.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_drlv2.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_drlv2.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: gv vs drlv2 */
-    if ((char*)buf_gv.buf >= (char*)buf_drlv2.buf && 
-        (char*)buf_gv.buf < (char*)buf_drlv2.buf + buf_drlv2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_drlv2.buf >= (char*)buf_gv.buf && 
-        (char*)buf_drlv2.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -22539,6 +22539,30 @@ _refine_assigned_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_labels = 1;
 
+    /* restrict check: gv vs labels */
+    if ((char*)buf_gv.buf >= (char*)buf_labels.buf && 
+        (char*)buf_gv.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_gv.buf && 
+        (char*)buf_labels.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: labels vs ubi */
     if ((char*)buf_labels.buf >= (char*)buf_ubi.buf && 
         (char*)buf_labels.buf < (char*)buf_ubi.buf + buf_ubi.len) {
@@ -22547,30 +22571,6 @@ _refine_assigned_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_ubi.buf >= (char*)buf_labels.buf && 
         (char*)buf_ubi.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs gv */
-    if ((char*)buf_labels.buf >= (char*)buf_gv.buf && 
-        (char*)buf_labels.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_labels.buf && 
-        (char*)buf_gv.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -22645,6 +22645,30 @@ _refine_assigned_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
         goto cleanup;
     acq_labels = 1;
 
+    /* restrict check: gv vs labels */
+    if ((char*)buf_gv.buf >= (char*)buf_labels.buf && 
+        (char*)buf_gv.buf < (char*)buf_labels.buf + buf_labels.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_labels.buf >= (char*)buf_gv.buf && 
+        (char*)buf_labels.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: labels vs ubi */
     if ((char*)buf_labels.buf >= (char*)buf_ubi.buf && 
         (char*)buf_labels.buf < (char*)buf_ubi.buf + buf_ubi.len) {
@@ -22653,30 +22677,6 @@ _refine_assigned_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t narg
     }
     if ((char*)buf_ubi.buf >= (char*)buf_labels.buf && 
         (char*)buf_ubi.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: labels vs gv */
-    if ((char*)buf_labels.buf >= (char*)buf_gv.buf && 
-        (char*)buf_labels.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_labels.buf && 
-        (char*)buf_gv.buf < (char*)buf_labels.buf + buf_labels.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -22930,18 +22930,6 @@ _put_incr64_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_vals = 1;
 
-    /* restrict check: data vs ind */
-    if ((char*)buf_data.buf >= (char*)buf_ind.buf && 
-        (char*)buf_data.buf < (char*)buf_ind.buf + buf_ind.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ind.buf >= (char*)buf_data.buf && 
-        (char*)buf_ind.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: data vs vals */
     if ((char*)buf_data.buf >= (char*)buf_vals.buf && 
         (char*)buf_data.buf < (char*)buf_vals.buf + buf_vals.len) {
@@ -22950,6 +22938,18 @@ _put_incr64_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_vals.buf >= (char*)buf_data.buf && 
         (char*)buf_vals.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: data vs ind */
+    if ((char*)buf_data.buf >= (char*)buf_ind.buf && 
+        (char*)buf_data.buf < (char*)buf_ind.buf + buf_ind.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ind.buf >= (char*)buf_data.buf && 
+        (char*)buf_ind.buf < (char*)buf_data.buf + buf_data.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -23024,18 +23024,6 @@ _put_incr64_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_vals = 1;
 
-    /* restrict check: data vs ind */
-    if ((char*)buf_data.buf >= (char*)buf_ind.buf && 
-        (char*)buf_data.buf < (char*)buf_ind.buf + buf_ind.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ind.buf >= (char*)buf_data.buf && 
-        (char*)buf_ind.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: data vs vals */
     if ((char*)buf_data.buf >= (char*)buf_vals.buf && 
         (char*)buf_data.buf < (char*)buf_vals.buf + buf_vals.len) {
@@ -23044,6 +23032,18 @@ _put_incr64_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_vals.buf >= (char*)buf_data.buf && 
         (char*)buf_vals.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: data vs ind */
+    if ((char*)buf_data.buf >= (char*)buf_ind.buf && 
+        (char*)buf_data.buf < (char*)buf_ind.buf + buf_ind.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ind.buf >= (char*)buf_data.buf && 
+        (char*)buf_ind.buf < (char*)buf_data.buf + buf_data.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -23297,18 +23297,6 @@ _put_incr32_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_vals = 1;
 
-    /* restrict check: data vs ind */
-    if ((char*)buf_data.buf >= (char*)buf_ind.buf && 
-        (char*)buf_data.buf < (char*)buf_ind.buf + buf_ind.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ind.buf >= (char*)buf_data.buf && 
-        (char*)buf_ind.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: data vs vals */
     if ((char*)buf_data.buf >= (char*)buf_vals.buf && 
         (char*)buf_data.buf < (char*)buf_vals.buf + buf_vals.len) {
@@ -23317,6 +23305,18 @@ _put_incr32_wrapper(PyObject *self, PyObject *args)
     }
     if ((char*)buf_vals.buf >= (char*)buf_data.buf && 
         (char*)buf_vals.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: data vs ind */
+    if ((char*)buf_data.buf >= (char*)buf_ind.buf && 
+        (char*)buf_data.buf < (char*)buf_ind.buf + buf_ind.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ind.buf >= (char*)buf_data.buf && 
+        (char*)buf_ind.buf < (char*)buf_data.buf + buf_data.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -23391,18 +23391,6 @@ _put_incr32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_vals = 1;
 
-    /* restrict check: data vs ind */
-    if ((char*)buf_data.buf >= (char*)buf_ind.buf && 
-        (char*)buf_data.buf < (char*)buf_ind.buf + buf_ind.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ind.buf >= (char*)buf_data.buf && 
-        (char*)buf_ind.buf < (char*)buf_data.buf + buf_data.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
     /* restrict check: data vs vals */
     if ((char*)buf_data.buf >= (char*)buf_vals.buf && 
         (char*)buf_data.buf < (char*)buf_vals.buf + buf_vals.len) {
@@ -23411,6 +23399,18 @@ _put_incr32_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if ((char*)buf_vals.buf >= (char*)buf_data.buf && 
         (char*)buf_vals.buf < (char*)buf_data.buf + buf_data.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: data vs ind */
+    if ((char*)buf_data.buf >= (char*)buf_ind.buf && 
+        (char*)buf_data.buf < (char*)buf_ind.buf + buf_ind.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ind.buf >= (char*)buf_data.buf && 
+        (char*)buf_ind.buf < (char*)buf_data.buf + buf_data.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -23725,50 +23725,14 @@ _cluster1d_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_avgs = 1;
 
-    /* restrict check: ids vs order */
-    if ((char*)buf_ids.buf >= (char*)buf_order.buf && 
-        (char*)buf_ids.buf < (char*)buf_order.buf + buf_order.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: order vs ids */
     if ((char*)buf_order.buf >= (char*)buf_ids.buf && 
         (char*)buf_order.buf < (char*)buf_ids.buf + buf_ids.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: ids vs ar */
-    if ((char*)buf_ids.buf >= (char*)buf_ar.buf && 
-        (char*)buf_ids.buf < (char*)buf_ar.buf + buf_ar.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ar.buf >= (char*)buf_ids.buf && 
-        (char*)buf_ar.buf < (char*)buf_ids.buf + buf_ids.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ids vs avgs */
-    if ((char*)buf_ids.buf >= (char*)buf_avgs.buf && 
-        (char*)buf_ids.buf < (char*)buf_avgs.buf + buf_avgs.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_avgs.buf >= (char*)buf_ids.buf && 
-        (char*)buf_avgs.buf < (char*)buf_ids.buf + buf_ids.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: order vs ar */
-    if ((char*)buf_order.buf >= (char*)buf_ar.buf && 
-        (char*)buf_order.buf < (char*)buf_ar.buf + buf_ar.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ar.buf >= (char*)buf_order.buf && 
-        (char*)buf_ar.buf < (char*)buf_order.buf + buf_order.len) {
+    if ((char*)buf_ids.buf >= (char*)buf_order.buf && 
+        (char*)buf_ids.buf < (char*)buf_order.buf + buf_order.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -23785,14 +23749,50 @@ _cluster1d_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: ar vs avgs */
-    if ((char*)buf_ar.buf >= (char*)buf_avgs.buf && 
-        (char*)buf_ar.buf < (char*)buf_avgs.buf + buf_avgs.len) {
+    /* restrict check: order vs ar */
+    if ((char*)buf_order.buf >= (char*)buf_ar.buf && 
+        (char*)buf_order.buf < (char*)buf_ar.buf + buf_ar.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
+    if ((char*)buf_ar.buf >= (char*)buf_order.buf && 
+        (char*)buf_ar.buf < (char*)buf_order.buf + buf_order.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: ids vs avgs */
+    if ((char*)buf_ids.buf >= (char*)buf_avgs.buf && 
+        (char*)buf_ids.buf < (char*)buf_avgs.buf + buf_avgs.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_avgs.buf >= (char*)buf_ids.buf && 
+        (char*)buf_avgs.buf < (char*)buf_ids.buf + buf_ids.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: ids vs ar */
+    if ((char*)buf_ids.buf >= (char*)buf_ar.buf && 
+        (char*)buf_ids.buf < (char*)buf_ar.buf + buf_ar.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ar.buf >= (char*)buf_ids.buf && 
+        (char*)buf_ar.buf < (char*)buf_ids.buf + buf_ids.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: avgs vs ar */
     if ((char*)buf_avgs.buf >= (char*)buf_ar.buf && 
         (char*)buf_avgs.buf < (char*)buf_ar.buf + buf_ar.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ar.buf >= (char*)buf_avgs.buf && 
+        (char*)buf_ar.buf < (char*)buf_avgs.buf + buf_avgs.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -23872,50 +23872,14 @@ _cluster1d_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_avgs = 1;
 
-    /* restrict check: ids vs order */
-    if ((char*)buf_ids.buf >= (char*)buf_order.buf && 
-        (char*)buf_ids.buf < (char*)buf_order.buf + buf_order.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: order vs ids */
     if ((char*)buf_order.buf >= (char*)buf_ids.buf && 
         (char*)buf_order.buf < (char*)buf_ids.buf + buf_ids.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: ids vs ar */
-    if ((char*)buf_ids.buf >= (char*)buf_ar.buf && 
-        (char*)buf_ids.buf < (char*)buf_ar.buf + buf_ar.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ar.buf >= (char*)buf_ids.buf && 
-        (char*)buf_ar.buf < (char*)buf_ids.buf + buf_ids.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ids vs avgs */
-    if ((char*)buf_ids.buf >= (char*)buf_avgs.buf && 
-        (char*)buf_ids.buf < (char*)buf_avgs.buf + buf_avgs.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_avgs.buf >= (char*)buf_ids.buf && 
-        (char*)buf_avgs.buf < (char*)buf_ids.buf + buf_ids.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: order vs ar */
-    if ((char*)buf_order.buf >= (char*)buf_ar.buf && 
-        (char*)buf_order.buf < (char*)buf_ar.buf + buf_ar.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ar.buf >= (char*)buf_order.buf && 
-        (char*)buf_ar.buf < (char*)buf_order.buf + buf_order.len) {
+    if ((char*)buf_ids.buf >= (char*)buf_order.buf && 
+        (char*)buf_ids.buf < (char*)buf_order.buf + buf_order.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -23932,14 +23896,50 @@ _cluster1d_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: ar vs avgs */
-    if ((char*)buf_ar.buf >= (char*)buf_avgs.buf && 
-        (char*)buf_ar.buf < (char*)buf_avgs.buf + buf_avgs.len) {
+    /* restrict check: order vs ar */
+    if ((char*)buf_order.buf >= (char*)buf_ar.buf && 
+        (char*)buf_order.buf < (char*)buf_ar.buf + buf_ar.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
+    if ((char*)buf_ar.buf >= (char*)buf_order.buf && 
+        (char*)buf_ar.buf < (char*)buf_order.buf + buf_order.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: ids vs avgs */
+    if ((char*)buf_ids.buf >= (char*)buf_avgs.buf && 
+        (char*)buf_ids.buf < (char*)buf_avgs.buf + buf_avgs.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_avgs.buf >= (char*)buf_ids.buf && 
+        (char*)buf_avgs.buf < (char*)buf_ids.buf + buf_ids.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: ids vs ar */
+    if ((char*)buf_ids.buf >= (char*)buf_ar.buf && 
+        (char*)buf_ids.buf < (char*)buf_ar.buf + buf_ar.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ar.buf >= (char*)buf_ids.buf && 
+        (char*)buf_ar.buf < (char*)buf_ids.buf + buf_ids.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: avgs vs ar */
     if ((char*)buf_avgs.buf >= (char*)buf_ar.buf && 
         (char*)buf_avgs.buf < (char*)buf_ar.buf + buf_ar.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ar.buf >= (char*)buf_avgs.buf && 
+        (char*)buf_ar.buf < (char*)buf_avgs.buf + buf_avgs.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -24512,134 +24512,134 @@ _score_gvec_z_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_e = 1;
 
-    /* restrict check: g0 vs g2 */
-    if ((char*)buf_g0.buf >= (char*)buf_g2.buf && 
-        (char*)buf_g0.buf < (char*)buf_g2.buf + buf_g2.len) {
+    /* restrict check: gv vs ub */
+    if ((char*)buf_gv.buf >= (char*)buf_ub.buf && 
+        (char*)buf_gv.buf < (char*)buf_ub.buf + buf_ub.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g2.buf >= (char*)buf_g0.buf && 
-        (char*)buf_g2.buf < (char*)buf_g0.buf + buf_g0.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g0 vs ub */
-    if ((char*)buf_g0.buf >= (char*)buf_ub.buf && 
-        (char*)buf_g0.buf < (char*)buf_ub.buf + buf_ub.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ub.buf >= (char*)buf_g0.buf && 
-        (char*)buf_ub.buf < (char*)buf_g0.buf + buf_g0.len) {
+    if ((char*)buf_ub.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ub.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: g0 vs e */
-    if ((char*)buf_g0.buf >= (char*)buf_e.buf && 
-        (char*)buf_g0.buf < (char*)buf_e.buf + buf_e.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_e.buf >= (char*)buf_g0.buf && 
-        (char*)buf_e.buf < (char*)buf_g0.buf + buf_g0.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g0 vs ubi */
-    if ((char*)buf_g0.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_g0.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ubi.buf >= (char*)buf_g0.buf && 
-        (char*)buf_ubi.buf < (char*)buf_g0.buf + buf_g0.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g0 vs gv */
-    if ((char*)buf_g0.buf >= (char*)buf_gv.buf && 
-        (char*)buf_g0.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: gv vs g0 */
     if ((char*)buf_gv.buf >= (char*)buf_g0.buf && 
         (char*)buf_gv.buf < (char*)buf_g0.buf + buf_g0.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: g0 vs g1 */
-    if ((char*)buf_g0.buf >= (char*)buf_g1.buf && 
-        (char*)buf_g0.buf < (char*)buf_g1.buf + buf_g1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_g1.buf >= (char*)buf_g0.buf && 
-        (char*)buf_g1.buf < (char*)buf_g0.buf + buf_g0.len) {
+    if ((char*)buf_g0.buf >= (char*)buf_gv.buf && 
+        (char*)buf_g0.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: g2 vs ub */
-    if ((char*)buf_g2.buf >= (char*)buf_ub.buf && 
-        (char*)buf_g2.buf < (char*)buf_ub.buf + buf_ub.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ub.buf >= (char*)buf_g2.buf && 
-        (char*)buf_ub.buf < (char*)buf_g2.buf + buf_g2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g2 vs e */
-    if ((char*)buf_g2.buf >= (char*)buf_e.buf && 
-        (char*)buf_g2.buf < (char*)buf_e.buf + buf_e.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_e.buf >= (char*)buf_g2.buf && 
-        (char*)buf_e.buf < (char*)buf_g2.buf + buf_g2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g2 vs ubi */
-    if ((char*)buf_g2.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_g2.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ubi.buf >= (char*)buf_g2.buf && 
-        (char*)buf_ubi.buf < (char*)buf_g2.buf + buf_g2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g2 vs gv */
-    if ((char*)buf_g2.buf >= (char*)buf_gv.buf && 
-        (char*)buf_g2.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: gv vs g2 */
     if ((char*)buf_gv.buf >= (char*)buf_g2.buf && 
         (char*)buf_gv.buf < (char*)buf_g2.buf + buf_g2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
+    if ((char*)buf_g2.buf >= (char*)buf_gv.buf && 
+        (char*)buf_g2.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
 
-    /* restrict check: g2 vs g1 */
+    /* restrict check: gv vs g1 */
+    if ((char*)buf_gv.buf >= (char*)buf_g1.buf && 
+        (char*)buf_gv.buf < (char*)buf_g1.buf + buf_g1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_g1.buf >= (char*)buf_gv.buf && 
+        (char*)buf_g1.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs e */
+    if ((char*)buf_gv.buf >= (char*)buf_e.buf && 
+        (char*)buf_gv.buf < (char*)buf_e.buf + buf_e.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_e.buf >= (char*)buf_gv.buf && 
+        (char*)buf_e.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: g1 vs ub */
+    if ((char*)buf_g1.buf >= (char*)buf_ub.buf && 
+        (char*)buf_g1.buf < (char*)buf_ub.buf + buf_ub.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ub.buf >= (char*)buf_g1.buf && 
+        (char*)buf_ub.buf < (char*)buf_g1.buf + buf_g1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: g1 vs g0 */
+    if ((char*)buf_g1.buf >= (char*)buf_g0.buf && 
+        (char*)buf_g1.buf < (char*)buf_g0.buf + buf_g0.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_g0.buf >= (char*)buf_g1.buf && 
+        (char*)buf_g0.buf < (char*)buf_g1.buf + buf_g1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: g1 vs g2 */
+    if ((char*)buf_g1.buf >= (char*)buf_g2.buf && 
+        (char*)buf_g1.buf < (char*)buf_g2.buf + buf_g2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
     if ((char*)buf_g2.buf >= (char*)buf_g1.buf && 
         (char*)buf_g2.buf < (char*)buf_g1.buf + buf_g1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g1.buf >= (char*)buf_g2.buf && 
-        (char*)buf_g1.buf < (char*)buf_g2.buf + buf_g2.len) {
+
+    /* restrict check: g1 vs e */
+    if ((char*)buf_g1.buf >= (char*)buf_e.buf && 
+        (char*)buf_g1.buf < (char*)buf_e.buf + buf_e.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_e.buf >= (char*)buf_g1.buf && 
+        (char*)buf_e.buf < (char*)buf_g1.buf + buf_g1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: g1 vs ubi */
+    if ((char*)buf_g1.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_g1.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_g1.buf && 
+        (char*)buf_ubi.buf < (char*)buf_g1.buf + buf_g1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -24656,6 +24656,30 @@ _score_gvec_z_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
+    /* restrict check: e vs g0 */
+    if ((char*)buf_e.buf >= (char*)buf_g0.buf && 
+        (char*)buf_e.buf < (char*)buf_g0.buf + buf_g0.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_g0.buf >= (char*)buf_e.buf && 
+        (char*)buf_g0.buf < (char*)buf_e.buf + buf_e.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: e vs g2 */
+    if ((char*)buf_e.buf >= (char*)buf_g2.buf && 
+        (char*)buf_e.buf < (char*)buf_g2.buf + buf_g2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_g2.buf >= (char*)buf_e.buf && 
+        (char*)buf_g2.buf < (char*)buf_e.buf + buf_e.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: e vs ubi */
     if ((char*)buf_e.buf >= (char*)buf_ubi.buf && 
         (char*)buf_e.buf < (char*)buf_ubi.buf + buf_ubi.len) {
@@ -24668,98 +24692,74 @@ _score_gvec_z_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     }
 
-    /* restrict check: e vs gv */
-    if ((char*)buf_e.buf >= (char*)buf_gv.buf && 
-        (char*)buf_e.buf < (char*)buf_gv.buf + buf_gv.len) {
+    /* restrict check: ub vs g0 */
+    if ((char*)buf_ub.buf >= (char*)buf_g0.buf && 
+        (char*)buf_ub.buf < (char*)buf_g0.buf + buf_g0.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_gv.buf >= (char*)buf_e.buf && 
-        (char*)buf_gv.buf < (char*)buf_e.buf + buf_e.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: e vs g1 */
-    if ((char*)buf_e.buf >= (char*)buf_g1.buf && 
-        (char*)buf_e.buf < (char*)buf_g1.buf + buf_g1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_g1.buf >= (char*)buf_e.buf && 
-        (char*)buf_g1.buf < (char*)buf_e.buf + buf_e.len) {
+    if ((char*)buf_g0.buf >= (char*)buf_ub.buf && 
+        (char*)buf_g0.buf < (char*)buf_ub.buf + buf_ub.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: ubi vs ub */
-    if ((char*)buf_ubi.buf >= (char*)buf_ub.buf && 
-        (char*)buf_ubi.buf < (char*)buf_ub.buf + buf_ub.len) {
+    /* restrict check: ub vs g2 */
+    if ((char*)buf_ub.buf >= (char*)buf_g2.buf && 
+        (char*)buf_ub.buf < (char*)buf_g2.buf + buf_g2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
+    if ((char*)buf_g2.buf >= (char*)buf_ub.buf && 
+        (char*)buf_g2.buf < (char*)buf_ub.buf + buf_ub.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: ub vs ubi */
     if ((char*)buf_ub.buf >= (char*)buf_ubi.buf && 
         (char*)buf_ub.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+    if ((char*)buf_ubi.buf >= (char*)buf_ub.buf && 
+        (char*)buf_ubi.buf < (char*)buf_ub.buf + buf_ub.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: ubi vs g1 */
-    if ((char*)buf_ubi.buf >= (char*)buf_g1.buf && 
-        (char*)buf_ubi.buf < (char*)buf_g1.buf + buf_g1.len) {
+    /* restrict check: g2 vs g0 */
+    if ((char*)buf_g2.buf >= (char*)buf_g0.buf && 
+        (char*)buf_g2.buf < (char*)buf_g0.buf + buf_g0.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g1.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_g1.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ub vs gv */
-    if ((char*)buf_ub.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ub.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_ub.buf && 
-        (char*)buf_gv.buf < (char*)buf_ub.buf + buf_ub.len) {
+    if ((char*)buf_g0.buf >= (char*)buf_g2.buf && 
+        (char*)buf_g0.buf < (char*)buf_g2.buf + buf_g2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: ub vs g1 */
-    if ((char*)buf_ub.buf >= (char*)buf_g1.buf && 
-        (char*)buf_ub.buf < (char*)buf_g1.buf + buf_g1.len) {
+    /* restrict check: g2 vs ubi */
+    if ((char*)buf_g2.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_g2.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g1.buf >= (char*)buf_ub.buf && 
-        (char*)buf_g1.buf < (char*)buf_ub.buf + buf_ub.len) {
+    if ((char*)buf_ubi.buf >= (char*)buf_g2.buf && 
+        (char*)buf_ubi.buf < (char*)buf_g2.buf + buf_g2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: gv vs g1 */
-    if ((char*)buf_gv.buf >= (char*)buf_g1.buf && 
-        (char*)buf_gv.buf < (char*)buf_g1.buf + buf_g1.len) {
+    /* restrict check: ubi vs g0 */
+    if ((char*)buf_ubi.buf >= (char*)buf_g0.buf && 
+        (char*)buf_ubi.buf < (char*)buf_g0.buf + buf_g0.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g1.buf >= (char*)buf_gv.buf && 
-        (char*)buf_g1.buf < (char*)buf_gv.buf + buf_gv.len) {
+    if ((char*)buf_g0.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_g0.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -24874,134 +24874,134 @@ _score_gvec_z_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_e = 1;
 
-    /* restrict check: g0 vs g2 */
-    if ((char*)buf_g0.buf >= (char*)buf_g2.buf && 
-        (char*)buf_g0.buf < (char*)buf_g2.buf + buf_g2.len) {
+    /* restrict check: gv vs ub */
+    if ((char*)buf_gv.buf >= (char*)buf_ub.buf && 
+        (char*)buf_gv.buf < (char*)buf_ub.buf + buf_ub.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g2.buf >= (char*)buf_g0.buf && 
-        (char*)buf_g2.buf < (char*)buf_g0.buf + buf_g0.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g0 vs ub */
-    if ((char*)buf_g0.buf >= (char*)buf_ub.buf && 
-        (char*)buf_g0.buf < (char*)buf_ub.buf + buf_ub.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ub.buf >= (char*)buf_g0.buf && 
-        (char*)buf_ub.buf < (char*)buf_g0.buf + buf_g0.len) {
+    if ((char*)buf_ub.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ub.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: g0 vs e */
-    if ((char*)buf_g0.buf >= (char*)buf_e.buf && 
-        (char*)buf_g0.buf < (char*)buf_e.buf + buf_e.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_e.buf >= (char*)buf_g0.buf && 
-        (char*)buf_e.buf < (char*)buf_g0.buf + buf_g0.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g0 vs ubi */
-    if ((char*)buf_g0.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_g0.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ubi.buf >= (char*)buf_g0.buf && 
-        (char*)buf_ubi.buf < (char*)buf_g0.buf + buf_g0.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g0 vs gv */
-    if ((char*)buf_g0.buf >= (char*)buf_gv.buf && 
-        (char*)buf_g0.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: gv vs g0 */
     if ((char*)buf_gv.buf >= (char*)buf_g0.buf && 
         (char*)buf_gv.buf < (char*)buf_g0.buf + buf_g0.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: g0 vs g1 */
-    if ((char*)buf_g0.buf >= (char*)buf_g1.buf && 
-        (char*)buf_g0.buf < (char*)buf_g1.buf + buf_g1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_g1.buf >= (char*)buf_g0.buf && 
-        (char*)buf_g1.buf < (char*)buf_g0.buf + buf_g0.len) {
+    if ((char*)buf_g0.buf >= (char*)buf_gv.buf && 
+        (char*)buf_g0.buf < (char*)buf_gv.buf + buf_gv.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: g2 vs ub */
-    if ((char*)buf_g2.buf >= (char*)buf_ub.buf && 
-        (char*)buf_g2.buf < (char*)buf_ub.buf + buf_ub.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ub.buf >= (char*)buf_g2.buf && 
-        (char*)buf_ub.buf < (char*)buf_g2.buf + buf_g2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g2 vs e */
-    if ((char*)buf_g2.buf >= (char*)buf_e.buf && 
-        (char*)buf_g2.buf < (char*)buf_e.buf + buf_e.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_e.buf >= (char*)buf_g2.buf && 
-        (char*)buf_e.buf < (char*)buf_g2.buf + buf_g2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g2 vs ubi */
-    if ((char*)buf_g2.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_g2.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_ubi.buf >= (char*)buf_g2.buf && 
-        (char*)buf_ubi.buf < (char*)buf_g2.buf + buf_g2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: g2 vs gv */
-    if ((char*)buf_g2.buf >= (char*)buf_gv.buf && 
-        (char*)buf_g2.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
+    /* restrict check: gv vs g2 */
     if ((char*)buf_gv.buf >= (char*)buf_g2.buf && 
         (char*)buf_gv.buf < (char*)buf_g2.buf + buf_g2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
+    if ((char*)buf_g2.buf >= (char*)buf_gv.buf && 
+        (char*)buf_g2.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
 
-    /* restrict check: g2 vs g1 */
+    /* restrict check: gv vs g1 */
+    if ((char*)buf_gv.buf >= (char*)buf_g1.buf && 
+        (char*)buf_gv.buf < (char*)buf_g1.buf + buf_g1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_g1.buf >= (char*)buf_gv.buf && 
+        (char*)buf_g1.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs e */
+    if ((char*)buf_gv.buf >= (char*)buf_e.buf && 
+        (char*)buf_gv.buf < (char*)buf_e.buf + buf_e.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_e.buf >= (char*)buf_gv.buf && 
+        (char*)buf_e.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: gv vs ubi */
+    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
+        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: g1 vs ub */
+    if ((char*)buf_g1.buf >= (char*)buf_ub.buf && 
+        (char*)buf_g1.buf < (char*)buf_ub.buf + buf_ub.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ub.buf >= (char*)buf_g1.buf && 
+        (char*)buf_ub.buf < (char*)buf_g1.buf + buf_g1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: g1 vs g0 */
+    if ((char*)buf_g1.buf >= (char*)buf_g0.buf && 
+        (char*)buf_g1.buf < (char*)buf_g0.buf + buf_g0.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_g0.buf >= (char*)buf_g1.buf && 
+        (char*)buf_g0.buf < (char*)buf_g1.buf + buf_g1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: g1 vs g2 */
+    if ((char*)buf_g1.buf >= (char*)buf_g2.buf && 
+        (char*)buf_g1.buf < (char*)buf_g2.buf + buf_g2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
     if ((char*)buf_g2.buf >= (char*)buf_g1.buf && 
         (char*)buf_g2.buf < (char*)buf_g1.buf + buf_g1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g1.buf >= (char*)buf_g2.buf && 
-        (char*)buf_g1.buf < (char*)buf_g2.buf + buf_g2.len) {
+
+    /* restrict check: g1 vs e */
+    if ((char*)buf_g1.buf >= (char*)buf_e.buf && 
+        (char*)buf_g1.buf < (char*)buf_e.buf + buf_e.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_e.buf >= (char*)buf_g1.buf && 
+        (char*)buf_e.buf < (char*)buf_g1.buf + buf_g1.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: g1 vs ubi */
+    if ((char*)buf_g1.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_g1.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_ubi.buf >= (char*)buf_g1.buf && 
+        (char*)buf_ubi.buf < (char*)buf_g1.buf + buf_g1.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -25018,6 +25018,30 @@ _score_gvec_z_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
+    /* restrict check: e vs g0 */
+    if ((char*)buf_e.buf >= (char*)buf_g0.buf && 
+        (char*)buf_e.buf < (char*)buf_g0.buf + buf_g0.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_g0.buf >= (char*)buf_e.buf && 
+        (char*)buf_g0.buf < (char*)buf_e.buf + buf_e.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: e vs g2 */
+    if ((char*)buf_e.buf >= (char*)buf_g2.buf && 
+        (char*)buf_e.buf < (char*)buf_g2.buf + buf_g2.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+    if ((char*)buf_g2.buf >= (char*)buf_e.buf && 
+        (char*)buf_g2.buf < (char*)buf_e.buf + buf_e.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
     /* restrict check: e vs ubi */
     if ((char*)buf_e.buf >= (char*)buf_ubi.buf && 
         (char*)buf_e.buf < (char*)buf_ubi.buf + buf_ubi.len) {
@@ -25030,98 +25054,74 @@ _score_gvec_z_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     }
 
-    /* restrict check: e vs gv */
-    if ((char*)buf_e.buf >= (char*)buf_gv.buf && 
-        (char*)buf_e.buf < (char*)buf_gv.buf + buf_gv.len) {
+    /* restrict check: ub vs g0 */
+    if ((char*)buf_ub.buf >= (char*)buf_g0.buf && 
+        (char*)buf_ub.buf < (char*)buf_g0.buf + buf_g0.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_gv.buf >= (char*)buf_e.buf && 
-        (char*)buf_gv.buf < (char*)buf_e.buf + buf_e.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: e vs g1 */
-    if ((char*)buf_e.buf >= (char*)buf_g1.buf && 
-        (char*)buf_e.buf < (char*)buf_g1.buf + buf_g1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_g1.buf >= (char*)buf_e.buf && 
-        (char*)buf_g1.buf < (char*)buf_e.buf + buf_e.len) {
+    if ((char*)buf_g0.buf >= (char*)buf_ub.buf && 
+        (char*)buf_g0.buf < (char*)buf_ub.buf + buf_ub.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: ubi vs ub */
-    if ((char*)buf_ubi.buf >= (char*)buf_ub.buf && 
-        (char*)buf_ubi.buf < (char*)buf_ub.buf + buf_ub.len) {
+    /* restrict check: ub vs g2 */
+    if ((char*)buf_ub.buf >= (char*)buf_g2.buf && 
+        (char*)buf_ub.buf < (char*)buf_g2.buf + buf_g2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
+    if ((char*)buf_g2.buf >= (char*)buf_ub.buf && 
+        (char*)buf_g2.buf < (char*)buf_ub.buf + buf_ub.len) {
+        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
+        goto cleanup;
+    }
+
+    /* restrict check: ub vs ubi */
     if ((char*)buf_ub.buf >= (char*)buf_ubi.buf && 
         (char*)buf_ub.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-
-    /* restrict check: ubi vs gv */
-    if ((char*)buf_ubi.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ubi.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_gv.buf < (char*)buf_ubi.buf + buf_ubi.len) {
+    if ((char*)buf_ubi.buf >= (char*)buf_ub.buf && 
+        (char*)buf_ubi.buf < (char*)buf_ub.buf + buf_ub.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: ubi vs g1 */
-    if ((char*)buf_ubi.buf >= (char*)buf_g1.buf && 
-        (char*)buf_ubi.buf < (char*)buf_g1.buf + buf_g1.len) {
+    /* restrict check: g2 vs g0 */
+    if ((char*)buf_g2.buf >= (char*)buf_g0.buf && 
+        (char*)buf_g2.buf < (char*)buf_g0.buf + buf_g0.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g1.buf >= (char*)buf_ubi.buf && 
-        (char*)buf_g1.buf < (char*)buf_ubi.buf + buf_ubi.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-
-    /* restrict check: ub vs gv */
-    if ((char*)buf_ub.buf >= (char*)buf_gv.buf && 
-        (char*)buf_ub.buf < (char*)buf_gv.buf + buf_gv.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_gv.buf >= (char*)buf_ub.buf && 
-        (char*)buf_gv.buf < (char*)buf_ub.buf + buf_ub.len) {
+    if ((char*)buf_g0.buf >= (char*)buf_g2.buf && 
+        (char*)buf_g0.buf < (char*)buf_g2.buf + buf_g2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: ub vs g1 */
-    if ((char*)buf_ub.buf >= (char*)buf_g1.buf && 
-        (char*)buf_ub.buf < (char*)buf_g1.buf + buf_g1.len) {
+    /* restrict check: g2 vs ubi */
+    if ((char*)buf_g2.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_g2.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g1.buf >= (char*)buf_ub.buf && 
-        (char*)buf_g1.buf < (char*)buf_ub.buf + buf_ub.len) {
+    if ((char*)buf_ubi.buf >= (char*)buf_g2.buf && 
+        (char*)buf_ubi.buf < (char*)buf_g2.buf + buf_g2.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
 
-    /* restrict check: gv vs g1 */
-    if ((char*)buf_gv.buf >= (char*)buf_g1.buf && 
-        (char*)buf_gv.buf < (char*)buf_g1.buf + buf_g1.len) {
+    /* restrict check: ubi vs g0 */
+    if ((char*)buf_ubi.buf >= (char*)buf_g0.buf && 
+        (char*)buf_ubi.buf < (char*)buf_g0.buf + buf_g0.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_g1.buf >= (char*)buf_gv.buf && 
-        (char*)buf_g1.buf < (char*)buf_gv.buf + buf_gv.len) {
+    if ((char*)buf_g0.buf >= (char*)buf_ubi.buf && 
+        (char*)buf_g0.buf < (char*)buf_ubi.buf + buf_ubi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -25316,7 +25316,7 @@ _misori_cubic_impl(Py_buffer *buf_u1, Py_buffer *buf_u2)
     /* overload 0 (always) */
     {
         if (_c2py_do_time) _c2py_ct0 = c2py_ticks();
-        double _ret = misori_cubic((double (*)[3])buf_u1->buf, (double (*)[3])buf_u2->buf);
+        double _ret = misori_cubic((const double (*)[3])buf_u1->buf, (const double (*)[3])buf_u2->buf);
         if (_c2py_do_time) {
             _c2py_ct1 = c2py_ticks();
             c2py_perf_record_call(&_perf_misori_cubic__misori_cubic, _c2py_ct0, _c2py_ct1);
@@ -25354,25 +25354,13 @@ _misori_cubic_wrapper(PyObject *self, PyObject *args)
     memset(&buf_u1, 0, C2PY.pybuffer_size);
     memset(&buf_u2, 0, C2PY.pybuffer_size);
 
-    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_READ) == -1)
         return NULL;
     acq_u1 = 1;
 
-    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_READ) == -1)
         goto cleanup;
     acq_u2 = 1;
-
-    /* restrict check: u2 vs u1 */
-    if ((char*)buf_u2.buf >= (char*)buf_u1.buf && 
-        (char*)buf_u2.buf < (char*)buf_u1.buf + buf_u1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_u1.buf >= (char*)buf_u2.buf && 
-        (char*)buf_u1.buf < (char*)buf_u2.buf + buf_u2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
 
     if (_c2py_do_time) _c2py_t1 = c2py_ticks();
     ret = _misori_cubic_impl(&buf_u1, &buf_u2);
@@ -25414,25 +25402,13 @@ _misori_cubic_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     memset(&buf_u1, 0, C2PY.pybuffer_size);
     memset(&buf_u2, 0, C2PY.pybuffer_size);
 
-    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_READ) == -1)
         return NULL;
     acq_u1 = 1;
 
-    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_READ) == -1)
         goto cleanup;
     acq_u2 = 1;
-
-    /* restrict check: u2 vs u1 */
-    if ((char*)buf_u2.buf >= (char*)buf_u1.buf && 
-        (char*)buf_u2.buf < (char*)buf_u1.buf + buf_u1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_u1.buf >= (char*)buf_u2.buf && 
-        (char*)buf_u1.buf < (char*)buf_u2.buf + buf_u2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
 
     if (_c2py_do_time) _c2py_t1 = c2py_ticks();
     ret = _misori_cubic_impl(&buf_u1, &buf_u2);
@@ -25619,7 +25595,7 @@ _misori_orthorhombic_impl(Py_buffer *buf_u1, Py_buffer *buf_u2)
     /* overload 0 (always) */
     {
         if (_c2py_do_time) _c2py_ct0 = c2py_ticks();
-        double _ret = misori_orthorhombic((double (*)[3])buf_u1->buf, (double (*)[3])buf_u2->buf);
+        double _ret = misori_orthorhombic((const double (*)[3])buf_u1->buf, (const double (*)[3])buf_u2->buf);
         if (_c2py_do_time) {
             _c2py_ct1 = c2py_ticks();
             c2py_perf_record_call(&_perf_misori_orthorhombic__misori_orthorhombic, _c2py_ct0, _c2py_ct1);
@@ -25657,25 +25633,13 @@ _misori_orthorhombic_wrapper(PyObject *self, PyObject *args)
     memset(&buf_u1, 0, C2PY.pybuffer_size);
     memset(&buf_u2, 0, C2PY.pybuffer_size);
 
-    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_READ) == -1)
         return NULL;
     acq_u1 = 1;
 
-    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_READ) == -1)
         goto cleanup;
     acq_u2 = 1;
-
-    /* restrict check: u2 vs u1 */
-    if ((char*)buf_u2.buf >= (char*)buf_u1.buf && 
-        (char*)buf_u2.buf < (char*)buf_u1.buf + buf_u1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_u1.buf >= (char*)buf_u2.buf && 
-        (char*)buf_u1.buf < (char*)buf_u2.buf + buf_u2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
 
     if (_c2py_do_time) _c2py_t1 = c2py_ticks();
     ret = _misori_orthorhombic_impl(&buf_u1, &buf_u2);
@@ -25717,25 +25681,13 @@ _misori_orthorhombic_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t 
     memset(&buf_u1, 0, C2PY.pybuffer_size);
     memset(&buf_u2, 0, C2PY.pybuffer_size);
 
-    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_READ) == -1)
         return NULL;
     acq_u1 = 1;
 
-    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_READ) == -1)
         goto cleanup;
     acq_u2 = 1;
-
-    /* restrict check: u2 vs u1 */
-    if ((char*)buf_u2.buf >= (char*)buf_u1.buf && 
-        (char*)buf_u2.buf < (char*)buf_u1.buf + buf_u1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_u1.buf >= (char*)buf_u2.buf && 
-        (char*)buf_u1.buf < (char*)buf_u2.buf + buf_u2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
 
     if (_c2py_do_time) _c2py_t1 = c2py_ticks();
     ret = _misori_orthorhombic_impl(&buf_u1, &buf_u2);
@@ -25922,7 +25874,7 @@ _misori_tetragonal_impl(Py_buffer *buf_u1, Py_buffer *buf_u2)
     /* overload 0 (always) */
     {
         if (_c2py_do_time) _c2py_ct0 = c2py_ticks();
-        double _ret = misori_tetragonal((double (*)[3])buf_u1->buf, (double (*)[3])buf_u2->buf);
+        double _ret = misori_tetragonal((const double (*)[3])buf_u1->buf, (const double (*)[3])buf_u2->buf);
         if (_c2py_do_time) {
             _c2py_ct1 = c2py_ticks();
             c2py_perf_record_call(&_perf_misori_tetragonal__misori_tetragonal, _c2py_ct0, _c2py_ct1);
@@ -25960,25 +25912,13 @@ _misori_tetragonal_wrapper(PyObject *self, PyObject *args)
     memset(&buf_u1, 0, C2PY.pybuffer_size);
     memset(&buf_u2, 0, C2PY.pybuffer_size);
 
-    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_READ) == -1)
         return NULL;
     acq_u1 = 1;
 
-    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_READ) == -1)
         goto cleanup;
     acq_u2 = 1;
-
-    /* restrict check: u2 vs u1 */
-    if ((char*)buf_u2.buf >= (char*)buf_u1.buf && 
-        (char*)buf_u2.buf < (char*)buf_u1.buf + buf_u1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_u1.buf >= (char*)buf_u2.buf && 
-        (char*)buf_u1.buf < (char*)buf_u2.buf + buf_u2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
 
     if (_c2py_do_time) _c2py_t1 = c2py_ticks();
     ret = _misori_tetragonal_impl(&buf_u1, &buf_u2);
@@ -26020,25 +25960,13 @@ _misori_tetragonal_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t na
     memset(&buf_u1, 0, C2PY.pybuffer_size);
     memset(&buf_u2, 0, C2PY.pybuffer_size);
 
-    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_READ) == -1)
         return NULL;
     acq_u1 = 1;
 
-    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_READ) == -1)
         goto cleanup;
     acq_u2 = 1;
-
-    /* restrict check: u2 vs u1 */
-    if ((char*)buf_u2.buf >= (char*)buf_u1.buf && 
-        (char*)buf_u2.buf < (char*)buf_u1.buf + buf_u1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_u1.buf >= (char*)buf_u2.buf && 
-        (char*)buf_u1.buf < (char*)buf_u2.buf + buf_u2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
 
     if (_c2py_do_time) _c2py_t1 = c2py_ticks();
     ret = _misori_tetragonal_impl(&buf_u1, &buf_u2);
@@ -26225,7 +26153,7 @@ _misori_monoclinic_impl(Py_buffer *buf_u1, Py_buffer *buf_u2)
     /* overload 0 (always) */
     {
         if (_c2py_do_time) _c2py_ct0 = c2py_ticks();
-        double _ret = misori_monoclinic((double (*)[3])buf_u1->buf, (double (*)[3])buf_u2->buf);
+        double _ret = misori_monoclinic((const double (*)[3])buf_u1->buf, (const double (*)[3])buf_u2->buf);
         if (_c2py_do_time) {
             _c2py_ct1 = c2py_ticks();
             c2py_perf_record_call(&_perf_misori_monoclinic__misori_monoclinic, _c2py_ct0, _c2py_ct1);
@@ -26263,25 +26191,13 @@ _misori_monoclinic_wrapper(PyObject *self, PyObject *args)
     memset(&buf_u1, 0, C2PY.pybuffer_size);
     memset(&buf_u2, 0, C2PY.pybuffer_size);
 
-    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_READ) == -1)
         return NULL;
     acq_u1 = 1;
 
-    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_READ) == -1)
         goto cleanup;
     acq_u2 = 1;
-
-    /* restrict check: u2 vs u1 */
-    if ((char*)buf_u2.buf >= (char*)buf_u1.buf && 
-        (char*)buf_u2.buf < (char*)buf_u1.buf + buf_u1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_u1.buf >= (char*)buf_u2.buf && 
-        (char*)buf_u1.buf < (char*)buf_u2.buf + buf_u2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
 
     if (_c2py_do_time) _c2py_t1 = c2py_ticks();
     ret = _misori_monoclinic_impl(&buf_u1, &buf_u2);
@@ -26323,25 +26239,13 @@ _misori_monoclinic_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t na
     memset(&buf_u1, 0, C2PY.pybuffer_size);
     memset(&buf_u2, 0, C2PY.pybuffer_size);
 
-    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u1, &buf_u1, C2PY_BUF_READ) == -1)
         return NULL;
     acq_u1 = 1;
 
-    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_WRITE) == -1)
+    if (c2py_acquire_buffer(py_u2, &buf_u2, C2PY_BUF_READ) == -1)
         goto cleanup;
     acq_u2 = 1;
-
-    /* restrict check: u2 vs u1 */
-    if ((char*)buf_u2.buf >= (char*)buf_u1.buf && 
-        (char*)buf_u2.buf < (char*)buf_u1.buf + buf_u1.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
-    if ((char*)buf_u1.buf >= (char*)buf_u2.buf && 
-        (char*)buf_u1.buf < (char*)buf_u2.buf + buf_u2.len) {
-        PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
-        goto cleanup;
-    }
 
     if (_c2py_do_time) _c2py_t1 = c2py_ticks();
     ret = _misori_monoclinic_impl(&buf_u1, &buf_u2);
@@ -26522,14 +26426,14 @@ _count_shared_wrapper(PyObject *self, PyObject *args)
         goto cleanup;
     acq_pj = 1;
 
-    /* restrict check: pj vs pi */
-    if ((char*)buf_pj.buf >= (char*)buf_pi.buf && 
-        (char*)buf_pj.buf < (char*)buf_pi.buf + buf_pi.len) {
+    /* restrict check: pi vs pj */
+    if ((char*)buf_pi.buf >= (char*)buf_pj.buf && 
+        (char*)buf_pi.buf < (char*)buf_pj.buf + buf_pj.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_pi.buf >= (char*)buf_pj.buf && 
-        (char*)buf_pi.buf < (char*)buf_pj.buf + buf_pj.len) {
+    if ((char*)buf_pj.buf >= (char*)buf_pi.buf && 
+        (char*)buf_pj.buf < (char*)buf_pi.buf + buf_pi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -26582,14 +26486,14 @@ _count_shared_fastcall(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto cleanup;
     acq_pj = 1;
 
-    /* restrict check: pj vs pi */
-    if ((char*)buf_pj.buf >= (char*)buf_pi.buf && 
-        (char*)buf_pj.buf < (char*)buf_pi.buf + buf_pi.len) {
+    /* restrict check: pi vs pj */
+    if ((char*)buf_pi.buf >= (char*)buf_pj.buf && 
+        (char*)buf_pi.buf < (char*)buf_pj.buf + buf_pj.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
-    if ((char*)buf_pi.buf >= (char*)buf_pj.buf && 
-        (char*)buf_pi.buf < (char*)buf_pj.buf + buf_pj.len) {
+    if ((char*)buf_pj.buf >= (char*)buf_pi.buf && 
+        (char*)buf_pj.buf < (char*)buf_pi.buf + buf_pi.len) {
         PyErr_SetString(PyExc_ValueError, "buffer aliasing forbidden");
         goto cleanup;
     }
@@ -26840,10 +26744,10 @@ static PyMethodDef _methods_varargs[] = {
     {"put_incr32", (PyCFunction)_put_incr32_wrapper, METH_VARARGS, "put_incr32(data, ind, vals, boundscheck)\n--\n\nput_incr32(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void\n\nput_incr32 does the simple loop: data[ind] += vals, 32 bit addressing\n\nParameters\n----------\ndata : buffer\n    Type: float32 (format 'f')\n    Writable\n    Destination array (float32).\nind : buffer\n    Type: int32 (format 'i') or ? (format 'l')\n    Size must equal vals\n    Indices array (int32).\nvals : buffer\n    Type: float32 (format 'f')\n    Values array (float32) to add.\nboundscheck : int\n    If non-zero, enables bounds checking on ind.\n\nChecks\n------\n  data.format == 'f'  [ValueError]\n  (ind.format == 'i' or ind.format == 'l')  [ValueError]\n  ind.n == vals.n  [ValueError]\n  vals.format == 'f'  [ValueError]\n\nGIL: released\n\nOverloads\n---------\n  void put_incr32(float *data, const int32_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m) (When: ((data.format == 'f' and vals.format == 'f') and (ind.format == 'i' or ind.format == 'l')))\n    Map: data = data.ptr (float *)\n         ind = ind.ptr (const int32_t *)\n         vals = vals.ptr (const float *)\n         boundscheck = boundscheck (int)\n         n = ind.n (intptr_t)\n         m = data.n (intptr_t)"},
     {"cluster1d", (PyCFunction)_cluster1d_wrapper, METH_VARARGS, "cluster1d(ar, order, tol, ids, avgs)\n--\n\ncluster1d(ar: buffer, order: buffer, tol: float, ids: buffer, avgs: buffer) -> void\n\ncluster1d is used to find clusters of peaks.\n\nParameters\n----------\nar : buffer\n    Type: float64 (format 'd')\n    Writable\n    Array of values to cluster.\norder : buffer\n    Writable\n    Size must equal ar\n    Permutation that sorts ar ascending.\ntol : float\n    Distance tolerance for cluster membership.\nids : buffer\n    Writable\n    Size must equal ar\n    Output: cluster id for each element.\navgs : buffer\n    Type: float64 (format 'd')\n    Writable\n    Size must equal ar\n    Output: average value of each cluster.\n\nChecks\n------\n  ar.format == 'd'  [ValueError]\n  (order.format == 'i' or order.format == 'l')  [ValueError]\n  order.n == ar.n  [ValueError]\n  (ids.format == 'i' or ids.format == 'l')  [ValueError]\n  ids.n == ar.n  [ValueError]\n  avgs.format == 'd'  [ValueError]\n  avgs.n == ar.n  [ValueError]\n\nOverloads\n---------\n  void cluster1d(double *ar, intptr_t n, int *order, double tol, int *nclusters, int *ids, double *avgs)\n    Map: ar = ar.ptr (double *)\n         n = ar.n (intptr_t)\n         order = order.ptr (int *)\n         tol = tol (double)\n         ids = ids.ptr (int *)\n         avgs = avgs.ptr (double *)\n    Outputs: nclusters (int)"},
     {"score_gvec_z", (PyCFunction)_score_gvec_z_wrapper, METH_VARARGS, "score_gvec_z(ubi, ub, gv, g0, g1, g2, e, recompute)\n--\n\nscore_gvec_z(ubi: buffer, ub: buffer, gv: buffer, g0: buffer, g1: buffer, g2: buffer, e: buffer, recompute: int) -> void\n\nscore_gvec_z computes error projections for g-vectors.\n\nParameters\n----------\nubi : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    UBI matrix (9-element flattened double).\nub : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    UB matrix (9-element flattened double).\ngv : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 1: 3 elements\n    Experimental g-vectors, shape (ng, 3) flattened.\ng0 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Error along g component.\ng1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Error along z component.\ng2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Error along rhs component.\ne : buffer\n    Type: float64 (format 'd')\n    Writable\n    Output error array.\nrecompute : int\n    If non-zero, recompute gcalc from ub.\n\nChecks\n------\n  ubi.format == 'd'  [ValueError]\n  ubi.n == 9  [ValueError]\n  ub.format == 'd'  [ValueError]\n  ub.n == 9  [ValueError]\n  gv.format == 'd'  [ValueError]\n  gv.ndim >= 1  [ValueError]\n  g0.format == 'd'  [ValueError]\n  g1.format == 'd'  [ValueError]\n  g2.format == 'd'  [ValueError]\n  e.format == 'd'  [ValueError]\n  ubi.slow_axis == 0  [ValueError]\n  ubi.ndim == 2  [ValueError]\n  ubi.shape[0] == 3  [ValueError]\n  ubi.shape[1] == 3  [ValueError]\n  ub.slow_axis == 0  [ValueError]\n  ub.ndim == 2  [ValueError]\n  ub.shape[0] == 3  [ValueError]\n  ub.shape[1] == 3  [ValueError]\n  gv.slow_axis == 0  [ValueError]\n  gv.ndim == 2  [ValueError]\n  gv.shape[1] == 3  [ValueError]\n  g0.slow_axis == 0  [ValueError]\n  g1.slow_axis == 0  [ValueError]\n  g2.slow_axis == 0  [ValueError]\n  e.slow_axis == 0  [ValueError]\n\nOverloads\n---------\n  void score_gvec_z(double ubi[3][3], double ub[3][3], double gv[][3], double g0[], double g1[], double g2[], double e[], int recompute, intptr_t n)\n    Map: ubi = ubi.ptr (double (*)[3])\n         ub = ub.ptr (double (*)[3])\n         gv = gv.ptr (double (*)[3])\n         g0 = g0.ptr (double *)\n         g1 = g1.ptr (double *)\n         g2 = g2.ptr (double *)\n         e = e.ptr (double *)\n         recompute = recompute (int)\n         n = gv.shape[0] (intptr_t)"},
-    {"misori_cubic", (PyCFunction)_misori_cubic_wrapper, METH_VARARGS, "misori_cubic(u1, u2)\n--\n\nmisori_cubic(u1: buffer, u2: buffer) -> float\n\nmisori_cubic computes the smallest misorientation for cubic symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_cubic(double u1[3][3], double u2[3][3]) -> double\n    Map: u1 = u1.ptr (double (*)[3])\n         u2 = u2.ptr (double (*)[3])"},
-    {"misori_orthorhombic", (PyCFunction)_misori_orthorhombic_wrapper, METH_VARARGS, "misori_orthorhombic(u1, u2)\n--\n\nmisori_orthorhombic(u1: buffer, u2: buffer) -> float\n\nmisori_orthorhombic computes the smallest misorientation for orthorhombic symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_orthorhombic(double u1[3][3], double u2[3][3]) -> double\n    Map: u1 = u1.ptr (double (*)[3])\n         u2 = u2.ptr (double (*)[3])"},
-    {"misori_tetragonal", (PyCFunction)_misori_tetragonal_wrapper, METH_VARARGS, "misori_tetragonal(u1, u2)\n--\n\nmisori_tetragonal(u1: buffer, u2: buffer) -> float\n\nmisori_tetragonal computes the smallest misorientation for tetragonal symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_tetragonal(double u1[3][3], double u2[3][3]) -> double\n    Map: u1 = u1.ptr (double (*)[3])\n         u2 = u2.ptr (double (*)[3])"},
-    {"misori_monoclinic", (PyCFunction)_misori_monoclinic_wrapper, METH_VARARGS, "misori_monoclinic(u1, u2)\n--\n\nmisori_monoclinic(u1: buffer, u2: buffer) -> float\n\nmisori_monoclinic assumes a unique b axis and only checks the flip of b -> -b.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_monoclinic(double u1[3][3], double u2[3][3]) -> double\n    Map: u1 = u1.ptr (double (*)[3])\n         u2 = u2.ptr (double (*)[3])"},
+    {"misori_cubic", (PyCFunction)_misori_cubic_wrapper, METH_VARARGS, "misori_cubic(u1, u2)\n--\n\nmisori_cubic(u1: buffer, u2: buffer) -> float\n\nmisori_cubic computes the smallest misorientation for cubic symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_cubic(const double u1[3][3], const double u2[3][3]) -> double\n    Map: u1 = u1.ptr (const double (*)[3])\n         u2 = u2.ptr (const double (*)[3])"},
+    {"misori_orthorhombic", (PyCFunction)_misori_orthorhombic_wrapper, METH_VARARGS, "misori_orthorhombic(u1, u2)\n--\n\nmisori_orthorhombic(u1: buffer, u2: buffer) -> float\n\nmisori_orthorhombic computes the smallest misorientation for orthorhombic symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_orthorhombic(const double u1[3][3], const double u2[3][3]) -> double\n    Map: u1 = u1.ptr (const double (*)[3])\n         u2 = u2.ptr (const double (*)[3])"},
+    {"misori_tetragonal", (PyCFunction)_misori_tetragonal_wrapper, METH_VARARGS, "misori_tetragonal(u1, u2)\n--\n\nmisori_tetragonal(u1: buffer, u2: buffer) -> float\n\nmisori_tetragonal computes the smallest misorientation for tetragonal symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_tetragonal(const double u1[3][3], const double u2[3][3]) -> double\n    Map: u1 = u1.ptr (const double (*)[3])\n         u2 = u2.ptr (const double (*)[3])"},
+    {"misori_monoclinic", (PyCFunction)_misori_monoclinic_wrapper, METH_VARARGS, "misori_monoclinic(u1, u2)\n--\n\nmisori_monoclinic(u1: buffer, u2: buffer) -> float\n\nmisori_monoclinic assumes a unique b axis and only checks the flip of b -> -b.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_monoclinic(const double u1[3][3], const double u2[3][3]) -> double\n    Map: u1 = u1.ptr (const double (*)[3])\n         u2 = u2.ptr (const double (*)[3])"},
     {"count_shared", (PyCFunction)_count_shared_wrapper, METH_VARARGS, "count_shared(pi, pj)\n--\n\ncount_shared(pi: buffer, pj: buffer) -> int\n\ncount_shared takes two sorted arrays and counts collisions.\n\nParameters\n----------\npi : buffer\n    Writable\n    First sorted array of integer labels.\npj : buffer\n    Writable\n    Second sorted array of integer labels.\n\nChecks\n------\n  (pi.format == 'i' or pi.format == 'l')  [ValueError]\n  (pj.format == 'i' or pj.format == 'l')  [ValueError]\n\nOverloads\n---------\n  int count_shared(int *pi, intptr_t ni, int *pj, intptr_t nj) -> int\n    Map: pi = pi.ptr (int *)\n         ni = pi.n (intptr_t)\n         pj = pj.ptr (int *)\n         nj = pj.n (intptr_t)"},
     {"cimaged11_omp_set_num_threads", (PyCFunction)_cimaged11_omp_set_num_threads_wrapper, METH_VARARGS, "cimaged11_omp_set_num_threads(n)\n--\n\ncimaged11_omp_set_num_threads(n: int) -> void\n\nSet the number of OpenMP threads used by all subsequent C calls.\n\nParameters\n----------\nn : int\n    Number of OpenMP threads. Pass 1 for single-threaded execution.\n\nOverloads\n---------\n  void cimaged11_omp_set_num_threads(int n)\n    Map: n = n (int)"},
     {"cimaged11_omp_get_max_threads", (PyCFunction)_cimaged11_omp_get_max_threads_wrapper, METH_VARARGS, "cimaged11_omp_get_max_threads()\n--\n\ncimaged11_omp_get_max_threads() -> int\n\nReturn the maximum number of OpenMP threads available.\n\nOverloads\n---------\n  int cimaged11_omp_get_max_threads()"},
@@ -26918,10 +26822,10 @@ static PyMethodDef _methods_fastcall[] = {
     {"put_incr32", (PyCFunction)_put_incr32_fastcall, METH_FASTCALL, "put_incr32(data, ind, vals, boundscheck)\n--\n\nput_incr32(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void\n\nput_incr32 does the simple loop: data[ind] += vals, 32 bit addressing\n\nParameters\n----------\ndata : buffer\n    Type: float32 (format 'f')\n    Writable\n    Destination array (float32).\nind : buffer\n    Type: int32 (format 'i') or ? (format 'l')\n    Size must equal vals\n    Indices array (int32).\nvals : buffer\n    Type: float32 (format 'f')\n    Values array (float32) to add.\nboundscheck : int\n    If non-zero, enables bounds checking on ind.\n\nChecks\n------\n  data.format == 'f'  [ValueError]\n  (ind.format == 'i' or ind.format == 'l')  [ValueError]\n  ind.n == vals.n  [ValueError]\n  vals.format == 'f'  [ValueError]\n\nGIL: released\n\nOverloads\n---------\n  void put_incr32(float *data, const int32_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m) (When: ((data.format == 'f' and vals.format == 'f') and (ind.format == 'i' or ind.format == 'l')))\n    Map: data = data.ptr (float *)\n         ind = ind.ptr (const int32_t *)\n         vals = vals.ptr (const float *)\n         boundscheck = boundscheck (int)\n         n = ind.n (intptr_t)\n         m = data.n (intptr_t)"},
     {"cluster1d", (PyCFunction)_cluster1d_fastcall, METH_FASTCALL, "cluster1d(ar, order, tol, ids, avgs)\n--\n\ncluster1d(ar: buffer, order: buffer, tol: float, ids: buffer, avgs: buffer) -> void\n\ncluster1d is used to find clusters of peaks.\n\nParameters\n----------\nar : buffer\n    Type: float64 (format 'd')\n    Writable\n    Array of values to cluster.\norder : buffer\n    Writable\n    Size must equal ar\n    Permutation that sorts ar ascending.\ntol : float\n    Distance tolerance for cluster membership.\nids : buffer\n    Writable\n    Size must equal ar\n    Output: cluster id for each element.\navgs : buffer\n    Type: float64 (format 'd')\n    Writable\n    Size must equal ar\n    Output: average value of each cluster.\n\nChecks\n------\n  ar.format == 'd'  [ValueError]\n  (order.format == 'i' or order.format == 'l')  [ValueError]\n  order.n == ar.n  [ValueError]\n  (ids.format == 'i' or ids.format == 'l')  [ValueError]\n  ids.n == ar.n  [ValueError]\n  avgs.format == 'd'  [ValueError]\n  avgs.n == ar.n  [ValueError]\n\nOverloads\n---------\n  void cluster1d(double *ar, intptr_t n, int *order, double tol, int *nclusters, int *ids, double *avgs)\n    Map: ar = ar.ptr (double *)\n         n = ar.n (intptr_t)\n         order = order.ptr (int *)\n         tol = tol (double)\n         ids = ids.ptr (int *)\n         avgs = avgs.ptr (double *)\n    Outputs: nclusters (int)"},
     {"score_gvec_z", (PyCFunction)_score_gvec_z_fastcall, METH_FASTCALL, "score_gvec_z(ubi, ub, gv, g0, g1, g2, e, recompute)\n--\n\nscore_gvec_z(ubi: buffer, ub: buffer, gv: buffer, g0: buffer, g1: buffer, g2: buffer, e: buffer, recompute: int) -> void\n\nscore_gvec_z computes error projections for g-vectors.\n\nParameters\n----------\nubi : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    UBI matrix (9-element flattened double).\nub : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    UB matrix (9-element flattened double).\ngv : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 1: 3 elements\n    Experimental g-vectors, shape (ng, 3) flattened.\ng0 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Error along g component.\ng1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Error along z component.\ng2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Error along rhs component.\ne : buffer\n    Type: float64 (format 'd')\n    Writable\n    Output error array.\nrecompute : int\n    If non-zero, recompute gcalc from ub.\n\nChecks\n------\n  ubi.format == 'd'  [ValueError]\n  ubi.n == 9  [ValueError]\n  ub.format == 'd'  [ValueError]\n  ub.n == 9  [ValueError]\n  gv.format == 'd'  [ValueError]\n  gv.ndim >= 1  [ValueError]\n  g0.format == 'd'  [ValueError]\n  g1.format == 'd'  [ValueError]\n  g2.format == 'd'  [ValueError]\n  e.format == 'd'  [ValueError]\n  ubi.slow_axis == 0  [ValueError]\n  ubi.ndim == 2  [ValueError]\n  ubi.shape[0] == 3  [ValueError]\n  ubi.shape[1] == 3  [ValueError]\n  ub.slow_axis == 0  [ValueError]\n  ub.ndim == 2  [ValueError]\n  ub.shape[0] == 3  [ValueError]\n  ub.shape[1] == 3  [ValueError]\n  gv.slow_axis == 0  [ValueError]\n  gv.ndim == 2  [ValueError]\n  gv.shape[1] == 3  [ValueError]\n  g0.slow_axis == 0  [ValueError]\n  g1.slow_axis == 0  [ValueError]\n  g2.slow_axis == 0  [ValueError]\n  e.slow_axis == 0  [ValueError]\n\nOverloads\n---------\n  void score_gvec_z(double ubi[3][3], double ub[3][3], double gv[][3], double g0[], double g1[], double g2[], double e[], int recompute, intptr_t n)\n    Map: ubi = ubi.ptr (double (*)[3])\n         ub = ub.ptr (double (*)[3])\n         gv = gv.ptr (double (*)[3])\n         g0 = g0.ptr (double *)\n         g1 = g1.ptr (double *)\n         g2 = g2.ptr (double *)\n         e = e.ptr (double *)\n         recompute = recompute (int)\n         n = gv.shape[0] (intptr_t)"},
-    {"misori_cubic", (PyCFunction)_misori_cubic_fastcall, METH_FASTCALL, "misori_cubic(u1, u2)\n--\n\nmisori_cubic(u1: buffer, u2: buffer) -> float\n\nmisori_cubic computes the smallest misorientation for cubic symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_cubic(double u1[3][3], double u2[3][3]) -> double\n    Map: u1 = u1.ptr (double (*)[3])\n         u2 = u2.ptr (double (*)[3])"},
-    {"misori_orthorhombic", (PyCFunction)_misori_orthorhombic_fastcall, METH_FASTCALL, "misori_orthorhombic(u1, u2)\n--\n\nmisori_orthorhombic(u1: buffer, u2: buffer) -> float\n\nmisori_orthorhombic computes the smallest misorientation for orthorhombic symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_orthorhombic(double u1[3][3], double u2[3][3]) -> double\n    Map: u1 = u1.ptr (double (*)[3])\n         u2 = u2.ptr (double (*)[3])"},
-    {"misori_tetragonal", (PyCFunction)_misori_tetragonal_fastcall, METH_FASTCALL, "misori_tetragonal(u1, u2)\n--\n\nmisori_tetragonal(u1: buffer, u2: buffer) -> float\n\nmisori_tetragonal computes the smallest misorientation for tetragonal symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_tetragonal(double u1[3][3], double u2[3][3]) -> double\n    Map: u1 = u1.ptr (double (*)[3])\n         u2 = u2.ptr (double (*)[3])"},
-    {"misori_monoclinic", (PyCFunction)_misori_monoclinic_fastcall, METH_FASTCALL, "misori_monoclinic(u1, u2)\n--\n\nmisori_monoclinic(u1: buffer, u2: buffer) -> float\n\nmisori_monoclinic assumes a unique b axis and only checks the flip of b -> -b.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Writable\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_monoclinic(double u1[3][3], double u2[3][3]) -> double\n    Map: u1 = u1.ptr (double (*)[3])\n         u2 = u2.ptr (double (*)[3])"},
+    {"misori_cubic", (PyCFunction)_misori_cubic_fastcall, METH_FASTCALL, "misori_cubic(u1, u2)\n--\n\nmisori_cubic(u1: buffer, u2: buffer) -> float\n\nmisori_cubic computes the smallest misorientation for cubic symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_cubic(const double u1[3][3], const double u2[3][3]) -> double\n    Map: u1 = u1.ptr (const double (*)[3])\n         u2 = u2.ptr (const double (*)[3])"},
+    {"misori_orthorhombic", (PyCFunction)_misori_orthorhombic_fastcall, METH_FASTCALL, "misori_orthorhombic(u1, u2)\n--\n\nmisori_orthorhombic(u1: buffer, u2: buffer) -> float\n\nmisori_orthorhombic computes the smallest misorientation for orthorhombic symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_orthorhombic(const double u1[3][3], const double u2[3][3]) -> double\n    Map: u1 = u1.ptr (const double (*)[3])\n         u2 = u2.ptr (const double (*)[3])"},
+    {"misori_tetragonal", (PyCFunction)_misori_tetragonal_fastcall, METH_FASTCALL, "misori_tetragonal(u1, u2)\n--\n\nmisori_tetragonal(u1: buffer, u2: buffer) -> float\n\nmisori_tetragonal computes the smallest misorientation for tetragonal symmetry.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_tetragonal(const double u1[3][3], const double u2[3][3]) -> double\n    Map: u1 = u1.ptr (const double (*)[3])\n         u2 = u2.ptr (const double (*)[3])"},
+    {"misori_monoclinic", (PyCFunction)_misori_monoclinic_fastcall, METH_FASTCALL, "misori_monoclinic(u1, u2)\n--\n\nmisori_monoclinic(u1: buffer, u2: buffer) -> float\n\nmisori_monoclinic assumes a unique b axis and only checks the flip of b -> -b.\n\nParameters\n----------\nu1 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\nu2 : buffer\n    Type: float64 (format 'd')\n    Shape: 2D\n    Axis 0: 3 elements\n    Axis 1: 3 elements\n    Orientation matrix U (9-element flattened double).\n\nChecks\n------\n  u1.format == 'd'  [ValueError]\n  u1.n == 9  [ValueError]\n  u2.format == 'd'  [ValueError]\n  u2.n == 9  [ValueError]\n  u1.slow_axis == 0  [ValueError]\n  u1.ndim == 2  [ValueError]\n  u1.shape[0] == 3  [ValueError]\n  u1.shape[1] == 3  [ValueError]\n  u2.slow_axis == 0  [ValueError]\n  u2.ndim == 2  [ValueError]\n  u2.shape[0] == 3  [ValueError]\n  u2.shape[1] == 3  [ValueError]\n\nOverloads\n---------\n  double misori_monoclinic(const double u1[3][3], const double u2[3][3]) -> double\n    Map: u1 = u1.ptr (const double (*)[3])\n         u2 = u2.ptr (const double (*)[3])"},
     {"count_shared", (PyCFunction)_count_shared_fastcall, METH_FASTCALL, "count_shared(pi, pj)\n--\n\ncount_shared(pi: buffer, pj: buffer) -> int\n\ncount_shared takes two sorted arrays and counts collisions.\n\nParameters\n----------\npi : buffer\n    Writable\n    First sorted array of integer labels.\npj : buffer\n    Writable\n    Second sorted array of integer labels.\n\nChecks\n------\n  (pi.format == 'i' or pi.format == 'l')  [ValueError]\n  (pj.format == 'i' or pj.format == 'l')  [ValueError]\n\nOverloads\n---------\n  int count_shared(int *pi, intptr_t ni, int *pj, intptr_t nj) -> int\n    Map: pi = pi.ptr (int *)\n         ni = pi.n (intptr_t)\n         pj = pj.ptr (int *)\n         nj = pj.n (intptr_t)"},
     {"cimaged11_omp_set_num_threads", (PyCFunction)_cimaged11_omp_set_num_threads_fastcall, METH_FASTCALL, "cimaged11_omp_set_num_threads(n)\n--\n\ncimaged11_omp_set_num_threads(n: int) -> void\n\nSet the number of OpenMP threads used by all subsequent C calls.\n\nParameters\n----------\nn : int\n    Number of OpenMP threads. Pass 1 for single-threaded execution.\n\nOverloads\n---------\n  void cimaged11_omp_set_num_threads(int n)\n    Map: n = n (int)"},
     {"cimaged11_omp_get_max_threads", (PyCFunction)_cimaged11_omp_get_max_threads_fastcall, METH_FASTCALL, "cimaged11_omp_get_max_threads()\n--\n\ncimaged11_omp_get_max_threads() -> int\n\nReturn the maximum number of OpenMP threads available.\n\nOverloads\n---------\n  int cimaged11_omp_get_max_threads()"},
