@@ -259,7 +259,7 @@ def main():
 
     output_dir = os.path.abspath(args.output_dir)
     parent_dir = os.path.dirname(output_dir)
-    src_dir = os.path.join(parent_dir, "src")
+    src_dir = os.path.join(parent_dir, "functions")
 
     if not os.path.isdir(src_dir):
         print("ERROR: source directory not found: %s" % src_dir,
