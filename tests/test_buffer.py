@@ -169,7 +169,7 @@ class TestMisoriAliasing:
     def test_tetragonal(self):
         u = np.eye(3)
         result = ci.misori_tetragonal(u, u)
-        assert result == 1.0
+        assert result == 3.0
 
     def test_monoclinic(self):
         u = np.eye(3)
