@@ -63,9 +63,17 @@ if "--force-rebuild" in sys.argv:
 
 
 if "bdist_wheel" in sys.argv:
+    # Prefer setuptools' built-in bdist_wheel (>=70.1) over separate wheel package
+    # to properly place .so in platlib (required by auditwheel).
     try:
-        from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+        from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+    except ImportError:
+        try:
+            from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+        except ImportError:
+            _bdist_wheel = None
 
+    if _bdist_wheel is not None:
         python_tag = "py2" if sys.version_info[0] == 2 else "py3"
 
         class bdist_wheel_override(_bdist_wheel):
@@ -78,7 +86,7 @@ if "bdist_wheel" in sys.argv:
                 return python_tag, "none", plat
 
         bdist_wheel_cmd = bdist_wheel_override
-    except ImportError:
+    else:
         bdist_wheel_cmd = None
 else:
     bdist_wheel_cmd = None
