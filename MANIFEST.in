@@ -10,6 +10,7 @@ graft lib/interface
 include lib/meson.build
 global-exclude __pycache__
 global-exclude *.pyc
+global-exclude *.so *.pyd
 
 # Python package
 include c2ImageD11/*.py
