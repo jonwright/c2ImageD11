@@ -1,5 +1,6 @@
 #include "cImageD11.h"
 #include "ImageD11_cmath.h"
+#include "cimaged11utils.h"
 
 /* C2PY_BEGIN
  * {
