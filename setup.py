@@ -17,10 +17,19 @@ import sys
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
+from setuptools.dist import Distribution
+
+
+class PlatlibDistribution(Distribution):
+    """Force platlib layout so auditwheel accepts our .so in package_data."""
+    def has_ext_modules(self):
+        return True
+
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PKG_DIR = os.path.join(HERE, "c2ImageD11")
-ARCH = platform.machine()
+# str() for Python 2.7 unicode_literals compatibility
+PKG_DIR = str(os.path.join(HERE, "c2ImageD11"))
+ARCH = str(platform.machine())
 EXT = ".pyd" if sys.platform == "win32" else ".so"
 SO_NAME = "_cImageD11_{}{}".format(ARCH, EXT)
 SO_PATH = os.path.join(PKG_DIR, SO_NAME)
@@ -102,6 +111,7 @@ setup(
     packages=["c2ImageD11"],
     package_data={"c2ImageD11": [SO_NAME]},
     include_package_data=True,
+    distclass=PlatlibDistribution,
     cmdclass=cmdclass,
     zip_safe=False,
 )
