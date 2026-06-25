@@ -116,7 +116,7 @@ mkdir -p "$SDISTDIR"
 if python3 setup.py sdist --dist-dir "$SDISTDIR" 2>/dev/null; then
   echo "  -> $SDISTDIR/"
 else
-  echo "  WARNING: sdist build failed — skipping"
+  echo "  WARNING: sdist build failed  --  skipping"
 fi
 
 # ---- Show inventory -------------------------------------------------------
