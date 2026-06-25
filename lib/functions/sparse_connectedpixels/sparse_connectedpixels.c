@@ -1,5 +1,6 @@
 #include "cImageD11.h"
 #include "blobs.h"
+extern int sparse_is_sorted(const uint16_t i[], const uint16_t j[], intptr_t nnz);
 static int NOISY = 0;
 
 /* C2PY_BEGIN
