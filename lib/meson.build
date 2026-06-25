@@ -11,6 +11,7 @@
 
 project('c2ImageD11', 'c',
   default_options: ['c_std=c11', 'warning_level=1'],
+  # Keep in sync with c2ImageD11/_version.py (single source of truth)
   version: '0.2.0')
 
 cc = meson.get_compiler('c')

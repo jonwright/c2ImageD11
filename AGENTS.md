@@ -18,6 +18,18 @@ hand-written adapter code.
 - Performance at parity with ImageD11 (e.g. `compute_geometry` 0.97x of f2py at n=200)
 - Tested on Python 3.12; targets Python 2.7-3.14
 
+## Versioning
+
+Single source of truth: `c2ImageD11/_version.py` (`__version__`).
+
+On bump:
+1. Edit `c2ImageD11/_version.py` — the new version number
+2. Sync `lib/meson.build` (`version:` field) — same value
+3. Git tag `v<newversion>` after merge
+
+`pyproject.toml` and `setup.py` read from `_version.py` automatically
+via `[tool.setuptools.dynamic]` / `attr:` directive.
+
 ## Language Choices
 
 - **C**: C99, compiled with `-O3 -ffast-math -fopenmp`
