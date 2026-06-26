@@ -2,8 +2,8 @@
 """harvester.py - Regenerate all files in lib/interface/.
 
 Extracts C2PY_BEGIN..C2PY_END blocks from C sources in lib/functions/,
-assembles _cImageD11.c2py, copies c2py23 runtime, and runs
-c2py23.cli.generate to produce the wrapper.
+assembles _cImageD11.c2py (Python dict format), copies c2py23 runtime,
+and generates the wrapper in-process via from_c2py_dict() + generate().
 
 Usage:
     python tools/harvester.py --output-dir lib/interface
@@ -12,13 +12,14 @@ Usage:
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import ast
+import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 
-import yaml
+from c2py23.parser import from_c2py_dict
+from c2py23.generator import generate
 
 C2PY_RUNTIME_FILES = [
     "c2py_runtime.c",
@@ -27,6 +28,39 @@ C2PY_RUNTIME_FILES = [
     "c2py_arm64.h",
     "c2py_ppc64.h",
 ]
+
+
+def _py_repr(obj, indent=0):
+    """Render a Python object as a pretty-printed Python dict literal."""
+    sp = "    "
+    if isinstance(obj, dict):
+        if not obj:
+            return "{}"
+        items = []
+        for k in sorted(obj.keys()):
+            kr = json.dumps(k)
+            vr = _py_repr(obj[k], indent + 1)
+            items.append(sp * (indent + 1) + kr + ": " + vr)
+        inner = ",\n".join(items)
+        return "{\n" + inner + ",\n" + sp * indent + "}"
+    elif isinstance(obj, list):
+        if not obj:
+            return "[]"
+        if len(obj) == 1 and not isinstance(obj[0], (dict, list)):
+            return "[" + _py_repr(obj[0], indent) + "]"
+        items = []
+        for v in obj:
+            items.append(sp * (indent + 1) + _py_repr(v, indent + 1))
+        inner = ",\n".join(items)
+        return "[\n" + inner + ",\n" + sp * indent + "]"
+    elif isinstance(obj, bool):
+        return "True" if obj else "False"
+    elif obj is None:
+        return "None"
+    elif isinstance(obj, (int, float)):
+        return json.dumps(obj)
+    else:
+        return json.dumps(obj)
 
 
 def extract_c2py_blocks(text):
@@ -96,8 +130,8 @@ def find_h_headers(src_dir):
     return headers
 
 
-def block_to_c2py_entry(block):
-    """Convert a C2PY_BLOCK dict to a c2py23 YAML entry dict."""
+def block_to_func_entry(block):
+    """Convert a C2PY_BLOCK dict to a c2py function entry dict."""
     entry = {
         "py_sig": block["py_sig"],
         "doc": block.get("doc", ""),
@@ -140,13 +174,12 @@ def extract_blocks_from_file(filepath):
 
 
 def assemble_c2py(src_dir, output_dir):
-    """Assemble the complete .c2py document."""
+    """Assemble the complete c2py interface dict."""
     c_sources = find_c_sources(src_dir)
     h_headers = find_h_headers(src_dir)
-    all_blocks = []
+    func_entries = []
     all_consts = {}
 
-    # Process all C sources and headers for C2PY_BLOCKs
     for filepath in c_sources + h_headers:
         funcs, consts = extract_blocks_from_file(filepath)
         if consts:
@@ -157,60 +190,29 @@ def assemble_c2py(src_dir, output_dir):
             rel = os.path.relpath(filepath, output_dir)
             print("  %s: %d function(s)" % (rel, len(funcs)),
                   file=sys.stderr)
-            all_blocks.append((filepath, funcs))
+            for line_no, block in funcs:
+                func_entries.append(block_to_func_entry(block))
 
-    output = []
-    output.append("# c2py23 interface definition for c2ImageD11")
-    output.append("#")
-    output.append("# AUTO-ASSEMBLED by harvester.py from C2PY_BLOCKs in C sources.")
-    output.append("")
-    output.append("module: _cImageD11")
-    output.append("timing: true")
-    output.append("free_threading: true")
-    output.append("")
-    output.append("source:")
-    for src in c_sources:
-        rel = os.path.relpath(src, output_dir)
-        output.append("  - %s" % rel)
-    output.append("")
-    output.append("headers:")
-    for hdr in h_headers:
-        rel = os.path.relpath(hdr, output_dir)
-        output.append("  - %s" % rel)
-    output.append("")
+    result = {
+        "module": "_cImageD11",
+        "timing": True,
+        "free_threading": True,
+    }
+
+    result["source"] = [
+        os.path.relpath(src, output_dir) for src in c_sources
+    ]
+
+    result["headers"] = [
+        os.path.relpath(hdr, output_dir) for hdr in h_headers
+    ]
 
     if all_consts:
-        output.append("constants:")
-        for k, v in sorted(all_consts.items()):
-            output.append("  %s: %d" % (k, v))
-        output.append("")
+        result["constants"] = all_consts
 
-    output.append("functions:")
-    output.append("")
+    result["functions"] = func_entries
 
-    for filepath, funcs in all_blocks:
-        rel = os.path.relpath(filepath, output_dir)
-        output.append("  # ==================================================="
-                      "==================")
-        output.append("  # %s" % rel)
-        output.append("  # ==================================================="
-                      "==================")
-        output.append("")
-        for line_no, block in funcs:
-            entry = block_to_c2py_entry(block)
-            yaml_text = yaml.dump(
-                [entry],
-                default_flow_style=None,
-                allow_unicode=True,
-                width=120,
-                indent=2,
-                sort_keys=False,
-            )
-            for line in yaml_text.splitlines():
-                output.append("  " + line)
-            output.append("")
-
-    return "\n".join(output) + "\n"
+    return result
 
 
 def copy_runtime(output_dir):
@@ -234,19 +236,14 @@ def copy_runtime(output_dir):
                   file=sys.stderr)
 
 
-def generate_wrapper(output_dir):
-    """Run c2py23.cli.generate to produce _cImageD11_wrapper.c."""
-    c2py_path = os.path.join(output_dir, "_cImageD11.c2py")
+def generate_wrapper(assembled, output_dir):
+    """Generate _cImageD11_wrapper.c from the assembled dict in-process."""
     wrapper_path = os.path.join(output_dir, "_cImageD11_wrapper.c")
-    if not os.path.isfile(c2py_path):
-        print("ERROR: %s not found. Run harvester first." % c2py_path,
-              file=sys.stderr)
-        sys.exit(1)
     print("  GENERATING: %s" % wrapper_path, file=sys.stderr)
-    subprocess.check_call([
-        sys.executable, "-m", "c2py23.cli", "generate",
-        c2py_path, "-o", wrapper_path,
-    ])
+    mod = from_c2py_dict(assembled, "_cImageD11")
+    wrapper_code = generate(mod)
+    with open(wrapper_path, "w") as f:
+        f.write(wrapper_code)
 
 
 def main():
@@ -268,19 +265,27 @@ def main():
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # 1. Assemble _cImageD11.c2py
-    c2py_text = assemble_c2py(src_dir, output_dir)
+    # 1. Assemble the interface dict
+    assembled = assemble_c2py(src_dir, output_dir)
+
+    # 2. Write _cImageD11.c2py in Python dict format (checked into git)
     c2py_path = os.path.join(output_dir, "_cImageD11.c2py")
+    c2py_text = ("# c2py23 interface definition for c2ImageD11\n"
+                 "#\n"
+                 "# AUTO-ASSEMBLED by harvester.py from C2PY_BLOCKs in C sources.\n"
+                 "# Python dict format -- load_c2py() auto-detects.\n"
+                 "\n")
+    c2py_text += _py_repr(assembled, 0) + "\n"
     with open(c2py_path, "w") as f:
         f.write(c2py_text)
     print("WROTE: %s (%d bytes)" % (c2py_path, len(c2py_text)),
           file=sys.stderr)
 
-    # 2. Copy c2py23 runtime files
+    # 3. Copy c2py23 runtime files
     copy_runtime(output_dir)
 
-    # 3. Generate wrapper
-    generate_wrapper(output_dir)
+    # 4. Generate wrapper in-process
+    generate_wrapper(assembled, output_dir)
 
     print("DONE", file=sys.stderr)
 

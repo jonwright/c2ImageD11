@@ -1,948 +1,1857 @@
 # c2py23 interface definition for c2ImageD11
 #
 # AUTO-ASSEMBLED by harvester.py from C2PY_BLOCKs in C sources.
-
-module: _cImageD11
-timing: true
-free_threading: true
-
-source:
-  - ../functions/mask_to_coo/mask_to_coo.c
-  - ../functions/uint16_to_float_darkflm/uint16_to_float_darkflm.c
-  - ../functions/reorderlut_f32_a32/reorderlut_f32_a32.c
-  - ../functions/score_and_refine/score_and_refine.c
-  - ../functions/sparse_overlaps/sparse_overlaps.c
-  - ../functions/make_clean_mask/make_clean_mask.c
-  - ../functions/compute_geometry/compute_geometry.c
-  - ../functions/put_incr32/put_incr32.c
-  - ../functions/score_gvec_z/score_gvec_z.c
-  - ../functions/sparse_connectedpixels_splat/sparse_connectedpixels_splat.c
-  - ../functions/sparse_is_sorted/sparse_is_sorted.c
-  - ../functions/common/blobs.c
-  - ../functions/common/cimaged11utils.c
-  - ../functions/put_incr64/put_incr64.c
-  - ../functions/reorder_f32_a32/reorder_f32_a32.c
-  - ../functions/array_mean_var_cut/array_mean_var_cut.c
-  - ../functions/tosparse_f32/tosparse_f32.c
-  - ../functions/closest_vec/closest_vec.c
-  - ../functions/compute_xlylzl/compute_xlylzl.c
-  - ../functions/frelon_lines/frelon_lines.c
-  - ../functions/sparse_blob2Dproperties/sparse_blob2Dproperties.c
-  - ../functions/connectedpixels/connectedpixels.c
-  - ../functions/coverlaps/coverlaps.c
-  - ../functions/sparse_smooth/sparse_smooth.c
-  - ../functions/clean_mask/clean_mask.c
-  - ../functions/splat/splat.c
-  - ../functions/count_shared/count_shared.c
-  - ../functions/misori_orthorhombic/misori_orthorhombic.c
-  - ../functions/compute_xlylzl_xpos_variable/compute_xlylzl_xpos_variable.c
-  - ../functions/tosparse_u32/tosparse_u32.c
-  - ../functions/blob_moments/blob_moments.c
-  - ../functions/sparse_localmaxlabel/sparse_localmaxlabel.c
-  - ../functions/compress_duplicates/compress_duplicates.c
-  - ../functions/cluster1d/cluster1d.c
-  - ../functions/array_mean_var_msk/array_mean_var_msk.c
-  - ../functions/quickorient/quickorient.c
-  - ../functions/score_and_assign/score_and_assign.c
-  - ../functions/frelon_lines_sub/frelon_lines_sub.c
-  - ../functions/closest/closest.c
-  - ../functions/score/score.c
-  - ../functions/bloboverlaps/bloboverlaps.c
-  - ../functions/uint16_to_float_darksub/uint16_to_float_darksub.c
-  - ../functions/sparse_connectedpixels/sparse_connectedpixels.c
-  - ../functions/bgcalc/bgcalc.c
-  - ../functions/reorder_u16_a32_a16/reorder_u16_a32_a16.c
-  - ../functions/misori_cubic/misori_cubic.c
-  - ../functions/array_stats/array_stats.c
-  - ../functions/misori_monoclinic/misori_monoclinic.c
-  - ../functions/localmaxlabel/localmaxlabel.c
-  - ../functions/blobproperties/blobproperties.c
-  - ../functions/array_histogram/array_histogram.c
-  - ../functions/reorder_u16_a32/reorder_u16_a32.c
-  - ../functions/compute_gv/compute_gv.c
-  - ../functions/refine_assigned/refine_assigned.c
-  - ../functions/reorderlut_u16_a32/reorderlut_u16_a32.c
-  - ../functions/misori_tetragonal/misori_tetragonal.c
-  - ../functions/tosparse_u16/tosparse_u16.c
-
-headers:
-  - ../functions/common/ImageD11_cmath.h
-  - ../functions/common/blobs.h
-  - ../functions/common/cImageD11.h
-  - ../functions/common/cimaged11utils.h
-
-constants:
-  NPROPERTY: 36
-  NPROPERTY2D: 11
-  avg_i: 22
-  bb_mn_f: 19
-  bb_mn_o: 21
-  bb_mn_s: 20
-  bb_mx_f: 16
-  bb_mx_o: 18
-  bb_mx_s: 17
-  dety: 34
-  detz: 35
-  f_cen: 32
-  f_raw: 23
-  m_ff: 27
-  m_fo: 31
-  m_oo: 28
-  m_sf: 29
-  m_so: 30
-  m_ss: 26
-  mx_I: 12
-  mx_I_f: 13
-  mx_I_o: 15
-  mx_I_s: 14
-  o_raw: 25
-  s2D_1: 0
-  s2D_I: 1
-  s2D_bb_mn_f: 9
-  s2D_bb_mn_s: 10
-  s2D_bb_mx_f: 7
-  s2D_bb_mx_s: 8
-  s2D_fI: 2
-  s2D_ffI: 4
-  s2D_sI: 3
-  s2D_sfI: 5
-  s2D_ssI: 6
-  s_1: 0
-  s_I: 1
-  s_I2: 2
-  s_cen: 33
-  s_fI: 3
-  s_ffI: 4
-  s_foI: 11
-  s_oI: 8
-  s_ooI: 9
-  s_raw: 24
-  s_sI: 5
-  s_sfI: 7
-  s_soI: 10
-  s_ssI: 6
-
-functions:
-
-  # =====================================================================
-  # ../functions/mask_to_coo/mask_to_coo.c
-  # =====================================================================
-
-  - py_sig: 'mask_to_coo(msk: buffer, i: buffer, j: buffer, w: buffer) -> int'
-    doc: Convert mask to sparse COO coordinates.
-    params: {msk: Input int8 2D mask., i: Output row indices (uint16)., j: Output col indices (uint16)., w: Output per-row counts
-        (int32).}
-    checks: [msk.format == 'b' or msk.format == 'B', msk.ndim == 2, i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize
-        == 2, j.n == i.n, ( w.format == 'i' or w.format == 'l' ), 'w.n == msk.shape[0]']
-    c_overloads:
-    - sig: int mask_to_coo(const int8_t *msk, intptr_t ns, intptr_t nf, uint16_t *i, uint16_t *j, intptr_t nnz, int *nrow) ->
-        int
-      map: {msk: msk.ptr, ns: 'msk.shape[0]', nf: 'msk.shape[1]', i: i.ptr, j: j.ptr, nnz: i.n, nrow: w.ptr}
-
-  # =====================================================================
-  # ../functions/uint16_to_float_darkflm/uint16_to_float_darkflm.c
-  # =====================================================================
-
-  - py_sig: 'uint16_to_float_darkflm(img: buffer, drk: buffer, flm: buffer, data: buffer) -> void'
-    doc: 'Dark subtract, flat-field multiply: img = (data - drk) * flm.'
-    checks: [img.format == 'f', drk.format == 'f', drk.n == img.n, flm.format == 'f', flm.n == img.n, data.format == 'H' or
-        data.itemsize == 2, data.n == img.n]
-    gil_release: true
-    c_overloads:
-    - when: img.format == 'f' and drk.format == 'f' and flm.format == 'f'
-      sig: void uint16_to_float_darkflm(float *img, const float *drk, const float *flm, const uint16_t *data, intptr_t npx)
-      map: {img: img.ptr, drk: drk.ptr, flm: flm.ptr, data: data.ptr, npx: img.n}
-
-  # =====================================================================
-  # ../functions/reorderlut_f32_a32/reorderlut_f32_a32.c
-  # =====================================================================
-
-  - py_sig: 'reorderlut_f32_a32(data: buffer, adr: buffer, out: buffer) -> void'
-    doc: out[i] = data[adr[i]].
-    checks: [data.format == 'f', adr.format == 'I' or adr.itemsize == 4, adr.n == data.n, out.format == 'f', out.n == data.n]
-    gil_release: true
-    c_overloads:
-    - when: data.format == 'f' and out.format == 'f'
-      sig: void reorderlut_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)
-      map: {data: data.ptr, adr: adr.ptr, out: out.ptr, N: data.n}
-
-  # =====================================================================
-  # ../functions/score_and_refine/score_and_refine.c
-  # =====================================================================
-
-  - py_sig: 'score_and_refine(ubi: buffer, gv: buffer, tol: float) -> int'
-    doc: score_and_refine also refines the UB matrix using the assigned peaks.
-    params: {ubi: Orientation matrix UBI (9-element flattened double)., gv: 'G-vectors array, shape (ng, 3) flattened.', tol: Matching
-        tolerance on |h - round(h)|.}
-    checks: [ubi.format == 'd', ubi.n == 9, gv.format == 'd', gv.ndim >= 1]
-    gil_release: true
-    c_overloads:
-    - when: ubi.format == 'd' and gv.format == 'd'
-      sig: void score_and_refine(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t
-        ng)
-      outputs: {n_arg: int, sumdrlv2_arg: double}
-      map: {ubi: ubi.ptr, gv: gv.ptr, tol: tol, ng: 'gv.shape[0]'}
-
-  # =====================================================================
-  # ../functions/sparse_overlaps/sparse_overlaps.c
-  # =====================================================================
-
-  - py_sig: 'sparse_overlaps(i1: buffer, j1: buffer, k1: buffer, i2: buffer, j2: buffer, k2: buffer) -> int'
-    doc: Find overlapping pixels between two sparse arrays.
-    params: {i1: Rows 1 (uint16)., j1: Cols 1 (uint16)., k1: Output indices into 1., i2: Rows 2 (uint16)., j2: Cols 2 (uint16).,
-      k2: Output indices into 2.}
-    checks: [i1.format == 'H' or i1.itemsize == 2, j1.format == 'H' or j1.itemsize == 2, j1.n == i1.n, k1.format == 'i' or k1.format
-        == 'l', k1.n == i1.n, i2.format == 'H' or i2.itemsize == 2, j2.format == 'H' or j2.itemsize == 2, j2.n == i2.n, k2.format
-        == 'i' or k2.format == 'l', k2.n == i2.n]
-    c_overloads:
-    - sig: int sparse_overlaps(const uint16_t *i1, const uint16_t *j1, int *k1, intptr_t nnz1, const uint16_t *i2, const uint16_t
-        *j2, int *k2, intptr_t nnz2) -> int
-      map: {i1: i1.ptr, j1: j1.ptr, k1: k1.ptr, nnz1: i1.n, i2: i2.ptr, j2: j2.ptr, k2: k2.ptr, nnz2: i2.n}
-
-  # =====================================================================
-  # ../functions/make_clean_mask/make_clean_mask.c
-  # =====================================================================
-
-  - py_sig: 'make_clean_mask(img: buffer, cut: float, msk: buffer, ret: buffer) -> int'
-    doc: Generate mask from threshold then clean isolated pixels.
-    params: {img: Input float32 2D., cut: Threshold., msk: Priority mask (int8)., ret: Output cleaned mask.}
-    checks: [img.format == 'f', img.ndim == 2, msk.format == 'b' or msk.format == 'B', msk.n == img.n, ret.format == 'b' or
-        ret.format == 'B', ret.n == img.n]
-    c_overloads:
-    - sig: int make_clean_mask(const float *img, float cut, int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int
-      map: {img: img.ptr, cut: cut, msk: msk.ptr, ret: ret.ptr, ns: 'img.shape[0]', nf: 'img.shape[1]'}
-
-  # =====================================================================
-  # ../functions/compute_geometry/compute_geometry.c
-  # =====================================================================
-
-  - py_sig: 'compute_geometry(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer,
-      out: buffer) -> void'
-    doc: compute_geometry is for the updateGeometry method of columnfiles. From xlylzl it will compute tth, eta, ds, gve into
-      out.
-    params: {xlylzl: 'Spot positions in laboratory frame, shape (n, 3).', omega: 'Omega rotation per spot (radians), shape (n,).',
-      omegasign: Omega rotation sign (+1 or -1)., wvln: Wavelength (angstroms)., wedge: 'Wedge angle (detector tilt, radians).',
-      chi: Chi angle (radians)., t: Translation vector (3 elements)., out: 'Output array shape (n, 6): tth, eta, ds, gx, gy,
-        gz.'}
-    checks: [xlylzl.format == 'd', xlylzl.ndim == 2, 'xlylzl.shape[1] == 3', omega.format == 'd', 'omega.n == xlylzl.shape[0]',
-      t.format == 'd', t.n == 3, out.format == 'd', out.ndim == 2, 'out.shape[0] == xlylzl.shape[0]', 'out.shape[1] == 6']
-    gil_release: true
-    c_overloads:
-    - when: xlylzl.format == 'd' and omega.format == 'd' and out.format == 'd'
-      sig: void compute_geometry(const double xlylzl[][3], const double omega[], double omegasign, double wvln, double wedge,
-        double chi, const double t[3], double out[][6], intptr_t n)
-      map: {xlylzl: xlylzl.ptr, omega: omega.ptr, omegasign: omegasign, wvln: wvln, wedge: wedge, chi: chi, t: t.ptr, out: out.ptr,
-        n: 'xlylzl.shape[0]'}
-
-  # =====================================================================
-  # ../functions/put_incr32/put_incr32.c
-  # =====================================================================
-
-  - py_sig: 'put_incr32(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void'
-    doc: 'put_incr32 does the simple loop: data[ind] += vals, 32 bit addressing'
-    params: {data: Destination array (float32)., ind: Indices array (int32)., vals: Values array (float32) to add., boundscheck: 'If
-        non-zero, enables bounds checking on ind.'}
-    checks: [data.format == 'f', ( ind.format == 'i' or ind.format == 'l' ), ind.n == vals.n, vals.format == 'f']
-    gil_release: true
-    c_overloads:
-    - when: data.format == 'f' and vals.format == 'f' and (ind.format == 'i' or ind.format == 'l')
-      sig: void put_incr32(float *data, const int32_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m)
-      map: {data: data.ptr, ind: ind.ptr, vals: vals.ptr, boundscheck: boundscheck, n: ind.n, m: data.n}
-
-  # =====================================================================
-  # ../functions/score_gvec_z/score_gvec_z.c
-  # =====================================================================
-
-  - py_sig: 'score_gvec_z(ubi: buffer, ub: buffer, gv: buffer, g0: buffer, g1: buffer, g2: buffer, e: buffer, recompute: int)
-      -> void'
-    doc: score_gvec_z computes error projections for g-vectors.
-    params: {ubi: UBI matrix (9-element flattened double)., ub: UB matrix (9-element flattened double)., gv: 'Experimental g-vectors,
-        shape (ng, 3) flattened.', g0: Error along g component., g1: Error along z component., g2: Error along rhs component.,
-      e: Output error array., recompute: 'If non-zero, recompute gcalc from ub.'}
-    checks: [ubi.format == 'd', ubi.n == 9, ub.format == 'd', ub.n == 9, gv.format == 'd', gv.ndim >= 1, g0.format == 'd', g1.format
-        == 'd', g2.format == 'd', e.format == 'd']
-    c_overloads:
-    - sig: void score_gvec_z(const double ubi[3][3], const double ub[3][3], const double gv[][3], double g0[], double g1[],
-        double g2[], double e[], int recompute, intptr_t n)
-      map: {ubi: ubi.ptr, ub: ub.ptr, gv: gv.ptr, g0: g0.ptr, g1: g1.ptr, g2: g2.ptr, e: e.ptr, recompute: recompute, n: 'gv.shape[0]'}
-
-  # =====================================================================
-  # ../functions/sparse_connectedpixels_splat/sparse_connectedpixels_splat.c
-  # =====================================================================
-
-  - py_sig: 'sparse_connectedpixels_splat(v: buffer, i: buffer, j: buffer, th: float, lbl: buffer, Z: buffer, ni: int, nj: int)
-      -> int'
-    doc: Splat sparse to dense then run connectedpixels.
-    params: {v: Values (float32)., i: Rows (uint16)., j: Cols (uint16)., th: Threshold., lbl: Output labels., Z: Temp buffer.,
-      ni: Rows., nj: Cols.}
-    checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
-      ( lbl.format == 'i' or lbl.format == 'l' ), lbl.n == i.n, ( Z.format == 'i' or Z.format == 'l' )]
-    c_overloads:
-    - sig: int sparse_connectedpixels_splat(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold,
-        int32_t *labels, int32_t *Z, intptr_t imax, intptr_t jmax) -> int
-      map: {v: v.ptr, i: i.ptr, j: j.ptr, nnz: i.n, threshold: th, labels: lbl.ptr, Z: Z.ptr, imax: ni, jmax: nj}
-
-  # =====================================================================
-  # ../functions/sparse_is_sorted/sparse_is_sorted.c
-  # =====================================================================
-
-  - py_sig: 'sparse_is_sorted(i: buffer, j: buffer) -> int'
-    doc: Check if sparse COO indices are in row-major order.
-    params: {i: Row indices (uint16)., j: Col indices (uint16).}
-    checks: [i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n]
-    c_overloads:
-    - sig: int sparse_is_sorted(const uint16_t *i, const uint16_t *j, intptr_t nnz) -> int
-      map: {i: i.ptr, j: j.ptr, nnz: i.n}
-
-  # =====================================================================
-  # ../functions/common/cimaged11utils.c
-  # =====================================================================
-
-  - py_sig: 'cimaged11_omp_set_num_threads(n: int) -> void'
-    doc: Set the number of OpenMP threads used by all subsequent C calls.
-    params: {n: Number of OpenMP threads. Pass 1 for single-threaded execution.}
-    c_overloads:
-    - sig: void cimaged11_omp_set_num_threads(int n)
-      map: {n: n}
-
-  - py_sig: cimaged11_omp_get_max_threads() -> int
-    doc: Return the maximum number of OpenMP threads available.
-    c_overloads:
-    - sig: int cimaged11_omp_get_max_threads()
-      map: {}
-
-  - py_sig: 'verify_rounding(n: int) -> int'
-    doc: checks the round to nearest int code is correct
-    params: {n: ask jon about this parameter}
-    c_overloads:
-    - sig: int verify_rounding(int n)
-      map: {n: n}
-
-  # =====================================================================
-  # ../functions/put_incr64/put_incr64.c
-  # =====================================================================
-
-  - py_sig: 'put_incr64(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void'
-    doc: 'put_incr64 does the simple loop: data[ind] += vals, 64 bit addressing'
-    params: {data: Destination array (float32). Updated in place with scatter-add., ind: Indices array (int64)., vals: Values
-        array (float32) to add., boundscheck: 'If non-zero, enables bounds checking on ind. Default 0 (no check).'}
-    checks: [data.format == 'f', ind.format == 'q' or ind.itemsize == 8, ind.n == vals.n, vals.format == 'f']
-    gil_release: true
-    c_overloads:
-    - when: data.format == 'f' and vals.format == 'f'
-      sig: void put_incr64(float *data, const int64_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m)
-      map: {data: data.ptr, ind: ind.ptr, vals: vals.ptr, boundscheck: boundscheck, n: ind.n, m: data.n}
-
-  # =====================================================================
-  # ../functions/reorder_f32_a32/reorder_f32_a32.c
-  # =====================================================================
-
-  - py_sig: 'reorder_f32_a32(data: buffer, adr: buffer, out: buffer) -> void'
-    doc: out[adr[i]] = data[i].
-    checks: [data.format == 'f', adr.format == 'I' or adr.itemsize == 4, adr.n == data.n, out.format == 'f', out.n >= data.n]
-    gil_release: true
-    c_overloads:
-    - when: data.format == 'f' and out.format == 'f'
-      sig: void reorder_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)
-      map: {data: data.ptr, adr: adr.ptr, out: out.ptr, N: data.n}
-
-  # =====================================================================
-  # ../functions/array_mean_var_cut/array_mean_var_cut.c
-  # =====================================================================
-
-  - py_sig: 'array_mean_var_cut(img: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void'
-    doc: Sigma-clipped mean/var.
-    checks: [img.format == 'f']
-    c_overloads:
-    - sig: void array_mean_var_cut(const float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)
-      map: {img: img.ptr, npx: img.n, n: n, cut: cut, verbose: verbose}
-      outputs: {mean: float, std: float}
-
-  # =====================================================================
-  # ../functions/tosparse_f32/tosparse_f32.c
-  # =====================================================================
-
-  - py_sig: 'tosparse_f32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int'
-    doc: Convert dense float32 image to sparse COO.
-    params: {img: Input float32 2D., msk: Mask (uint8)., row: Output rows., col: Output cols., val: Output values., cut: Threshold.}
-    checks: [img.format == 'f', img.ndim == 2, 'msk.format == ''B'' or msk.format == ''b'' or msk.format == ''?''', msk.n ==
-        img.n, row.format == 'H' or row.itemsize == 2, col.format == 'H' or col.itemsize == 2, val.format == 'f']
-    c_overloads:
-    - sig: int tosparse_f32(const float *img, const uint8_t *msk, uint16_t *row, uint16_t *col, float *val, float cut, intptr_t
-        ns, intptr_t nf) -> int
-      map: {img: img.ptr, msk: msk.ptr, row: row.ptr, col: col.ptr, val: val.ptr, cut: cut, ns: 'img.shape[0]', nf: 'img.shape[1]'}
-
-  # =====================================================================
-  # ../functions/closest_vec/closest_vec.c
-  # =====================================================================
-
-  - py_sig: 'closest_vec(x: buffer, ic: buffer) -> void'
-    doc: closest_vec finds the closest neighbors for each row of X ignoring the self.
-    params: {x: '2D array of feature vectors, shape (nv, dim). Each row is a vector.', ic: 'Output array of shape (nv,). For
-        each row i, ic[i] = index j of the nearest neighbor (j != i).'}
-    checks: [x.format == 'd', x.ndim == 2, 'x.shape[1] >= 1', ( ic.format == 'i' or ic.format == 'l' ), 'ic.n == x.shape[0]']
-    c_overloads:
-    - sig: void closest_vec(const double *x, intptr_t dim, intptr_t nv, int *ic)
-      map: {x: x.ptr, dim: 'x.shape[1]', nv: 'x.shape[0]', ic: ic.ptr}
-
-  # =====================================================================
-  # ../functions/compute_xlylzl/compute_xlylzl.c
-  # =====================================================================
-
-  - py_sig: 'compute_xlylzl(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xlylzl: buffer) -> void'
-    doc: compute_xlylzl finds spot positions in the laboratory frame using packed parameters.
-    params: {s: Slow-scan pixel positions (double)., f: 'Fast-scan pixel positions (double, same size as s).', p: 'Detector
-        params (4): [s_cen, f_cen, s_size, f_size].', r: 'Rotation matrix (9): det(rotation)*flip.', dist: 'Detector distance
-        (3): [dx, dy, dz].', xlylzl: 'Output spot positions (n, 3).'}
-    checks: [s.format == 'd', f.format == 'd', f.n == s.n, p.format == 'd', p.n == 4, r.format == 'd', r.n == 9, dist.format
-        == 'd', dist.n == 3, xlylzl.format == 'd', xlylzl.ndim >= 1]
-    gil_release: true
-    c_overloads:
-    - when: s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'
-      sig: void compute_xlylzl(const double s[], const double f[], const double p[4], const double r[9], const double dist[3],
-        double xlylzl[][3], intptr_t n)
-      map: {s: s.ptr, f: f.ptr, p: p.ptr, r: r.ptr, dist: dist.ptr, xlylzl: xlylzl.ptr, n: s.n}
-
-  # =====================================================================
-  # ../functions/frelon_lines/frelon_lines.c
-  # =====================================================================
-
-  - py_sig: 'frelon_lines(img: buffer, cut: float) -> void'
-    doc: Subtract per-row baseline using quiet pixels (value < cut).
-    checks: [img.format == 'f', img.ndim == 2]
-    c_overloads:
-    - sig: void frelon_lines(float *img, intptr_t ns, intptr_t nf, float cut)
-      map: {img: img.ptr, ns: 'img.shape[0]', nf: 'img.shape[1]', cut: cut}
-
-  # =====================================================================
-  # ../functions/sparse_blob2Dproperties/sparse_blob2Dproperties.c
-  # =====================================================================
-
-  - py_sig: 'sparse_blob2Dproperties(v: buffer, i: buffer, j: buffer, labels: buffer, npk: int, results: buffer) -> void'
-    doc: Compute blob properties for sparse labels.
-    params: {v: Values (float32)., i: Rows (uint16)., j: Cols (uint16)., labels: Labels (int32)., npk: Number of objects., results: 'Output
-        (npk, 11).'}
-    checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
-      ( labels.format == 'i' or labels.format == 'l' ), labels.n == i.n, results.format == 'd', 'results.shape[0] == npk', 'results.shape[1]
-        == 11']
-    c_overloads:
-    - sig: void sparse_blob2Dproperties(float *data, uint16_t *i, uint16_t *j, intptr_t nnz, int32_t *labels, double *res, int32_t
-        npk)
-      map: {data: v.ptr, i: i.ptr, j: j.ptr, nnz: i.n, labels: labels.ptr, res: results.ptr, npk: npk}
-
-  # =====================================================================
-  # ../functions/connectedpixels/connectedpixels.c
-  # =====================================================================
-
-  - py_sig: 'connectedpixels(data: buffer, labels: buffer, threshold: float, verbose: int = 0, con8: int = 1) -> int'
-    doc: Connected-component labeling above threshold.
-    params: {data: Input float32 2D., labels: Output int32 labels., threshold: Threshold., verbose: Print diagnostics., con8: 8-connected
-        (1) or 4-connected (0).}
-    checks: [data.format == 'f', data.ndim == 2, ( labels.format == 'i' or labels.format == 'l' ), labels.n == data.n]
-    c_overloads:
-    - sig: int connectedpixels(const float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t
-        ns, intptr_t nf) -> int
-      map: {data: data.ptr, labels: labels.ptr, threshold: threshold, verbose: verbose, eightconnected: con8, ns: 'data.shape[0]',
-        nf: 'data.shape[1]'}
-
-  # =====================================================================
-  # ../functions/coverlaps/coverlaps.c
-  # =====================================================================
-
-  - py_sig: 'coverlaps(row1: buffer, col1: buffer, labels1: buffer, row2: buffer, col2: buffer, labels2: buffer, mat: buffer,
-      results: buffer) -> int'
-    doc: Determine overlapping labels between two sparse frames.
-    params: {row1: Rows 1 (uint16)., col1: Cols 1 (uint16)., labels1: Labels 1 (int32)., row2: Rows 2 (uint16)., col2: Cols
-        2 (uint16)., labels2: Labels 2 (int32)., mat: Output overlap matrix (int32)., results: Output triples (int32).}
-    checks: [row1.format == 'H' or row1.itemsize == 2, col1.format == 'H' or col1.itemsize == 2, col1.n == row1.n, labels1.format
-        == 'i' or labels1.format == 'l', labels1.n == row1.n, row2.format == 'H' or row2.itemsize == 2, col2.format == 'H' or
-        col2.itemsize == 2, col2.n == row2.n, labels2.format == 'i' or labels2.format == 'l', labels2.n == row2.n, ( mat.format
-        == 'i' or mat.format == 'l' ), mat.ndim == 2, ( results.format == 'i' or results.format == 'l' )]
-    c_overloads:
-    - sig: int coverlaps(const uint16_t *row1, const uint16_t *col1, const int *labels1, intptr_t nnz1, const uint16_t *row2,
-        const uint16_t *col2, const int *labels2, intptr_t nnz2, int *mat, intptr_t npk1, intptr_t npk2, int *results) -> int
-      map: {row1: row1.ptr, col1: col1.ptr, labels1: labels1.ptr, nnz1: row1.n, row2: row2.ptr, col2: col2.ptr, labels2: labels2.ptr,
-        nnz2: row2.n, mat: mat.ptr, npk1: 'mat.shape[0]', npk2: 'mat.shape[1]', results: results.ptr}
-
-  # =====================================================================
-  # ../functions/sparse_smooth/sparse_smooth.c
-  # =====================================================================
-
-  - py_sig: 'sparse_smooth(v: buffer, i: buffer, j: buffer, s: buffer) -> void'
-    doc: Smooth sparse image (avoid equal-pixel tails in peak detection).
-    params: {v: Values (float32)., i: Rows (uint16)., j: Cols (uint16)., s: Output smoothed (float32).}
-    checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
-      s.format == 'f', s.n == i.n]
-    c_overloads:
-    - sig: void sparse_smooth(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *s)
-      map: {v: v.ptr, i: i.ptr, j: j.ptr, nnz: i.n, s: s.ptr}
-
-  # =====================================================================
-  # ../functions/clean_mask/clean_mask.c
-  # =====================================================================
-
-  - py_sig: 'clean_mask(msk: buffer, ret: buffer) -> int'
-    doc: Remove isolated pixels (no 4-connected neighbor).
-    params: {msk: Input int8 2D mask., ret: Output cleaned int8 mask.}
-    checks: [msk.format == 'b' or msk.format == 'B', msk.ndim == 2, ret.format == 'b' or ret.format == 'B', ret.n == msk.n]
-    c_overloads:
-    - sig: int clean_mask(const int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int
-      map: {msk: msk.ptr, ret: ret.ptr, ns: 'msk.shape[0]', nf: 'msk.shape[1]'}
-
-  # =====================================================================
-  # ../functions/splat/splat.c
-  # =====================================================================
-
-  - py_sig: 'splat(rgba: buffer, gve: buffer, u: buffer, npx: int) -> void'
-    doc: Draw g-vectors into RGBA image.
-    params: {rgba: 'Output uint8 RGBA (h, w, 4).', gve: 'G-vectors (ng, 3).', u: Projection matrix (9)., npx: Marker half-size.}
-    checks: [rgba.format == 'B' or rgba.format == 'b', rgba.ndim >= 1, gve.format == 'd', gve.ndim >= 1, u.format == 'd', u.n
-        == 9, gve.slow_axis == 0, gve.ndim == 2, 'gve.shape[1] == 3']
-    c_overloads:
-    - sig: void splat(uint8_t *rgba, intptr_t w, intptr_t h, const double gve[][3], intptr_t ng, const double *u, intptr_t npx)
-      map: {rgba: rgba.ptr, w: 'rgba.shape[1]', h: 'rgba.shape[0]', gve: gve.ptr, ng: 'gve.shape[0]', u: u.ptr, npx: npx}
-
-  # =====================================================================
-  # ../functions/count_shared/count_shared.c
-  # =====================================================================
-
-  - py_sig: 'count_shared(pi: buffer, pj: buffer) -> int'
-    doc: count_shared takes two sorted arrays and counts collisions.
-    params: {pi: First sorted array of integer labels., pj: Second sorted array of integer labels.}
-    checks: [( pi.format == 'i' or pi.format == 'l' ), ( pj.format == 'i' or pj.format == 'l' )]
-    c_overloads:
-    - sig: int count_shared(const int *pi, intptr_t ni, const int *pj, intptr_t nj) -> int
-      map: {pi: pi.ptr, ni: pi.n, pj: pj.ptr, nj: pj.n}
-
-  # =====================================================================
-  # ../functions/misori_orthorhombic/misori_orthorhombic.c
-  # =====================================================================
-
-  - py_sig: 'misori_orthorhombic(u1: buffer, u2: buffer) -> float'
-    doc: misori_orthorhombic computes the smallest misorientation for orthorhombic symmetry.
-    params: {u1: Orientation matrix U (9-element flattened double)., u2: Orientation matrix U (9-element flattened double).}
-    checks: [u1.format == 'd', u1.n == 9, u2.format == 'd', u2.n == 9]
-    c_overloads:
-    - sig: double misori_orthorhombic(const double u1[3][3], const double u2[3][3]) -> double
-      map: {u1: u1.ptr, u2: u2.ptr}
-
-  # =====================================================================
-  # ../functions/compute_xlylzl_xpos_variable/compute_xlylzl_xpos_variable.c
-  # =====================================================================
-
-  - py_sig: 'compute_xlylzl_xpos_variable(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xpos: buffer, xlylzl: buffer)
-      -> void'
-    doc: compute_xlylzl_xpos_variable like compute_xlylzl but with extra per-spot x-offset.
-    params: {s: Slow-scan pixel positions (double)., f: Fast-scan pixel positions (double)., p: Detector params (4)., r: Rotation
-        matrix (9)., dist: Detector distance (3)., xpos: 'Per-spot x-axis offset (double, same size as s).', xlylzl: Output
-        spot positions.}
-    checks: [s.format == 'd', f.format == 'd', f.n == s.n, p.format == 'd', p.n == 4, r.format == 'd', r.n == 9, dist.format
-        == 'd', dist.n == 3, xpos.format == 'd', xpos.n == s.n, xlylzl.format == 'd', xlylzl.ndim >= 1]
-    gil_release: true
-    c_overloads:
-    - when: s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'
-      sig: void compute_xlylzl_xpos_variable(const double s[], const double f[], const double p[4], const double r[9], const
-        double dist[3], const double xpos[], double xlylzl[][3], intptr_t n)
-      map: {s: s.ptr, f: f.ptr, p: p.ptr, r: r.ptr, dist: dist.ptr, xpos: xpos.ptr, xlylzl: xlylzl.ptr, n: s.n}
-
-  # =====================================================================
-  # ../functions/tosparse_u32/tosparse_u32.c
-  # =====================================================================
-
-  - py_sig: 'tosparse_u32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int'
-    doc: Convert dense uint32 image to sparse COO.
-    params: {img: Input uint32 2D., msk: Mask (uint8)., row: Output rows., col: Output cols., val: Output values., cut: Threshold
-        (float).}
-    checks: [img.format == 'I' or img.itemsize == 4, img.ndim == 2, 'msk.format == ''B'' or msk.format == ''b'' or msk.format
-        == ''?''', msk.n == img.n, row.format == 'H' or row.itemsize == 2, col.format == 'H' or col.itemsize == 2, val.format
-        == 'I' or val.itemsize == 4]
-    c_overloads:
-    - sig: int tosparse_u32(const uint32_t *img, const uint8_t *msk, uint16_t *row, uint16_t *col, uint32_t *val, float cut,
-        intptr_t ns, intptr_t nf) -> int
-      map: {img: img.ptr, msk: msk.ptr, row: row.ptr, col: col.ptr, val: val.ptr, cut: cut, ns: 'img.shape[0]', nf: 'img.shape[1]'}
-
-  # =====================================================================
-  # ../functions/blob_moments/blob_moments.c
-  # =====================================================================
-
-  - py_sig: 'blob_moments(results: buffer) -> void'
-    doc: Fill reduced moments from raw blob properties.
-    params: {results: 'I/O array (np, 36). Raw moments in, reduced out.'}
-    checks: [results.format == 'd', results.ndim == 2, 'results.shape[1] == 36']
-    c_overloads:
-    - sig: void blob_moments(double *res, intptr_t np)
-      map: {res: results.ptr, np: 'results.shape[0]'}
-
-  # =====================================================================
-  # ../functions/sparse_localmaxlabel/sparse_localmaxlabel.c
-  # =====================================================================
-
-  - py_sig: 'sparse_localmaxlabel(v: buffer, i: buffer, j: buffer, MV: buffer, iMV: buffer, labels: buffer) -> int'
-    doc: Label sparse COO pixels to local maximum.
-    params: {v: Values (float32)., i: Rows (uint16)., j: Cols (uint16)., MV: Temp float32., iMV: Temp int32., labels: Output
-        labels (int32).}
-    checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
-      MV.format == 'f', MV.n == i.n, ( iMV.format == 'i' or iMV.format == 'l' ), iMV.n == i.n, ( labels.format == 'i' or labels.format
-        == 'l' ), labels.n == i.n]
-    c_overloads:
-    - sig: int sparse_localmaxlabel(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV,
-        int32_t *labels) -> int
-      map: {v: v.ptr, i: i.ptr, j: j.ptr, nnz: i.n, MV: MV.ptr, iMV: iMV.ptr, labels: labels.ptr}
-
-  # =====================================================================
-  # ../functions/compress_duplicates/compress_duplicates.c
-  # =====================================================================
-
-  - py_sig: 'compress_duplicates(i: buffer, j: buffer, oi: buffer, oj: buffer, tmp: buffer) -> int'
-    doc: Remove duplicate (i,j) pairs via counting sort.
-    params: {i: I/O int32 col 0., j: I/O int32 col 1., oi: Output counts., oj: Temp., tmp: Temp.}
-    checks: [( i.format == 'i' or i.format == 'l' ), ( j.format == 'i' or j.format == 'l' ), j.n == i.n, ( oi.format == 'i'
-        or oi.format == 'l' ), oi.n == i.n, ( oj.format == 'i' or oj.format == 'l' ), oj.n == i.n, ( tmp.format == 'i' or tmp.format
-        == 'l' )]
-    c_overloads:
-    - sig: int compress_duplicates(int *i, int *j, int *oi, int *oj, int *tmp, intptr_t n, intptr_t nt) -> int
-      map: {i: i.ptr, j: j.ptr, oi: oi.ptr, oj: oj.ptr, tmp: tmp.ptr, n: i.n, nt: tmp.n}
-
-  # =====================================================================
-  # ../functions/cluster1d/cluster1d.c
-  # =====================================================================
-
-  - py_sig: 'cluster1d(ar: buffer, order: buffer, tol: float, ids: buffer, avgs: buffer) -> void'
-    doc: cluster1d is used to find clusters of peaks.
-    params: {ar: Array of values to cluster., order: Permutation that sorts ar ascending., tol: Distance tolerance for cluster
-        membership., ids: 'Output: cluster id for each element.', avgs: 'Output: average value of each cluster.'}
-    checks: [ar.format == 'd', ( order.format == 'i' or order.format == 'l' ), order.n == ar.n, ( ids.format == 'i' or ids.format
-        == 'l' ), ids.n == ar.n, avgs.format == 'd', avgs.n == ar.n]
-    c_overloads:
-    - sig: void cluster1d(const double *ar, intptr_t n, const int *order, double tol, int *nclusters, int *ids, double *avgs)
-      map: {ar: ar.ptr, n: ar.n, order: order.ptr, tol: tol, ids: ids.ptr, avgs: avgs.ptr}
-      outputs: {nclusters: int}
-
-  # =====================================================================
-  # ../functions/array_mean_var_msk/array_mean_var_msk.c
-  # =====================================================================
-
-  - py_sig: 'array_mean_var_msk(img: buffer, msk: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void'
-    doc: Sigma-clipped mean/var with mask.
-    checks: [img.format == 'f', msk.format == 'B' or msk.format == 'b', msk.n == img.n]
-    c_overloads:
-    - sig: void array_mean_var_msk(const float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut,
-        int verbose)
-      map: {img: img.ptr, msk: msk.ptr, npx: img.n, n: n, cut: cut, verbose: verbose}
-      outputs: {mean: float, std: float}
-
-  # =====================================================================
-  # ../functions/quickorient/quickorient.c
-  # =====================================================================
-
-  - py_sig: 'quickorient(ubi: buffer, bt: buffer) -> void'
-    doc: quickorient takes two g-vectors in UBI and overwrites with UBI orientation using cache in bt.
-    params: {ubi: Orientation matrix (9-element). First 2 rows are g-vectors on entry; overwritten with UBI on exit., bt: Busing-Levy
-        cache (9-element).}
-    checks: [ubi.format == 'd', ubi.ndim == 2, 'ubi.shape[0] == 3', 'ubi.shape[1] == 3', bt.format == 'd', bt.ndim == 2, 'bt.shape[0]
-        == 3', 'bt.shape[1] == 3']
-    c_overloads:
-    - sig: void quickorient(double ubi[3][3], const double bt[3][3])
-      map: {ubi: ubi.ptr, bt: bt.ptr}
-
-  # =====================================================================
-  # ../functions/score_and_assign/score_and_assign.c
-  # =====================================================================
-
-  - py_sig: 'score_and_assign(ubi: buffer, gv: buffer, tol: float, drlv2: buffer, labels: buffer, label: int) -> int'
-    doc: score_and_assign assigns peaks to this ubi only if they fit the data better.
-    params: {ubi: Orientation matrix (9-element flattened double)., gv: 'G-vectors array, shape (ng, 3) flattened.', tol: Matching
-        tolerance., drlv2: Input/output array (ng). Current best squared residuals per peak., labels: Input/output array (ng).
-        Current grain labels per peak., label: Grain label assigned to peaks that match this UBI.}
-    checks: [ubi.format == 'd', ubi.n == 9, gv.format == 'd', drlv2.format == 'd', 'drlv2.n == gv.shape[0]', ( labels.format
-        == 'i' or labels.format == 'l' ), 'labels.n == gv.shape[0]']
-    gil_release: true
-    c_overloads:
-    - when: ubi.format == 'd' and gv.format == 'd'
-      sig: int score_and_assign(const double ubi[3][3], const double gv[][3], double tol, double *drlv2, int *labels, int label,
-        intptr_t ng) -> int
-      map: {ubi: ubi.ptr, gv: gv.ptr, tol: tol, drlv2: drlv2.ptr, labels: labels.ptr, label: label, ng: 'gv.shape[0]'}
-
-  # =====================================================================
-  # ../functions/frelon_lines_sub/frelon_lines_sub.c
-  # =====================================================================
-
-  - py_sig: 'frelon_lines_sub(img: buffer, drk: buffer, cut: float) -> void'
-    doc: Dark subtract then per-row baseline removal.
-    checks: [img.format == 'f', img.ndim == 2, drk.format == 'f', drk.n == img.n]
-    c_overloads:
-    - sig: void frelon_lines_sub(float *img, const float *drk, intptr_t ns, intptr_t nf, float cut)
-      map: {img: img.ptr, drk: drk.ptr, ns: 'img.shape[0]', nf: 'img.shape[1]', cut: cut}
-
-  # =====================================================================
-  # ../functions/closest/closest.c
-  # =====================================================================
-
-  - py_sig: 'closest(x: buffer, v: buffer) -> void'
-    doc: closest finds the value and index in x closest to a value in v.
-    params: {x: Array of candidate values to search (e.g. ideal cosines from hkl geometry)., v: Array of values to search for
-        (e.g. experimental cosines).}
-    checks: [x.format == 'd', v.format == 'd']
-    c_overloads:
-    - sig: void closest(const double *x, const double *v, int *ribest, double *rbest, intptr_t nx, intptr_t nv)
-      outputs: {ribest: int, rbest: double}
-      doc: Standard O(nx*nv) scan-find-closest.
-      map: {x: x.ptr, v: v.ptr, nx: x.n, nv: v.n}
-
-  # =====================================================================
-  # ../functions/score/score.c
-  # =====================================================================
-
-  - py_sig: 'score(ubi: buffer, gv: buffer, tol: float) -> int'
-    doc: Count g-vectors indexed by ubi matrix within tol.
-    params: {ubi: 'Orientation matrix UBI (UB inverse), shape (9,) flattened double.', gv: 'G-vectors array, shape (ng, 3) flattened.',
-      tol: Tolerance on |h - round(h)|.}
-    checks: [ubi.format == 'd', ubi.n == 9, gv.format == 'd', gv.ndim >= 1]
-    gil_release: true
-    c_overloads:
-    - when: ubi.format == 'd' and gv.format == 'd'
-      sig: int score(const double ubi[3][3], const double gv[][3], double tol, intptr_t ng) -> int
-      map: {ubi: ubi.ptr, gv: gv.ptr, tol: tol, ng: 'gv.shape[0]'}
-
-  # =====================================================================
-  # ../functions/bloboverlaps/bloboverlaps.c
-  # =====================================================================
-
-  - py_sig: 'bloboverlaps(labels1: buffer, npk1: int, results1: buffer, labels2: buffer, npk2: int, results2: buffer, verbose:
-      int = 0) -> int'
-    doc: Determine overlaps between two frames label images.
-    params: {labels1: First frame labels (int32 2D)., npk1: Objects in first frame., results1: First frame properties., labels2: Second
-        frame labels., npk2: Objects in second frame., results2: Second frame properties., verbose: Print diagnostics.}
-    checks: [( labels1.format == 'i' or labels1.format == 'l' ), labels1.ndim == 2, ( labels2.format == 'i' or labels2.format
-        == 'l' ), labels2.n == labels1.n, results1.format == 'd', 'results1.shape[0] == npk1', 'results1.shape[1] == 36', results2.format
-        == 'd', 'results2.shape[0] == npk2', 'results2.shape[1] == 36']
-    c_overloads:
-    - sig: int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2, double *res2, int verbose, intptr_t
-        ns, intptr_t nf) -> int
-      map: {b1: labels1.ptr, n1: npk1, res1: results1.ptr, b2: labels2.ptr, n2: npk2, res2: results2.ptr, verbose: verbose,
-        ns: 'labels1.shape[0]', nf: 'labels1.shape[1]'}
-
-  # =====================================================================
-  # ../functions/uint16_to_float_darksub/uint16_to_float_darksub.c
-  # =====================================================================
-
-  - py_sig: 'uint16_to_float_darksub(img: buffer, drk: buffer, data: buffer) -> void'
-    doc: Subtract dark current from uint16 data, result in float32 img.
-    checks: [img.format == 'f', drk.format == 'f', drk.n == img.n, data.format == 'H' or data.itemsize == 2, data.n == img.n]
-    gil_release: true
-    c_overloads:
-    - when: img.format == 'f' and drk.format == 'f'
-      sig: void uint16_to_float_darksub(float *img, const float *drk, const uint16_t *data, intptr_t npx)
-      map: {img: img.ptr, drk: drk.ptr, data: data.ptr, npx: img.n}
-
-  # =====================================================================
-  # ../functions/sparse_connectedpixels/sparse_connectedpixels.c
-  # =====================================================================
-
-  - py_sig: 'sparse_connectedpixels(v: buffer, i: buffer, j: buffer, threshold: float, labels: buffer) -> int'
-    doc: Connected-component labeling on sparse image.
-    params: {v: Values (float32)., i: Rows (uint16)., j: Cols (uint16)., threshold: Threshold., labels: Output labels (int32).}
-    checks: [v.format == 'f', i.format == 'H' or i.itemsize == 2, j.format == 'H' or j.itemsize == 2, j.n == i.n, v.n == i.n,
-      ( labels.format == 'i' or labels.format == 'l' ), labels.n == i.n]
-    c_overloads:
-    - sig: int sparse_connectedpixels(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t
-        *labels) -> int
-      map: {v: v.ptr, i: i.ptr, j: j.ptr, nnz: i.n, threshold: threshold, labels: labels.ptr}
-
-  # =====================================================================
-  # ../functions/bgcalc/bgcalc.c
-  # =====================================================================
-
-  - py_sig: 'bgcalc(img: buffer, bg: buffer, msk: buffer, gain: float, sp: float, st: float) -> void'
-    doc: Recursive background filter.
-    checks: [img.format == 'f', img.ndim == 2, bg.format == 'f', bg.n == img.n, msk.format == 'B' or msk.format == 'b', msk.n
-        == img.n]
-    c_overloads:
-    - sig: void bgcalc(const float *img, float *bg, uint8_t *msk, intptr_t ns, intptr_t nf, float gain, float sigmap, float
-        sigmat)
-      map: {img: img.ptr, bg: bg.ptr, msk: msk.ptr, ns: 'img.shape[0]', nf: 'img.shape[1]', gain: gain, sigmap: sp, sigmat: st}
-
-  # =====================================================================
-  # ../functions/reorder_u16_a32_a16/reorder_u16_a32_a16.c
-  # =====================================================================
-
-  - py_sig: 'reorder_u16_a32_a16(data: buffer, adr0: buffer, adr1: buffer, out: buffer) -> void'
-    doc: 2D reorder with per-row base + per-pixel offsets.
-    checks: [data.format == 'H' or data.itemsize == 2, data.ndim == 2, adr0.format == 'I' or adr0.itemsize == 4, 'adr0.n ==
-        data.shape[0]', adr1.format == 'h' or adr1.itemsize == 2, adr1.n == data.n, out.format == 'H' or out.itemsize == 2,
-      out.n >= data.n]
-    c_overloads:
-    - sig: void reorder_u16_a32_a16(const uint16_t *data, const uint32_t *a0, const int16_t *a1, uint16_t *out, intptr_t ns,
-        intptr_t nf)
-      map: {data: data.ptr, a0: adr0.ptr, a1: adr1.ptr, out: out.ptr, ns: 'data.shape[0]', nf: 'data.shape[1]'}
-
-  # =====================================================================
-  # ../functions/misori_cubic/misori_cubic.c
-  # =====================================================================
-
-  - py_sig: 'misori_cubic(u1: buffer, u2: buffer) -> float'
-    doc: misori_cubic computes the smallest misorientation for cubic symmetry.
-    params: {u1: Orientation matrix U (9-element flattened double)., u2: Orientation matrix U (9-element flattened double).}
-    checks: [u1.format == 'd', u1.n == 9, u2.format == 'd', u2.n == 9]
-    c_overloads:
-    - sig: double misori_cubic(const double u1[3][3], const double u2[3][3]) -> double
-      map: {u1: u1.ptr, u2: u2.ptr}
-
-  # =====================================================================
-  # ../functions/array_stats/array_stats.c
-  # =====================================================================
-
-  - py_sig: 'array_stats(img: buffer) -> void'
-    doc: Compute min, max, mean, variance.
-    checks: [img.format == 'f']
-    c_overloads:
-    - sig: void array_stats(const float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)
-      map: {img: img.ptr, npx: img.n}
-      outputs: {minval: float, maxval: float, mean: float, var: float}
-
-  # =====================================================================
-  # ../functions/misori_monoclinic/misori_monoclinic.c
-  # =====================================================================
-
-  - py_sig: 'misori_monoclinic(u1: buffer, u2: buffer) -> float'
-    doc: misori_monoclinic assumes a unique b axis and only checks the flip of b -> -b.
-    params: {u1: Orientation matrix U (9-element flattened double)., u2: Orientation matrix U (9-element flattened double).}
-    checks: [u1.format == 'd', u1.n == 9, u2.format == 'd', u2.n == 9]
-    c_overloads:
-    - sig: double misori_monoclinic(const double u1[3][3], const double u2[3][3]) -> double
-      map: {u1: u1.ptr, u2: u2.ptr}
-
-  # =====================================================================
-  # ../functions/localmaxlabel/localmaxlabel.c
-  # =====================================================================
-
-  - py_sig: 'localmaxlabel(data: buffer, labels: buffer, wrk: buffer) -> int'
-    doc: Label each pixel to its local maximum.
-    params: {data: Input float32 2D., labels: Output int32 labels., wrk: Temp uint8 workspace.}
-    checks: [data.format == 'f', data.ndim == 2, ( labels.format == 'i' or labels.format == 'l' ), labels.n == data.n, wrk.format
-        == 'B' or wrk.format == 'b', wrk.n == data.n]
-    c_overloads:
-    - sig: int localmaxlabel(const float *im, int32_t *lout, uint8_t *l, intptr_t dim0, intptr_t dim1) -> int
-      map: {im: data.ptr, lout: labels.ptr, l: wrk.ptr, dim0: 'data.shape[0]', dim1: 'data.shape[1]'}
-
-  # =====================================================================
-  # ../functions/blobproperties/blobproperties.c
-  # =====================================================================
-
-  - py_sig: 'blobproperties(data: buffer, labels: buffer, np: int, results: buffer, omega: float = 0.0, verbose: int = 0) ->
-      void'
-    doc: Compute blob properties for each labelled object.
-    params: {data: Input float32 2D., labels: Input int32 labels., np: Number of objects., results: 'Output array (np, 36).',
-      omega: Omega angle., verbose: Print diagnostics.}
-    checks: [data.format == 'f', data.ndim == 2, ( labels.format == 'i' or labels.format == 'l' ), labels.n == data.n, results.format
-        == 'd', 'results.shape[0] == np', 'results.shape[1] == 36']
-    gil_release: true
-    c_overloads:
-    - sig: void blobproperties(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns,
-        intptr_t nf, double *res)
-      map: {data: data.ptr, labels: labels.ptr, npk: np, omega: omega, verbose: verbose, ns: 'data.shape[0]', nf: 'data.shape[1]',
-        res: results.ptr}
-
-  # =====================================================================
-  # ../functions/array_histogram/array_histogram.c
-  # =====================================================================
-
-  - py_sig: 'array_histogram(img: buffer, low: float, high: float, hist: buffer) -> void'
-    doc: Compute histogram of float array.
-    checks: [img.format == 'f', ( hist.format == 'i' or hist.format == 'l' )]
-    c_overloads:
-    - sig: void array_histogram(const float *img, intptr_t npx, float low, float high, int32_t *hist, intptr_t nhist)
-      map: {img: img.ptr, npx: img.n, low: low, high: high, hist: hist.ptr, nhist: hist.n}
-
-  # =====================================================================
-  # ../functions/reorder_u16_a32/reorder_u16_a32.c
-  # =====================================================================
-
-  - py_sig: 'reorder_u16_a32(data: buffer, adr: buffer, out: buffer) -> void'
-    doc: out[adr[i]] = data[i].
-    checks: [data.format == 'H' or data.itemsize == 2, adr.format == 'I' or adr.itemsize == 4, adr.n == data.n, out.format ==
-        'H' or out.itemsize == 2, out.n >= data.n]
-    gil_release: true
-    c_overloads:
-    - when: adr.format == 'I' or adr.itemsize == 4
-      sig: void reorder_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)
-      map: {data: data.ptr, adr: adr.ptr, out: out.ptr, N: data.n}
-
-  # =====================================================================
-  # ../functions/compute_gv/compute_gv.c
-  # =====================================================================
-
-  - py_sig: 'compute_gv(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, gv:
-      buffer) -> void'
-    doc: compute_gv computes scattering vectors given spot positions in the laboratory frame.
-    params: {xlylzl: 'Spot positions in laboratory frame, shape (n, 3).', omega: 'Omega rotation per spot (radians), shape (n,).',
-      omegasign: Omega rotation sign., wvln: Wavelength (angstroms)., wedge: Wedge angle (radians)., chi: Chi angle (radians).,
-      t: Translation vector (3 elements)., gv: 'Output g-vectors array, shape (n, 3).'}
-    checks: [xlylzl.format == 'd', xlylzl.ndim == 2, 'xlylzl.shape[1] == 3', omega.format == 'd', 'omega.n == xlylzl.shape[0]',
-      t.format == 'd', t.n == 3, gv.format == 'd', gv.ndim == 2, 'gv.shape[0] == xlylzl.shape[0]', 'gv.shape[1] == 3']
-    gil_release: true
-    c_overloads:
-    - when: xlylzl.format == 'd' and omega.format == 'd' and gv.format == 'd'
-      sig: void compute_gv(const double xlylzl[][3], const double omega[], double omegasign, double wvln, double wedge, double
-        chi, const double t[3], double gv[][3], intptr_t n)
-      map: {xlylzl: xlylzl.ptr, omega: omega.ptr, omegasign: omegasign, wvln: wvln, wedge: wedge, chi: chi, t: t.ptr, gv: gv.ptr,
-        n: 'xlylzl.shape[0]'}
-
-  # =====================================================================
-  # ../functions/refine_assigned/refine_assigned.c
-  # =====================================================================
-
-  - py_sig: 'refine_assigned(ubi: buffer, gv: buffer, labels: buffer, label: int) -> void'
-    doc: refine_assigned fits a ubi matrix to a set of g-vectors and assignments in labels.
-    params: {ubi: Orientation matrix (9-element flattened double)., gv: 'G-vectors array, shape (ng, 3) flattened.', labels: Peak-to-grain
-        assignments (ng ints)., label: Grain label to refine.}
-    checks: [ubi.format == 'd', ubi.n == 9, gv.format == 'd', ( labels.format == 'i' or labels.format == 'l' ), 'labels.n ==
-        gv.shape[0]']
-    c_overloads:
-    - sig: void refine_assigned(double ubi[3][3], const double gv[][3], const int *labels, int label, int *npk, double *drlv2,
-        intptr_t ng)
-      outputs: {npk: int, drlv2: double}
-      map: {ubi: ubi.ptr, gv: gv.ptr, labels: labels.ptr, label: label, ng: 'gv.shape[0]'}
-
-  # =====================================================================
-  # ../functions/reorderlut_u16_a32/reorderlut_u16_a32.c
-  # =====================================================================
-
-  - py_sig: 'reorderlut_u16_a32(data: buffer, adr: buffer, out: buffer) -> void'
-    doc: out[i] = data[adr[i]].
-    checks: [data.format == 'H' or data.itemsize == 2, adr.format == 'I' or adr.itemsize == 4, adr.n == data.n, out.format ==
-        'H' or out.itemsize == 2, out.n == data.n]
-    gil_release: true
-    c_overloads:
-    - when: adr.format == 'I' or adr.itemsize == 4
-      sig: void reorderlut_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)
-      map: {data: data.ptr, adr: adr.ptr, out: out.ptr, N: data.n}
-
-  # =====================================================================
-  # ../functions/misori_tetragonal/misori_tetragonal.c
-  # =====================================================================
-
-  - py_sig: 'misori_tetragonal(u1: buffer, u2: buffer) -> float'
-    doc: misori_tetragonal computes the smallest misorientation for tetragonal symmetry.
-    params: {u1: Orientation matrix U (9-element flattened double)., u2: Orientation matrix U (9-element flattened double).}
-    checks: [u1.format == 'd', u1.n == 9, u2.format == 'd', u2.n == 9]
-    c_overloads:
-    - sig: double misori_tetragonal(const double u1[3][3], const double u2[3][3]) -> double
-      map: {u1: u1.ptr, u2: u2.ptr}
-
-  # =====================================================================
-  # ../functions/tosparse_u16/tosparse_u16.c
-  # =====================================================================
-
-  - py_sig: 'tosparse_u16(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: int) -> int'
-    doc: Convert dense uint16 image to sparse COO.
-    params: {img: Input uint16 2D., msk: 'Mask (uint8, 0=include).', row: Output rows., col: Output cols., val: Output values.,
-      cut: Threshold.}
-    checks: [img.format == 'H' or img.itemsize == 2, img.ndim == 2, 'msk.format == ''B'' or msk.format == ''b'' or msk.format
-        == ''?''', msk.n == img.n, row.format == 'H' or row.itemsize == 2, col.format == 'H' or col.itemsize == 2, val.format
-        == 'H' or val.itemsize == 2]
-    c_overloads:
-    - sig: int tosparse_u16(const uint16_t *img, const uint8_t *msk, uint16_t *row, uint16_t *col, uint16_t *val, int cut, intptr_t
-        ns, intptr_t nf) -> int
-      map: {img: img.ptr, msk: msk.ptr, row: row.ptr, col: col.ptr, val: val.ptr, cut: cut, ns: 'img.shape[0]', nf: 'img.shape[1]'}
-
+# Python dict format -- load_c2py() auto-detects.
+
+{
+    "constants": {
+        "NPROPERTY": 36,
+        "NPROPERTY2D": 11,
+        "avg_i": 22,
+        "bb_mn_f": 19,
+        "bb_mn_o": 21,
+        "bb_mn_s": 20,
+        "bb_mx_f": 16,
+        "bb_mx_o": 18,
+        "bb_mx_s": 17,
+        "dety": 34,
+        "detz": 35,
+        "f_cen": 32,
+        "f_raw": 23,
+        "m_ff": 27,
+        "m_fo": 31,
+        "m_oo": 28,
+        "m_sf": 29,
+        "m_so": 30,
+        "m_ss": 26,
+        "mx_I": 12,
+        "mx_I_f": 13,
+        "mx_I_o": 15,
+        "mx_I_s": 14,
+        "o_raw": 25,
+        "s2D_1": 0,
+        "s2D_I": 1,
+        "s2D_bb_mn_f": 9,
+        "s2D_bb_mn_s": 10,
+        "s2D_bb_mx_f": 7,
+        "s2D_bb_mx_s": 8,
+        "s2D_fI": 2,
+        "s2D_ffI": 4,
+        "s2D_sI": 3,
+        "s2D_sfI": 5,
+        "s2D_ssI": 6,
+        "s_1": 0,
+        "s_I": 1,
+        "s_I2": 2,
+        "s_cen": 33,
+        "s_fI": 3,
+        "s_ffI": 4,
+        "s_foI": 11,
+        "s_oI": 8,
+        "s_ooI": 9,
+        "s_raw": 24,
+        "s_sI": 5,
+        "s_sfI": 7,
+        "s_soI": 10,
+        "s_ssI": 6,
+    },
+    "free_threading": True,
+    "functions": [
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "i": "i.ptr",
+                        "j": "j.ptr",
+                        "msk": "msk.ptr",
+                        "nf": "msk.shape[1]",
+                        "nnz": "i.n",
+                        "nrow": "w.ptr",
+                        "ns": "msk.shape[0]",
+                    },
+                    "sig": "int mask_to_coo(const int8_t *msk, intptr_t ns, intptr_t nf, uint16_t *i, uint16_t *j, intptr_t nnz, int *nrow) -> int",
+                },
+            ],
+            "checks": [
+                "msk.format == 'b' or msk.format == 'B'",
+                "msk.ndim == 2",
+                "i.format == 'H' or i.itemsize == 2",
+                "j.format == 'H' or j.itemsize == 2",
+                "j.n == i.n",
+                "( w.format == 'i' or w.format == 'l' )",
+                "w.n == msk.shape[0]",
+            ],
+            "doc": "Convert mask to sparse COO coordinates.",
+            "params": {
+                "i": "Output row indices (uint16).",
+                "j": "Output col indices (uint16).",
+                "msk": "Input int8 2D mask.",
+                "w": "Output per-row counts (int32).",
+            },
+            "py_sig": "mask_to_coo(msk: buffer, i: buffer, j: buffer, w: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "data": "data.ptr",
+                        "drk": "drk.ptr",
+                        "flm": "flm.ptr",
+                        "img": "img.ptr",
+                        "npx": "img.n",
+                    },
+                    "sig": "void uint16_to_float_darkflm(float *img, const float *drk, const float *flm, const uint16_t *data, intptr_t npx)",
+                    "when": "img.format == 'f' and drk.format == 'f' and flm.format == 'f'",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "drk.format == 'f'",
+                "drk.n == img.n",
+                "flm.format == 'f'",
+                "flm.n == img.n",
+                "data.format == 'H' or data.itemsize == 2",
+                "data.n == img.n",
+            ],
+            "doc": "Dark subtract, flat-field multiply: img = (data - drk) * flm.",
+            "gil_release": True,
+            "py_sig": "uint16_to_float_darkflm(img: buffer, drk: buffer, flm: buffer, data: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "N": "data.n",
+                        "adr": "adr.ptr",
+                        "data": "data.ptr",
+                        "out": "out.ptr",
+                    },
+                    "sig": "void reorderlut_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)",
+                    "when": "data.format == 'f' and out.format == 'f'",
+                },
+            ],
+            "checks": [
+                "data.format == 'f'",
+                "adr.format == 'I' or adr.itemsize == 4",
+                "adr.n == data.n",
+                "out.format == 'f'",
+                "out.n == data.n",
+            ],
+            "doc": "out[i] = data[adr[i]].",
+            "gil_release": True,
+            "py_sig": "reorderlut_f32_a32(data: buffer, adr: buffer, out: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[0]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "n_arg": "int",
+                        "sumdrlv2_arg": "double",
+                    },
+                    "sig": "void score_and_refine(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd'",
+                },
+            ],
+            "checks": [
+                "ubi.format == 'd'",
+                "ubi.n == 9",
+                "gv.format == 'd'",
+                "gv.ndim >= 1",
+            ],
+            "doc": "score_and_refine also refines the UB matrix using the assigned peaks.",
+            "gil_release": True,
+            "params": {
+                "gv": "G-vectors array, shape (ng, 3) flattened.",
+                "tol": "Matching tolerance on |h - round(h)|.",
+                "ubi": "Orientation matrix UBI (9-element flattened double).",
+            },
+            "py_sig": "score_and_refine(ubi: buffer, gv: buffer, tol: float) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "i1": "i1.ptr",
+                        "i2": "i2.ptr",
+                        "j1": "j1.ptr",
+                        "j2": "j2.ptr",
+                        "k1": "k1.ptr",
+                        "k2": "k2.ptr",
+                        "nnz1": "i1.n",
+                        "nnz2": "i2.n",
+                    },
+                    "sig": "int sparse_overlaps(const uint16_t *i1, const uint16_t *j1, int *k1, intptr_t nnz1, const uint16_t *i2, const uint16_t *j2, int *k2, intptr_t nnz2) -> int",
+                },
+            ],
+            "checks": [
+                "i1.format == 'H' or i1.itemsize == 2",
+                "j1.format == 'H' or j1.itemsize == 2",
+                "j1.n == i1.n",
+                "k1.format == 'i' or k1.format == 'l'",
+                "k1.n == i1.n",
+                "i2.format == 'H' or i2.itemsize == 2",
+                "j2.format == 'H' or j2.itemsize == 2",
+                "j2.n == i2.n",
+                "k2.format == 'i' or k2.format == 'l'",
+                "k2.n == i2.n",
+            ],
+            "doc": "Find overlapping pixels between two sparse arrays.",
+            "params": {
+                "i1": "Rows 1 (uint16).",
+                "i2": "Rows 2 (uint16).",
+                "j1": "Cols 1 (uint16).",
+                "j2": "Cols 2 (uint16).",
+                "k1": "Output indices into 1.",
+                "k2": "Output indices into 2.",
+            },
+            "py_sig": "sparse_overlaps(i1: buffer, j1: buffer, k1: buffer, i2: buffer, j2: buffer, k2: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "cut": "cut",
+                        "img": "img.ptr",
+                        "msk": "msk.ptr",
+                        "nf": "img.shape[1]",
+                        "ns": "img.shape[0]",
+                        "ret": "ret.ptr",
+                    },
+                    "sig": "int make_clean_mask(const float *img, float cut, int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "img.ndim == 2",
+                "msk.format == 'b' or msk.format == 'B'",
+                "msk.n == img.n",
+                "ret.format == 'b' or ret.format == 'B'",
+                "ret.n == img.n",
+            ],
+            "doc": "Generate mask from threshold then clean isolated pixels.",
+            "params": {
+                "cut": "Threshold.",
+                "img": "Input float32 2D.",
+                "msk": "Priority mask (int8).",
+                "ret": "Output cleaned mask.",
+            },
+            "py_sig": "make_clean_mask(img: buffer, cut: float, msk: buffer, ret: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "chi": "chi",
+                        "n": "xlylzl.shape[0]",
+                        "omega": "omega.ptr",
+                        "omegasign": "omegasign",
+                        "out": "out.ptr",
+                        "t": "t.ptr",
+                        "wedge": "wedge",
+                        "wvln": "wvln",
+                        "xlylzl": "xlylzl.ptr",
+                    },
+                    "sig": "void compute_geometry(const double xlylzl[][3], const double omega[], double omegasign, double wvln, double wedge, double chi, const double t[3], double out[][6], intptr_t n)",
+                    "when": "xlylzl.format == 'd' and omega.format == 'd' and out.format == 'd'",
+                },
+            ],
+            "checks": [
+                "xlylzl.format == 'd'",
+                "xlylzl.ndim == 2",
+                "xlylzl.shape[1] == 3",
+                "omega.format == 'd'",
+                "omega.n == xlylzl.shape[0]",
+                "t.format == 'd'",
+                "t.n == 3",
+                "out.format == 'd'",
+                "out.ndim == 2",
+                "out.shape[0] == xlylzl.shape[0]",
+                "out.shape[1] == 6",
+            ],
+            "doc": "compute_geometry is for the updateGeometry method of columnfiles. From xlylzl it will compute tth, eta, ds, gve into out.",
+            "gil_release": True,
+            "params": {
+                "chi": "Chi angle (radians).",
+                "omega": "Omega rotation per spot (radians), shape (n,).",
+                "omegasign": "Omega rotation sign (+1 or -1).",
+                "out": "Output array shape (n, 6): tth, eta, ds, gx, gy, gz.",
+                "t": "Translation vector (3 elements).",
+                "wedge": "Wedge angle (detector tilt, radians).",
+                "wvln": "Wavelength (angstroms).",
+                "xlylzl": "Spot positions in laboratory frame, shape (n, 3).",
+            },
+            "py_sig": "compute_geometry(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, out: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "boundscheck": "boundscheck",
+                        "data": "data.ptr",
+                        "ind": "ind.ptr",
+                        "m": "data.n",
+                        "n": "ind.n",
+                        "vals": "vals.ptr",
+                    },
+                    "sig": "void put_incr32(float *data, const int32_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m)",
+                    "when": "data.format == 'f' and vals.format == 'f' and (ind.format == 'i' or ind.format == 'l')",
+                },
+            ],
+            "checks": [
+                "data.format == 'f'",
+                "( ind.format == 'i' or ind.format == 'l' )",
+                "ind.n == vals.n",
+                "vals.format == 'f'",
+            ],
+            "doc": "put_incr32 does the simple loop: data[ind] += vals, 32 bit addressing",
+            "gil_release": True,
+            "params": {
+                "boundscheck": "If non-zero, enables bounds checking on ind.",
+                "data": "Destination array (float32).",
+                "ind": "Indices array (int32).",
+                "vals": "Values array (float32) to add.",
+            },
+            "py_sig": "put_incr32(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "e": "e.ptr",
+                        "g0": "g0.ptr",
+                        "g1": "g1.ptr",
+                        "g2": "g2.ptr",
+                        "gv": "gv.ptr",
+                        "n": "gv.shape[0]",
+                        "recompute": "recompute",
+                        "ub": "ub.ptr",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "void score_gvec_z(const double ubi[3][3], const double ub[3][3], const double gv[][3], double g0[], double g1[], double g2[], double e[], int recompute, intptr_t n)",
+                },
+            ],
+            "checks": [
+                "ubi.format == 'd'",
+                "ubi.n == 9",
+                "ub.format == 'd'",
+                "ub.n == 9",
+                "gv.format == 'd'",
+                "gv.ndim >= 1",
+                "g0.format == 'd'",
+                "g1.format == 'd'",
+                "g2.format == 'd'",
+                "e.format == 'd'",
+            ],
+            "doc": "score_gvec_z computes error projections for g-vectors.",
+            "params": {
+                "e": "Output error array.",
+                "g0": "Error along g component.",
+                "g1": "Error along z component.",
+                "g2": "Error along rhs component.",
+                "gv": "Experimental g-vectors, shape (ng, 3) flattened.",
+                "recompute": "If non-zero, recompute gcalc from ub.",
+                "ub": "UB matrix (9-element flattened double).",
+                "ubi": "UBI matrix (9-element flattened double).",
+            },
+            "py_sig": "score_gvec_z(ubi: buffer, ub: buffer, gv: buffer, g0: buffer, g1: buffer, g2: buffer, e: buffer, recompute: int) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "Z": "Z.ptr",
+                        "i": "i.ptr",
+                        "imax": "ni",
+                        "j": "j.ptr",
+                        "jmax": "nj",
+                        "labels": "lbl.ptr",
+                        "nnz": "i.n",
+                        "threshold": "th",
+                        "v": "v.ptr",
+                    },
+                    "sig": "int sparse_connectedpixels_splat(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t *labels, int32_t *Z, intptr_t imax, intptr_t jmax) -> int",
+                },
+            ],
+            "checks": [
+                "v.format == 'f'",
+                "i.format == 'H' or i.itemsize == 2",
+                "j.format == 'H' or j.itemsize == 2",
+                "j.n == i.n",
+                "v.n == i.n",
+                "( lbl.format == 'i' or lbl.format == 'l' )",
+                "lbl.n == i.n",
+                "( Z.format == 'i' or Z.format == 'l' )",
+            ],
+            "doc": "Splat sparse to dense then run connectedpixels.",
+            "params": {
+                "Z": "Temp buffer.",
+                "i": "Rows (uint16).",
+                "j": "Cols (uint16).",
+                "lbl": "Output labels.",
+                "ni": "Rows.",
+                "nj": "Cols.",
+                "th": "Threshold.",
+                "v": "Values (float32).",
+            },
+            "py_sig": "sparse_connectedpixels_splat(v: buffer, i: buffer, j: buffer, th: float, lbl: buffer, Z: buffer, ni: int, nj: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "i": "i.ptr",
+                        "j": "j.ptr",
+                        "nnz": "i.n",
+                    },
+                    "sig": "int sparse_is_sorted(const uint16_t *i, const uint16_t *j, intptr_t nnz) -> int",
+                },
+            ],
+            "checks": [
+                "i.format == 'H' or i.itemsize == 2",
+                "j.format == 'H' or j.itemsize == 2",
+                "j.n == i.n",
+            ],
+            "doc": "Check if sparse COO indices are in row-major order.",
+            "params": {
+                "i": "Row indices (uint16).",
+                "j": "Col indices (uint16).",
+            },
+            "py_sig": "sparse_is_sorted(i: buffer, j: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "n": "n",
+                    },
+                    "sig": "void cimaged11_omp_set_num_threads(int n)",
+                },
+            ],
+            "doc": "Set the number of OpenMP threads used by all subsequent C calls.",
+            "params": {
+                "n": "Number of OpenMP threads. Pass 1 for single-threaded execution.",
+            },
+            "py_sig": "cimaged11_omp_set_num_threads(n: int) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {},
+                    "sig": "int cimaged11_omp_get_max_threads()",
+                },
+            ],
+            "doc": "Return the maximum number of OpenMP threads available.",
+            "py_sig": "cimaged11_omp_get_max_threads() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "n": "n",
+                    },
+                    "sig": "int verify_rounding(int n)",
+                },
+            ],
+            "doc": "checks the round to nearest int code is correct",
+            "params": {
+                "n": "ask jon about this parameter",
+            },
+            "py_sig": "verify_rounding(n: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "boundscheck": "boundscheck",
+                        "data": "data.ptr",
+                        "ind": "ind.ptr",
+                        "m": "data.n",
+                        "n": "ind.n",
+                        "vals": "vals.ptr",
+                    },
+                    "sig": "void put_incr64(float *data, const int64_t *ind, const float *vals, int boundscheck, intptr_t n, intptr_t m)",
+                    "when": "data.format == 'f' and vals.format == 'f'",
+                },
+            ],
+            "checks": [
+                "data.format == 'f'",
+                "ind.format == 'q' or ind.itemsize == 8",
+                "ind.n == vals.n",
+                "vals.format == 'f'",
+            ],
+            "doc": "put_incr64 does the simple loop: data[ind] += vals, 64 bit addressing",
+            "gil_release": True,
+            "params": {
+                "boundscheck": "If non-zero, enables bounds checking on ind. Default 0 (no check).",
+                "data": "Destination array (float32). Updated in place with scatter-add.",
+                "ind": "Indices array (int64).",
+                "vals": "Values array (float32) to add.",
+            },
+            "py_sig": "put_incr64(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "N": "data.n",
+                        "adr": "adr.ptr",
+                        "data": "data.ptr",
+                        "out": "out.ptr",
+                    },
+                    "sig": "void reorder_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)",
+                    "when": "data.format == 'f' and out.format == 'f'",
+                },
+            ],
+            "checks": [
+                "data.format == 'f'",
+                "adr.format == 'I' or adr.itemsize == 4",
+                "adr.n == data.n",
+                "out.format == 'f'",
+                "out.n >= data.n",
+            ],
+            "doc": "out[adr[i]] = data[i].",
+            "gil_release": True,
+            "py_sig": "reorder_f32_a32(data: buffer, adr: buffer, out: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "cut": "cut",
+                        "img": "img.ptr",
+                        "n": "n",
+                        "npx": "img.n",
+                        "verbose": "verbose",
+                    },
+                    "outputs": {
+                        "mean": "float",
+                        "std": "float",
+                    },
+                    "sig": "void array_mean_var_cut(const float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
+                },
+            ],
+            "checks": ["img.format == 'f'"],
+            "doc": "Sigma-clipped mean/var.",
+            "py_sig": "array_mean_var_cut(img: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "col": "col.ptr",
+                        "cut": "cut",
+                        "img": "img.ptr",
+                        "msk": "msk.ptr",
+                        "nf": "img.shape[1]",
+                        "ns": "img.shape[0]",
+                        "row": "row.ptr",
+                        "val": "val.ptr",
+                    },
+                    "sig": "int tosparse_f32(const float *img, const uint8_t *msk, uint16_t *row, uint16_t *col, float *val, float cut, intptr_t ns, intptr_t nf) -> int",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "img.ndim == 2",
+                "msk.format == 'B' or msk.format == 'b' or msk.format == '?'",
+                "msk.n == img.n",
+                "row.format == 'H' or row.itemsize == 2",
+                "col.format == 'H' or col.itemsize == 2",
+                "val.format == 'f'",
+            ],
+            "doc": "Convert dense float32 image to sparse COO.",
+            "params": {
+                "col": "Output cols.",
+                "cut": "Threshold.",
+                "img": "Input float32 2D.",
+                "msk": "Mask (uint8).",
+                "row": "Output rows.",
+                "val": "Output values.",
+            },
+            "py_sig": "tosparse_f32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "dim": "x.shape[1]",
+                        "ic": "ic.ptr",
+                        "nv": "x.shape[0]",
+                        "x": "x.ptr",
+                    },
+                    "sig": "void closest_vec(const double *x, intptr_t dim, intptr_t nv, int *ic)",
+                },
+            ],
+            "checks": [
+                "x.format == 'd'",
+                "x.ndim == 2",
+                "x.shape[1] >= 1",
+                "( ic.format == 'i' or ic.format == 'l' )",
+                "ic.n == x.shape[0]",
+            ],
+            "doc": "closest_vec finds the closest neighbors for each row of X ignoring the self.",
+            "params": {
+                "ic": "Output array of shape (nv,). For each row i, ic[i] = index j of the nearest neighbor (j != i).",
+                "x": "2D array of feature vectors, shape (nv, dim). Each row is a vector.",
+            },
+            "py_sig": "closest_vec(x: buffer, ic: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "dist": "dist.ptr",
+                        "f": "f.ptr",
+                        "n": "s.n",
+                        "p": "p.ptr",
+                        "r": "r.ptr",
+                        "s": "s.ptr",
+                        "xlylzl": "xlylzl.ptr",
+                    },
+                    "sig": "void compute_xlylzl(const double s[], const double f[], const double p[4], const double r[9], const double dist[3], double xlylzl[][3], intptr_t n)",
+                    "when": "s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'",
+                },
+            ],
+            "checks": [
+                "s.format == 'd'",
+                "f.format == 'd'",
+                "f.n == s.n",
+                "p.format == 'd'",
+                "p.n == 4",
+                "r.format == 'd'",
+                "r.n == 9",
+                "dist.format == 'd'",
+                "dist.n == 3",
+                "xlylzl.format == 'd'",
+                "xlylzl.ndim >= 1",
+            ],
+            "doc": "compute_xlylzl finds spot positions in the laboratory frame using packed parameters.",
+            "gil_release": True,
+            "params": {
+                "dist": "Detector distance (3): [dx, dy, dz].",
+                "f": "Fast-scan pixel positions (double, same size as s).",
+                "p": "Detector params (4): [s_cen, f_cen, s_size, f_size].",
+                "r": "Rotation matrix (9): det(rotation)*flip.",
+                "s": "Slow-scan pixel positions (double).",
+                "xlylzl": "Output spot positions (n, 3).",
+            },
+            "py_sig": "compute_xlylzl(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xlylzl: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "cut": "cut",
+                        "img": "img.ptr",
+                        "nf": "img.shape[1]",
+                        "ns": "img.shape[0]",
+                    },
+                    "sig": "void frelon_lines(float *img, intptr_t ns, intptr_t nf, float cut)",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "img.ndim == 2",
+            ],
+            "doc": "Subtract per-row baseline using quiet pixels (value < cut).",
+            "py_sig": "frelon_lines(img: buffer, cut: float) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "data": "v.ptr",
+                        "i": "i.ptr",
+                        "j": "j.ptr",
+                        "labels": "labels.ptr",
+                        "nnz": "i.n",
+                        "npk": "npk",
+                        "res": "results.ptr",
+                    },
+                    "sig": "void sparse_blob2Dproperties(float *data, uint16_t *i, uint16_t *j, intptr_t nnz, int32_t *labels, double *res, int32_t npk)",
+                },
+            ],
+            "checks": [
+                "v.format == 'f'",
+                "i.format == 'H' or i.itemsize == 2",
+                "j.format == 'H' or j.itemsize == 2",
+                "j.n == i.n",
+                "v.n == i.n",
+                "( labels.format == 'i' or labels.format == 'l' )",
+                "labels.n == i.n",
+                "results.format == 'd'",
+                "results.shape[0] == npk",
+                "results.shape[1] == 11",
+            ],
+            "doc": "Compute blob properties for sparse labels.",
+            "params": {
+                "i": "Rows (uint16).",
+                "j": "Cols (uint16).",
+                "labels": "Labels (int32).",
+                "npk": "Number of objects.",
+                "results": "Output (npk, 11).",
+                "v": "Values (float32).",
+            },
+            "py_sig": "sparse_blob2Dproperties(v: buffer, i: buffer, j: buffer, labels: buffer, npk: int, results: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "data": "data.ptr",
+                        "eightconnected": "con8",
+                        "labels": "labels.ptr",
+                        "nf": "data.shape[1]",
+                        "ns": "data.shape[0]",
+                        "threshold": "threshold",
+                        "verbose": "verbose",
+                    },
+                    "sig": "int connectedpixels(const float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
+                },
+            ],
+            "checks": [
+                "data.format == 'f'",
+                "data.ndim == 2",
+                "( labels.format == 'i' or labels.format == 'l' )",
+                "labels.n == data.n",
+            ],
+            "doc": "Connected-component labeling above threshold.",
+            "params": {
+                "con8": "8-connected (1) or 4-connected (0).",
+                "data": "Input float32 2D.",
+                "labels": "Output int32 labels.",
+                "threshold": "Threshold.",
+                "verbose": "Print diagnostics.",
+            },
+            "py_sig": "connectedpixels(data: buffer, labels: buffer, threshold: float, verbose: int = 0, con8: int = 1) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "col1": "col1.ptr",
+                        "col2": "col2.ptr",
+                        "labels1": "labels1.ptr",
+                        "labels2": "labels2.ptr",
+                        "mat": "mat.ptr",
+                        "nnz1": "row1.n",
+                        "nnz2": "row2.n",
+                        "npk1": "mat.shape[0]",
+                        "npk2": "mat.shape[1]",
+                        "results": "results.ptr",
+                        "row1": "row1.ptr",
+                        "row2": "row2.ptr",
+                    },
+                    "sig": "int coverlaps(const uint16_t *row1, const uint16_t *col1, const int *labels1, intptr_t nnz1, const uint16_t *row2, const uint16_t *col2, const int *labels2, intptr_t nnz2, int *mat, intptr_t npk1, intptr_t npk2, int *results) -> int",
+                },
+            ],
+            "checks": [
+                "row1.format == 'H' or row1.itemsize == 2",
+                "col1.format == 'H' or col1.itemsize == 2",
+                "col1.n == row1.n",
+                "labels1.format == 'i' or labels1.format == 'l'",
+                "labels1.n == row1.n",
+                "row2.format == 'H' or row2.itemsize == 2",
+                "col2.format == 'H' or col2.itemsize == 2",
+                "col2.n == row2.n",
+                "labels2.format == 'i' or labels2.format == 'l'",
+                "labels2.n == row2.n",
+                "( mat.format == 'i' or mat.format == 'l' )",
+                "mat.ndim == 2",
+                "( results.format == 'i' or results.format == 'l' )",
+            ],
+            "doc": "Determine overlapping labels between two sparse frames.",
+            "params": {
+                "col1": "Cols 1 (uint16).",
+                "col2": "Cols 2 (uint16).",
+                "labels1": "Labels 1 (int32).",
+                "labels2": "Labels 2 (int32).",
+                "mat": "Output overlap matrix (int32).",
+                "results": "Output triples (int32).",
+                "row1": "Rows 1 (uint16).",
+                "row2": "Rows 2 (uint16).",
+            },
+            "py_sig": "coverlaps(row1: buffer, col1: buffer, labels1: buffer, row2: buffer, col2: buffer, labels2: buffer, mat: buffer, results: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "i": "i.ptr",
+                        "j": "j.ptr",
+                        "nnz": "i.n",
+                        "s": "s.ptr",
+                        "v": "v.ptr",
+                    },
+                    "sig": "void sparse_smooth(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *s)",
+                },
+            ],
+            "checks": [
+                "v.format == 'f'",
+                "i.format == 'H' or i.itemsize == 2",
+                "j.format == 'H' or j.itemsize == 2",
+                "j.n == i.n",
+                "v.n == i.n",
+                "s.format == 'f'",
+                "s.n == i.n",
+            ],
+            "doc": "Smooth sparse image (avoid equal-pixel tails in peak detection).",
+            "params": {
+                "i": "Rows (uint16).",
+                "j": "Cols (uint16).",
+                "s": "Output smoothed (float32).",
+                "v": "Values (float32).",
+            },
+            "py_sig": "sparse_smooth(v: buffer, i: buffer, j: buffer, s: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "msk": "msk.ptr",
+                        "nf": "msk.shape[1]",
+                        "ns": "msk.shape[0]",
+                        "ret": "ret.ptr",
+                    },
+                    "sig": "int clean_mask(const int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int",
+                },
+            ],
+            "checks": [
+                "msk.format == 'b' or msk.format == 'B'",
+                "msk.ndim == 2",
+                "ret.format == 'b' or ret.format == 'B'",
+                "ret.n == msk.n",
+            ],
+            "doc": "Remove isolated pixels (no 4-connected neighbor).",
+            "params": {
+                "msk": "Input int8 2D mask.",
+                "ret": "Output cleaned int8 mask.",
+            },
+            "py_sig": "clean_mask(msk: buffer, ret: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "gve": "gve.ptr",
+                        "h": "rgba.shape[0]",
+                        "ng": "gve.shape[0]",
+                        "npx": "npx",
+                        "rgba": "rgba.ptr",
+                        "u": "u.ptr",
+                        "w": "rgba.shape[1]",
+                    },
+                    "sig": "void splat(uint8_t *rgba, intptr_t w, intptr_t h, const double gve[][3], intptr_t ng, const double *u, intptr_t npx)",
+                },
+            ],
+            "checks": [
+                "rgba.format == 'B' or rgba.format == 'b'",
+                "rgba.ndim >= 1",
+                "gve.format == 'd'",
+                "gve.ndim >= 1",
+                "u.format == 'd'",
+                "u.n == 9",
+                "gve.slow_axis == 0",
+                "gve.ndim == 2",
+                "gve.shape[1] == 3",
+            ],
+            "doc": "Draw g-vectors into RGBA image.",
+            "params": {
+                "gve": "G-vectors (ng, 3).",
+                "npx": "Marker half-size.",
+                "rgba": "Output uint8 RGBA (h, w, 4).",
+                "u": "Projection matrix (9).",
+            },
+            "py_sig": "splat(rgba: buffer, gve: buffer, u: buffer, npx: int) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "ni": "pi.n",
+                        "nj": "pj.n",
+                        "pi": "pi.ptr",
+                        "pj": "pj.ptr",
+                    },
+                    "sig": "int count_shared(const int *pi, intptr_t ni, const int *pj, intptr_t nj) -> int",
+                },
+            ],
+            "checks": [
+                "( pi.format == 'i' or pi.format == 'l' )",
+                "( pj.format == 'i' or pj.format == 'l' )",
+            ],
+            "doc": "count_shared takes two sorted arrays and counts collisions.",
+            "params": {
+                "pi": "First sorted array of integer labels.",
+                "pj": "Second sorted array of integer labels.",
+            },
+            "py_sig": "count_shared(pi: buffer, pj: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "u1": "u1.ptr",
+                        "u2": "u2.ptr",
+                    },
+                    "sig": "double misori_orthorhombic(const double u1[3][3], const double u2[3][3]) -> double",
+                },
+            ],
+            "checks": [
+                "u1.format == 'd'",
+                "u1.n == 9",
+                "u2.format == 'd'",
+                "u2.n == 9",
+            ],
+            "doc": "misori_orthorhombic computes the smallest misorientation for orthorhombic symmetry.",
+            "params": {
+                "u1": "Orientation matrix U (9-element flattened double).",
+                "u2": "Orientation matrix U (9-element flattened double).",
+            },
+            "py_sig": "misori_orthorhombic(u1: buffer, u2: buffer) -> float",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "dist": "dist.ptr",
+                        "f": "f.ptr",
+                        "n": "s.n",
+                        "p": "p.ptr",
+                        "r": "r.ptr",
+                        "s": "s.ptr",
+                        "xlylzl": "xlylzl.ptr",
+                        "xpos": "xpos.ptr",
+                    },
+                    "sig": "void compute_xlylzl_xpos_variable(const double s[], const double f[], const double p[4], const double r[9], const double dist[3], const double xpos[], double xlylzl[][3], intptr_t n)",
+                    "when": "s.format == 'd' and f.format == 'd' and xlylzl.format == 'd'",
+                },
+            ],
+            "checks": [
+                "s.format == 'd'",
+                "f.format == 'd'",
+                "f.n == s.n",
+                "p.format == 'd'",
+                "p.n == 4",
+                "r.format == 'd'",
+                "r.n == 9",
+                "dist.format == 'd'",
+                "dist.n == 3",
+                "xpos.format == 'd'",
+                "xpos.n == s.n",
+                "xlylzl.format == 'd'",
+                "xlylzl.ndim >= 1",
+            ],
+            "doc": "compute_xlylzl_xpos_variable like compute_xlylzl but with extra per-spot x-offset.",
+            "gil_release": True,
+            "params": {
+                "dist": "Detector distance (3).",
+                "f": "Fast-scan pixel positions (double).",
+                "p": "Detector params (4).",
+                "r": "Rotation matrix (9).",
+                "s": "Slow-scan pixel positions (double).",
+                "xlylzl": "Output spot positions.",
+                "xpos": "Per-spot x-axis offset (double, same size as s).",
+            },
+            "py_sig": "compute_xlylzl_xpos_variable(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xpos: buffer, xlylzl: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "col": "col.ptr",
+                        "cut": "cut",
+                        "img": "img.ptr",
+                        "msk": "msk.ptr",
+                        "nf": "img.shape[1]",
+                        "ns": "img.shape[0]",
+                        "row": "row.ptr",
+                        "val": "val.ptr",
+                    },
+                    "sig": "int tosparse_u32(const uint32_t *img, const uint8_t *msk, uint16_t *row, uint16_t *col, uint32_t *val, float cut, intptr_t ns, intptr_t nf) -> int",
+                },
+            ],
+            "checks": [
+                "img.format == 'I' or img.itemsize == 4",
+                "img.ndim == 2",
+                "msk.format == 'B' or msk.format == 'b' or msk.format == '?'",
+                "msk.n == img.n",
+                "row.format == 'H' or row.itemsize == 2",
+                "col.format == 'H' or col.itemsize == 2",
+                "val.format == 'I' or val.itemsize == 4",
+            ],
+            "doc": "Convert dense uint32 image to sparse COO.",
+            "params": {
+                "col": "Output cols.",
+                "cut": "Threshold (float).",
+                "img": "Input uint32 2D.",
+                "msk": "Mask (uint8).",
+                "row": "Output rows.",
+                "val": "Output values.",
+            },
+            "py_sig": "tosparse_u32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "np": "results.shape[0]",
+                        "res": "results.ptr",
+                    },
+                    "sig": "void blob_moments(double *res, intptr_t np)",
+                },
+            ],
+            "checks": [
+                "results.format == 'd'",
+                "results.ndim == 2",
+                "results.shape[1] == 36",
+            ],
+            "doc": "Fill reduced moments from raw blob properties.",
+            "params": {
+                "results": "I/O array (np, 36). Raw moments in, reduced out.",
+            },
+            "py_sig": "blob_moments(results: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "MV": "MV.ptr",
+                        "i": "i.ptr",
+                        "iMV": "iMV.ptr",
+                        "j": "j.ptr",
+                        "labels": "labels.ptr",
+                        "nnz": "i.n",
+                        "v": "v.ptr",
+                    },
+                    "sig": "int sparse_localmaxlabel(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV, int32_t *labels) -> int",
+                },
+            ],
+            "checks": [
+                "v.format == 'f'",
+                "i.format == 'H' or i.itemsize == 2",
+                "j.format == 'H' or j.itemsize == 2",
+                "j.n == i.n",
+                "v.n == i.n",
+                "MV.format == 'f'",
+                "MV.n == i.n",
+                "( iMV.format == 'i' or iMV.format == 'l' )",
+                "iMV.n == i.n",
+                "( labels.format == 'i' or labels.format == 'l' )",
+                "labels.n == i.n",
+            ],
+            "doc": "Label sparse COO pixels to local maximum.",
+            "params": {
+                "MV": "Temp float32.",
+                "i": "Rows (uint16).",
+                "iMV": "Temp int32.",
+                "j": "Cols (uint16).",
+                "labels": "Output labels (int32).",
+                "v": "Values (float32).",
+            },
+            "py_sig": "sparse_localmaxlabel(v: buffer, i: buffer, j: buffer, MV: buffer, iMV: buffer, labels: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "i": "i.ptr",
+                        "j": "j.ptr",
+                        "n": "i.n",
+                        "nt": "tmp.n",
+                        "oi": "oi.ptr",
+                        "oj": "oj.ptr",
+                        "tmp": "tmp.ptr",
+                    },
+                    "sig": "int compress_duplicates(int *i, int *j, int *oi, int *oj, int *tmp, intptr_t n, intptr_t nt) -> int",
+                },
+            ],
+            "checks": [
+                "( i.format == 'i' or i.format == 'l' )",
+                "( j.format == 'i' or j.format == 'l' )",
+                "j.n == i.n",
+                "( oi.format == 'i' or oi.format == 'l' )",
+                "oi.n == i.n",
+                "( oj.format == 'i' or oj.format == 'l' )",
+                "oj.n == i.n",
+                "( tmp.format == 'i' or tmp.format == 'l' )",
+            ],
+            "doc": "Remove duplicate (i,j) pairs via counting sort.",
+            "params": {
+                "i": "I/O int32 col 0.",
+                "j": "I/O int32 col 1.",
+                "oi": "Output counts.",
+                "oj": "Temp.",
+                "tmp": "Temp.",
+            },
+            "py_sig": "compress_duplicates(i: buffer, j: buffer, oi: buffer, oj: buffer, tmp: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "ar": "ar.ptr",
+                        "avgs": "avgs.ptr",
+                        "ids": "ids.ptr",
+                        "n": "ar.n",
+                        "order": "order.ptr",
+                        "tol": "tol",
+                    },
+                    "outputs": {
+                        "nclusters": "int",
+                    },
+                    "sig": "void cluster1d(const double *ar, intptr_t n, const int *order, double tol, int *nclusters, int *ids, double *avgs)",
+                },
+            ],
+            "checks": [
+                "ar.format == 'd'",
+                "( order.format == 'i' or order.format == 'l' )",
+                "order.n == ar.n",
+                "( ids.format == 'i' or ids.format == 'l' )",
+                "ids.n == ar.n",
+                "avgs.format == 'd'",
+                "avgs.n == ar.n",
+            ],
+            "doc": "cluster1d is used to find clusters of peaks.",
+            "params": {
+                "ar": "Array of values to cluster.",
+                "avgs": "Output: average value of each cluster.",
+                "ids": "Output: cluster id for each element.",
+                "order": "Permutation that sorts ar ascending.",
+                "tol": "Distance tolerance for cluster membership.",
+            },
+            "py_sig": "cluster1d(ar: buffer, order: buffer, tol: float, ids: buffer, avgs: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "cut": "cut",
+                        "img": "img.ptr",
+                        "msk": "msk.ptr",
+                        "n": "n",
+                        "npx": "img.n",
+                        "verbose": "verbose",
+                    },
+                    "outputs": {
+                        "mean": "float",
+                        "std": "float",
+                    },
+                    "sig": "void array_mean_var_msk(const float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "msk.format == 'B' or msk.format == 'b'",
+                "msk.n == img.n",
+            ],
+            "doc": "Sigma-clipped mean/var with mask.",
+            "py_sig": "array_mean_var_msk(img: buffer, msk: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "bt": "bt.ptr",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "void quickorient(double ubi[3][3], const double bt[3][3])",
+                },
+            ],
+            "checks": [
+                "ubi.format == 'd'",
+                "ubi.ndim == 2",
+                "ubi.shape[0] == 3",
+                "ubi.shape[1] == 3",
+                "bt.format == 'd'",
+                "bt.ndim == 2",
+                "bt.shape[0] == 3",
+                "bt.shape[1] == 3",
+            ],
+            "doc": "quickorient takes two g-vectors in UBI and overwrites with UBI orientation using cache in bt.",
+            "params": {
+                "bt": "Busing-Levy cache (9-element).",
+                "ubi": "Orientation matrix (9-element). First 2 rows are g-vectors on entry; overwritten with UBI on exit.",
+            },
+            "py_sig": "quickorient(ubi: buffer, bt: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "drlv2": "drlv2.ptr",
+                        "gv": "gv.ptr",
+                        "label": "label",
+                        "labels": "labels.ptr",
+                        "ng": "gv.shape[0]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "int score_and_assign(const double ubi[3][3], const double gv[][3], double tol, double *drlv2, int *labels, int label, intptr_t ng) -> int",
+                    "when": "ubi.format == 'd' and gv.format == 'd'",
+                },
+            ],
+            "checks": [
+                "ubi.format == 'd'",
+                "ubi.n == 9",
+                "gv.format == 'd'",
+                "drlv2.format == 'd'",
+                "drlv2.n == gv.shape[0]",
+                "( labels.format == 'i' or labels.format == 'l' )",
+                "labels.n == gv.shape[0]",
+            ],
+            "doc": "score_and_assign assigns peaks to this ubi only if they fit the data better.",
+            "gil_release": True,
+            "params": {
+                "drlv2": "Input/output array (ng). Current best squared residuals per peak.",
+                "gv": "G-vectors array, shape (ng, 3) flattened.",
+                "label": "Grain label assigned to peaks that match this UBI.",
+                "labels": "Input/output array (ng). Current grain labels per peak.",
+                "tol": "Matching tolerance.",
+                "ubi": "Orientation matrix (9-element flattened double).",
+            },
+            "py_sig": "score_and_assign(ubi: buffer, gv: buffer, tol: float, drlv2: buffer, labels: buffer, label: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "cut": "cut",
+                        "drk": "drk.ptr",
+                        "img": "img.ptr",
+                        "nf": "img.shape[1]",
+                        "ns": "img.shape[0]",
+                    },
+                    "sig": "void frelon_lines_sub(float *img, const float *drk, intptr_t ns, intptr_t nf, float cut)",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "img.ndim == 2",
+                "drk.format == 'f'",
+                "drk.n == img.n",
+            ],
+            "doc": "Dark subtract then per-row baseline removal.",
+            "py_sig": "frelon_lines_sub(img: buffer, drk: buffer, cut: float) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "doc": "Standard O(nx*nv) scan-find-closest.",
+                    "map": {
+                        "nv": "v.n",
+                        "nx": "x.n",
+                        "v": "v.ptr",
+                        "x": "x.ptr",
+                    },
+                    "outputs": {
+                        "rbest": "double",
+                        "ribest": "int",
+                    },
+                    "sig": "void closest(const double *x, const double *v, int *ribest, double *rbest, intptr_t nx, intptr_t nv)",
+                },
+            ],
+            "checks": [
+                "x.format == 'd'",
+                "v.format == 'd'",
+            ],
+            "doc": "closest finds the value and index in x closest to a value in v.",
+            "params": {
+                "v": "Array of values to search for (e.g. experimental cosines).",
+                "x": "Array of candidate values to search (e.g. ideal cosines from hkl geometry).",
+            },
+            "py_sig": "closest(x: buffer, v: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[0]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "int score(const double ubi[3][3], const double gv[][3], double tol, intptr_t ng) -> int",
+                    "when": "ubi.format == 'd' and gv.format == 'd'",
+                },
+            ],
+            "checks": [
+                "ubi.format == 'd'",
+                "ubi.n == 9",
+                "gv.format == 'd'",
+                "gv.ndim >= 1",
+            ],
+            "doc": "Count g-vectors indexed by ubi matrix within tol.",
+            "gil_release": True,
+            "params": {
+                "gv": "G-vectors array, shape (ng, 3) flattened.",
+                "tol": "Tolerance on |h - round(h)|.",
+                "ubi": "Orientation matrix UBI (UB inverse), shape (9,) flattened double.",
+            },
+            "py_sig": "score(ubi: buffer, gv: buffer, tol: float) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "b1": "labels1.ptr",
+                        "b2": "labels2.ptr",
+                        "n1": "npk1",
+                        "n2": "npk2",
+                        "nf": "labels1.shape[1]",
+                        "ns": "labels1.shape[0]",
+                        "res1": "results1.ptr",
+                        "res2": "results2.ptr",
+                        "verbose": "verbose",
+                    },
+                    "sig": "int bloboverlaps(int32_t *b1, int32_t n1, double *res1, int32_t *b2, int32_t n2, double *res2, int verbose, intptr_t ns, intptr_t nf) -> int",
+                },
+            ],
+            "checks": [
+                "( labels1.format == 'i' or labels1.format == 'l' )",
+                "labels1.ndim == 2",
+                "( labels2.format == 'i' or labels2.format == 'l' )",
+                "labels2.n == labels1.n",
+                "results1.format == 'd'",
+                "results1.shape[0] == npk1",
+                "results1.shape[1] == 36",
+                "results2.format == 'd'",
+                "results2.shape[0] == npk2",
+                "results2.shape[1] == 36",
+            ],
+            "doc": "Determine overlaps between two frames label images.",
+            "params": {
+                "labels1": "First frame labels (int32 2D).",
+                "labels2": "Second frame labels.",
+                "npk1": "Objects in first frame.",
+                "npk2": "Objects in second frame.",
+                "results1": "First frame properties.",
+                "results2": "Second frame properties.",
+                "verbose": "Print diagnostics.",
+            },
+            "py_sig": "bloboverlaps(labels1: buffer, npk1: int, results1: buffer, labels2: buffer, npk2: int, results2: buffer, verbose: int = 0) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "data": "data.ptr",
+                        "drk": "drk.ptr",
+                        "img": "img.ptr",
+                        "npx": "img.n",
+                    },
+                    "sig": "void uint16_to_float_darksub(float *img, const float *drk, const uint16_t *data, intptr_t npx)",
+                    "when": "img.format == 'f' and drk.format == 'f'",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "drk.format == 'f'",
+                "drk.n == img.n",
+                "data.format == 'H' or data.itemsize == 2",
+                "data.n == img.n",
+            ],
+            "doc": "Subtract dark current from uint16 data, result in float32 img.",
+            "gil_release": True,
+            "py_sig": "uint16_to_float_darksub(img: buffer, drk: buffer, data: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "i": "i.ptr",
+                        "j": "j.ptr",
+                        "labels": "labels.ptr",
+                        "nnz": "i.n",
+                        "threshold": "threshold",
+                        "v": "v.ptr",
+                    },
+                    "sig": "int sparse_connectedpixels(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) -> int",
+                },
+            ],
+            "checks": [
+                "v.format == 'f'",
+                "i.format == 'H' or i.itemsize == 2",
+                "j.format == 'H' or j.itemsize == 2",
+                "j.n == i.n",
+                "v.n == i.n",
+                "( labels.format == 'i' or labels.format == 'l' )",
+                "labels.n == i.n",
+            ],
+            "doc": "Connected-component labeling on sparse image.",
+            "params": {
+                "i": "Rows (uint16).",
+                "j": "Cols (uint16).",
+                "labels": "Output labels (int32).",
+                "threshold": "Threshold.",
+                "v": "Values (float32).",
+            },
+            "py_sig": "sparse_connectedpixels(v: buffer, i: buffer, j: buffer, threshold: float, labels: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "bg": "bg.ptr",
+                        "gain": "gain",
+                        "img": "img.ptr",
+                        "msk": "msk.ptr",
+                        "nf": "img.shape[1]",
+                        "ns": "img.shape[0]",
+                        "sigmap": "sp",
+                        "sigmat": "st",
+                    },
+                    "sig": "void bgcalc(const float *img, float *bg, uint8_t *msk, intptr_t ns, intptr_t nf, float gain, float sigmap, float sigmat)",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "img.ndim == 2",
+                "bg.format == 'f'",
+                "bg.n == img.n",
+                "msk.format == 'B' or msk.format == 'b'",
+                "msk.n == img.n",
+            ],
+            "doc": "Recursive background filter.",
+            "py_sig": "bgcalc(img: buffer, bg: buffer, msk: buffer, gain: float, sp: float, st: float) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "a0": "adr0.ptr",
+                        "a1": "adr1.ptr",
+                        "data": "data.ptr",
+                        "nf": "data.shape[1]",
+                        "ns": "data.shape[0]",
+                        "out": "out.ptr",
+                    },
+                    "sig": "void reorder_u16_a32_a16(const uint16_t *data, const uint32_t *a0, const int16_t *a1, uint16_t *out, intptr_t ns, intptr_t nf)",
+                },
+            ],
+            "checks": [
+                "data.format == 'H' or data.itemsize == 2",
+                "data.ndim == 2",
+                "adr0.format == 'I' or adr0.itemsize == 4",
+                "adr0.n == data.shape[0]",
+                "adr1.format == 'h' or adr1.itemsize == 2",
+                "adr1.n == data.n",
+                "out.format == 'H' or out.itemsize == 2",
+                "out.n >= data.n",
+            ],
+            "doc": "2D reorder with per-row base + per-pixel offsets.",
+            "py_sig": "reorder_u16_a32_a16(data: buffer, adr0: buffer, adr1: buffer, out: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "u1": "u1.ptr",
+                        "u2": "u2.ptr",
+                    },
+                    "sig": "double misori_cubic(const double u1[3][3], const double u2[3][3]) -> double",
+                },
+            ],
+            "checks": [
+                "u1.format == 'd'",
+                "u1.n == 9",
+                "u2.format == 'd'",
+                "u2.n == 9",
+            ],
+            "doc": "misori_cubic computes the smallest misorientation for cubic symmetry.",
+            "params": {
+                "u1": "Orientation matrix U (9-element flattened double).",
+                "u2": "Orientation matrix U (9-element flattened double).",
+            },
+            "py_sig": "misori_cubic(u1: buffer, u2: buffer) -> float",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "img": "img.ptr",
+                        "npx": "img.n",
+                    },
+                    "outputs": {
+                        "maxval": "float",
+                        "mean": "float",
+                        "minval": "float",
+                        "var": "float",
+                    },
+                    "sig": "void array_stats(const float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)",
+                },
+            ],
+            "checks": ["img.format == 'f'"],
+            "doc": "Compute min, max, mean, variance.",
+            "py_sig": "array_stats(img: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "u1": "u1.ptr",
+                        "u2": "u2.ptr",
+                    },
+                    "sig": "double misori_monoclinic(const double u1[3][3], const double u2[3][3]) -> double",
+                },
+            ],
+            "checks": [
+                "u1.format == 'd'",
+                "u1.n == 9",
+                "u2.format == 'd'",
+                "u2.n == 9",
+            ],
+            "doc": "misori_monoclinic assumes a unique b axis and only checks the flip of b -> -b.",
+            "params": {
+                "u1": "Orientation matrix U (9-element flattened double).",
+                "u2": "Orientation matrix U (9-element flattened double).",
+            },
+            "py_sig": "misori_monoclinic(u1: buffer, u2: buffer) -> float",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "dim0": "data.shape[0]",
+                        "dim1": "data.shape[1]",
+                        "im": "data.ptr",
+                        "l": "wrk.ptr",
+                        "lout": "labels.ptr",
+                    },
+                    "sig": "int localmaxlabel(const float *im, int32_t *lout, uint8_t *l, intptr_t dim0, intptr_t dim1) -> int",
+                },
+            ],
+            "checks": [
+                "data.format == 'f'",
+                "data.ndim == 2",
+                "( labels.format == 'i' or labels.format == 'l' )",
+                "labels.n == data.n",
+                "wrk.format == 'B' or wrk.format == 'b'",
+                "wrk.n == data.n",
+            ],
+            "doc": "Label each pixel to its local maximum.",
+            "params": {
+                "data": "Input float32 2D.",
+                "labels": "Output int32 labels.",
+                "wrk": "Temp uint8 workspace.",
+            },
+            "py_sig": "localmaxlabel(data: buffer, labels: buffer, wrk: buffer) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "data": "data.ptr",
+                        "labels": "labels.ptr",
+                        "nf": "data.shape[1]",
+                        "npk": "np",
+                        "ns": "data.shape[0]",
+                        "omega": "omega",
+                        "res": "results.ptr",
+                        "verbose": "verbose",
+                    },
+                    "sig": "void blobproperties(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf, double *res)",
+                },
+            ],
+            "checks": [
+                "data.format == 'f'",
+                "data.ndim == 2",
+                "( labels.format == 'i' or labels.format == 'l' )",
+                "labels.n == data.n",
+                "results.format == 'd'",
+                "results.shape[0] == np",
+                "results.shape[1] == 36",
+            ],
+            "doc": "Compute blob properties for each labelled object.",
+            "gil_release": True,
+            "params": {
+                "data": "Input float32 2D.",
+                "labels": "Input int32 labels.",
+                "np": "Number of objects.",
+                "omega": "Omega angle.",
+                "results": "Output array (np, 36).",
+                "verbose": "Print diagnostics.",
+            },
+            "py_sig": "blobproperties(data: buffer, labels: buffer, np: int, results: buffer, omega: float = 0.0, verbose: int = 0) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "high": "high",
+                        "hist": "hist.ptr",
+                        "img": "img.ptr",
+                        "low": "low",
+                        "nhist": "hist.n",
+                        "npx": "img.n",
+                    },
+                    "sig": "void array_histogram(const float *img, intptr_t npx, float low, float high, int32_t *hist, intptr_t nhist)",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "( hist.format == 'i' or hist.format == 'l' )",
+            ],
+            "doc": "Compute histogram of float array.",
+            "py_sig": "array_histogram(img: buffer, low: float, high: float, hist: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "N": "data.n",
+                        "adr": "adr.ptr",
+                        "data": "data.ptr",
+                        "out": "out.ptr",
+                    },
+                    "sig": "void reorder_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)",
+                    "when": "adr.format == 'I' or adr.itemsize == 4",
+                },
+            ],
+            "checks": [
+                "data.format == 'H' or data.itemsize == 2",
+                "adr.format == 'I' or adr.itemsize == 4",
+                "adr.n == data.n",
+                "out.format == 'H' or out.itemsize == 2",
+                "out.n >= data.n",
+            ],
+            "doc": "out[adr[i]] = data[i].",
+            "gil_release": True,
+            "py_sig": "reorder_u16_a32(data: buffer, adr: buffer, out: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "chi": "chi",
+                        "gv": "gv.ptr",
+                        "n": "xlylzl.shape[0]",
+                        "omega": "omega.ptr",
+                        "omegasign": "omegasign",
+                        "t": "t.ptr",
+                        "wedge": "wedge",
+                        "wvln": "wvln",
+                        "xlylzl": "xlylzl.ptr",
+                    },
+                    "sig": "void compute_gv(const double xlylzl[][3], const double omega[], double omegasign, double wvln, double wedge, double chi, const double t[3], double gv[][3], intptr_t n)",
+                    "when": "xlylzl.format == 'd' and omega.format == 'd' and gv.format == 'd'",
+                },
+            ],
+            "checks": [
+                "xlylzl.format == 'd'",
+                "xlylzl.ndim == 2",
+                "xlylzl.shape[1] == 3",
+                "omega.format == 'd'",
+                "omega.n == xlylzl.shape[0]",
+                "t.format == 'd'",
+                "t.n == 3",
+                "gv.format == 'd'",
+                "gv.ndim == 2",
+                "gv.shape[0] == xlylzl.shape[0]",
+                "gv.shape[1] == 3",
+            ],
+            "doc": "compute_gv computes scattering vectors given spot positions in the laboratory frame.",
+            "gil_release": True,
+            "params": {
+                "chi": "Chi angle (radians).",
+                "gv": "Output g-vectors array, shape (n, 3).",
+                "omega": "Omega rotation per spot (radians), shape (n,).",
+                "omegasign": "Omega rotation sign.",
+                "t": "Translation vector (3 elements).",
+                "wedge": "Wedge angle (radians).",
+                "wvln": "Wavelength (angstroms).",
+                "xlylzl": "Spot positions in laboratory frame, shape (n, 3).",
+            },
+            "py_sig": "compute_gv(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, gv: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "label": "label",
+                        "labels": "labels.ptr",
+                        "ng": "gv.shape[0]",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "drlv2": "double",
+                        "npk": "int",
+                    },
+                    "sig": "void refine_assigned(double ubi[3][3], const double gv[][3], const int *labels, int label, int *npk, double *drlv2, intptr_t ng)",
+                },
+            ],
+            "checks": [
+                "ubi.format == 'd'",
+                "ubi.n == 9",
+                "gv.format == 'd'",
+                "( labels.format == 'i' or labels.format == 'l' )",
+                "labels.n == gv.shape[0]",
+            ],
+            "doc": "refine_assigned fits a ubi matrix to a set of g-vectors and assignments in labels.",
+            "params": {
+                "gv": "G-vectors array, shape (ng, 3) flattened.",
+                "label": "Grain label to refine.",
+                "labels": "Peak-to-grain assignments (ng ints).",
+                "ubi": "Orientation matrix (9-element flattened double).",
+            },
+            "py_sig": "refine_assigned(ubi: buffer, gv: buffer, labels: buffer, label: int) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "N": "data.n",
+                        "adr": "adr.ptr",
+                        "data": "data.ptr",
+                        "out": "out.ptr",
+                    },
+                    "sig": "void reorderlut_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)",
+                    "when": "adr.format == 'I' or adr.itemsize == 4",
+                },
+            ],
+            "checks": [
+                "data.format == 'H' or data.itemsize == 2",
+                "adr.format == 'I' or adr.itemsize == 4",
+                "adr.n == data.n",
+                "out.format == 'H' or out.itemsize == 2",
+                "out.n == data.n",
+            ],
+            "doc": "out[i] = data[adr[i]].",
+            "gil_release": True,
+            "py_sig": "reorderlut_u16_a32(data: buffer, adr: buffer, out: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "u1": "u1.ptr",
+                        "u2": "u2.ptr",
+                    },
+                    "sig": "double misori_tetragonal(const double u1[3][3], const double u2[3][3]) -> double",
+                },
+            ],
+            "checks": [
+                "u1.format == 'd'",
+                "u1.n == 9",
+                "u2.format == 'd'",
+                "u2.n == 9",
+            ],
+            "doc": "misori_tetragonal computes the smallest misorientation for tetragonal symmetry.",
+            "params": {
+                "u1": "Orientation matrix U (9-element flattened double).",
+                "u2": "Orientation matrix U (9-element flattened double).",
+            },
+            "py_sig": "misori_tetragonal(u1: buffer, u2: buffer) -> float",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "col": "col.ptr",
+                        "cut": "cut",
+                        "img": "img.ptr",
+                        "msk": "msk.ptr",
+                        "nf": "img.shape[1]",
+                        "ns": "img.shape[0]",
+                        "row": "row.ptr",
+                        "val": "val.ptr",
+                    },
+                    "sig": "int tosparse_u16(const uint16_t *img, const uint8_t *msk, uint16_t *row, uint16_t *col, uint16_t *val, int cut, intptr_t ns, intptr_t nf) -> int",
+                },
+            ],
+            "checks": [
+                "img.format == 'H' or img.itemsize == 2",
+                "img.ndim == 2",
+                "msk.format == 'B' or msk.format == 'b' or msk.format == '?'",
+                "msk.n == img.n",
+                "row.format == 'H' or row.itemsize == 2",
+                "col.format == 'H' or col.itemsize == 2",
+                "val.format == 'H' or val.itemsize == 2",
+            ],
+            "doc": "Convert dense uint16 image to sparse COO.",
+            "params": {
+                "col": "Output cols.",
+                "cut": "Threshold.",
+                "img": "Input uint16 2D.",
+                "msk": "Mask (uint8, 0=include).",
+                "row": "Output rows.",
+                "val": "Output values.",
+            },
+            "py_sig": "tosparse_u16(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: int) -> int",
+        },
+    ],
+    "headers": [
+        "../functions/common/ImageD11_cmath.h",
+        "../functions/common/blobs.h",
+        "../functions/common/cImageD11.h",
+        "../functions/common/cimaged11utils.h",
+    ],
+    "module": "_cImageD11",
+    "source": [
+        "../functions/mask_to_coo/mask_to_coo.c",
+        "../functions/uint16_to_float_darkflm/uint16_to_float_darkflm.c",
+        "../functions/reorderlut_f32_a32/reorderlut_f32_a32.c",
+        "../functions/score_and_refine/score_and_refine.c",
+        "../functions/sparse_overlaps/sparse_overlaps.c",
+        "../functions/make_clean_mask/make_clean_mask.c",
+        "../functions/compute_geometry/compute_geometry.c",
+        "../functions/put_incr32/put_incr32.c",
+        "../functions/score_gvec_z/score_gvec_z.c",
+        "../functions/sparse_connectedpixels_splat/sparse_connectedpixels_splat.c",
+        "../functions/sparse_is_sorted/sparse_is_sorted.c",
+        "../functions/common/blobs.c",
+        "../functions/common/cimaged11utils.c",
+        "../functions/put_incr64/put_incr64.c",
+        "../functions/reorder_f32_a32/reorder_f32_a32.c",
+        "../functions/array_mean_var_cut/array_mean_var_cut.c",
+        "../functions/tosparse_f32/tosparse_f32.c",
+        "../functions/closest_vec/closest_vec.c",
+        "../functions/compute_xlylzl/compute_xlylzl.c",
+        "../functions/frelon_lines/frelon_lines.c",
+        "../functions/sparse_blob2Dproperties/sparse_blob2Dproperties.c",
+        "../functions/connectedpixels/connectedpixels.c",
+        "../functions/coverlaps/coverlaps.c",
+        "../functions/sparse_smooth/sparse_smooth.c",
+        "../functions/clean_mask/clean_mask.c",
+        "../functions/splat/splat.c",
+        "../functions/count_shared/count_shared.c",
+        "../functions/misori_orthorhombic/misori_orthorhombic.c",
+        "../functions/compute_xlylzl_xpos_variable/compute_xlylzl_xpos_variable.c",
+        "../functions/tosparse_u32/tosparse_u32.c",
+        "../functions/blob_moments/blob_moments.c",
+        "../functions/sparse_localmaxlabel/sparse_localmaxlabel.c",
+        "../functions/compress_duplicates/compress_duplicates.c",
+        "../functions/cluster1d/cluster1d.c",
+        "../functions/array_mean_var_msk/array_mean_var_msk.c",
+        "../functions/quickorient/quickorient.c",
+        "../functions/score_and_assign/score_and_assign.c",
+        "../functions/frelon_lines_sub/frelon_lines_sub.c",
+        "../functions/closest/closest.c",
+        "../functions/score/score.c",
+        "../functions/bloboverlaps/bloboverlaps.c",
+        "../functions/uint16_to_float_darksub/uint16_to_float_darksub.c",
+        "../functions/sparse_connectedpixels/sparse_connectedpixels.c",
+        "../functions/bgcalc/bgcalc.c",
+        "../functions/reorder_u16_a32_a16/reorder_u16_a32_a16.c",
+        "../functions/misori_cubic/misori_cubic.c",
+        "../functions/array_stats/array_stats.c",
+        "../functions/misori_monoclinic/misori_monoclinic.c",
+        "../functions/localmaxlabel/localmaxlabel.c",
+        "../functions/blobproperties/blobproperties.c",
+        "../functions/array_histogram/array_histogram.c",
+        "../functions/reorder_u16_a32/reorder_u16_a32.c",
+        "../functions/compute_gv/compute_gv.c",
+        "../functions/refine_assigned/refine_assigned.c",
+        "../functions/reorderlut_u16_a32/reorderlut_u16_a32.c",
+        "../functions/misori_tetragonal/misori_tetragonal.c",
+        "../functions/tosparse_u16/tosparse_u16.c",
+    ],
+    "timing": True,
+}
