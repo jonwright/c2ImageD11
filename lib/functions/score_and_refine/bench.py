@@ -2,8 +2,8 @@
 """Benchmark score_and_refine -- throughput, threading, f2py comparison.
 
 Usage:
-    python bench.py                     throughput at 3 sizes
-    python bench.py --threads           1T vs nT scaling sweep
+    python bench.py                     throughput, 1T vs nT, f2py baseline
+    python bench.py --threads           detailed 1T vs nT scaling sweep
     python bench.py --overhead          c2py23 wrapper overhead vs f2py
     python bench.py --sizes 10000 50000 200000 1000000
 """
@@ -48,16 +48,15 @@ def time_calls(fn, ubi, gv, tol, n_calls):
     for _ in range(n_calls):
         fn(ubi.copy(), gv, tol)
     t1 = time.perf_counter()
-    us = (t1 - t0) / n_calls * 1e6
     thr = ng * n_calls / (t1 - t0) / 1e6
-    return us, thr
+    return thr
 
 
 def do_default(args):
     import c2ImageD11
 
     fn = c2ImageD11.score_and_refine
-    c2ImageD11.cimaged11_omp_set_num_threads(1)
+    n_cores = os.cpu_count() or 4
 
     data = {}
     for ng in args.sizes:
@@ -70,34 +69,60 @@ def do_default(args):
                     "AoS_f32": (ubi, gv_f32, tol),
                     "SoA_f32": (ubi, gv_soa_f32, tol)}
 
-    print("score_and_refine throughput (1 thread, c2py23 dispatch)")
-    print("Sizes: %s" % ", ".join(str(s) for s in args.sizes))
-
-    # Detect which variants are dispatched for each layout
+    # Detect variants
     ng0 = args.sizes[0]
     ubi0, gv_f64_0, tol0 = gen_data(ng0, np.float64)
     mod = c2ImageD11._cImageD11
     variants = {}
-    for name, (ubi, gv, tol) in [
+    for name, (ub, gv, t) in [
             ("AoS_f64", (ubi0, gv_f64_0, tol0)),
             ("SoA_f64", (ubi0, gv_f64_0.T.copy(), tol0)),
             ("AoS_f32", (ubi0, gv_f64_0.astype(np.float32), tol0)),
             ("SoA_f32", (ubi0, gv_f64_0.T.copy().astype(np.float32), tol0))]:
-        variants[name] = detect_variant(fn, ubi, gv, tol, mod)
+        variants[name] = detect_variant(fn, ub, gv, t, mod)
+
+    # Try f2py
+    try:
+        import ImageD11._cImageD11 as old
+        old.cimaged11_omp_set_num_threads(1)
+        have_f2py = True
+    except ImportError:
+        have_f2py = False
+
+    print("score_and_refine throughput")
+    print("Sizes: %s, %d cores" % (", ".join(str(s) for s in args.sizes), n_cores))
+    print()
     for name in ("AoS_f64", "SoA_f64", "AoS_f32", "SoA_f32"):
         print("  %s => %s" % (name, variants.get(name, "?")))
     print()
-    print("%10s  %8s  %10s  %8s  %10s  %8s  %10s  %8s  %10s" %
-          ("ng", "AoS_f64", "M/s", "SoA_f64", "M/s", "AoS_f32", "M/s", "SoA_f32", "M/s"))
-    print("-" * 105)
+
+    print("%8s  %6s  %8s  %8s  %5s  %8s  %8s  %5s  %8s  %8s  %5s  %8s  %8s  %5s" %
+          ("ng", "f2py_M", "A64_1T", "A64_nT", "x", "S64_1T", "S64_nT", "x",
+           "A32_1T", "A32_nT", "x", "S32_1T", "S32_nT", "x"))
+    print("-" * 130)
+
     for ng in args.sizes:
-        row = "%10d" % ng
+        ubi = data[ng]["AoS_f64"][0]
+        nc = max(5, int(2e8 / ng))
+
+        # f2py baseline (f64 AoS only, 1 thread)
+        f2py_M = 0
+        if have_f2py:
+            old.cimaged11_omp_set_num_threads(1)
+            f2py_M = time_calls(old.score_and_refine, ubi, data[ng]["AoS_f64"][1], 0.05, nc)
+
+        row = "%8d  %6.0f" % (ng, f2py_M)
+
+        # c2py: 1T and nT for each layout
         for layout in ("AoS_f64", "SoA_f64", "AoS_f32", "SoA_f32"):
-            ubi, gv, tol = data[ng][layout]
-            ng_arr = gv.shape[1] if (gv.ndim == 2 and gv.shape[0] == 3) else gv.shape[0]
-            nc = max(3, int(1e8 / ng_arr))
-            us, thr = time_calls(fn, ubi, gv, tol, nc)
-            row += "  %8.0f %8.0f" % (us, thr)
+            _, gv, tol = data[ng][layout]
+            thr_1t, thr_nt = 0, 0
+            c2ImageD11.cimaged11_omp_set_num_threads(1)
+            thr_1t = time_calls(fn, ubi, gv, tol, nc)
+            c2ImageD11.cimaged11_omp_set_num_threads(n_cores)
+            thr_nt = time_calls(fn, ubi, gv, tol, nc)
+            ratio = " -" if thr_1t == 0 else "%5.2fx" % (thr_nt / thr_1t)
+            row += "  %6.0fM %6.0fM %5s" % (thr_1t, thr_nt, ratio)
         print(row)
 
 
@@ -125,15 +150,12 @@ def do_threads(args):
         row = "%8d" % ng
         for gv in (gv_f64, gv_soa_f64, gv_f32, gv_soa_f32):
             thr_1t, thr_nt = 0, 0
-            for nthr in (1, n_cores):
-                c2ImageD11.cimaged11_omp_set_num_threads(nthr)
-                _, thr = time_calls(fn, ubi, gv, tol, nc)
-                if nthr == 1:
-                    thr_1t = thr
-                else:
-                    thr_nt = thr
-            ratio = thr_nt / thr_1t if thr_1t else 0
-            row += "  %7.0fM %7.0fM %5.2fx" % (thr_1t, thr_nt, ratio)
+            c2ImageD11.cimaged11_omp_set_num_threads(1)
+            thr_1t = time_calls(fn, ubi, gv, tol, nc)
+            c2ImageD11.cimaged11_omp_set_num_threads(n_cores)
+            thr_nt = time_calls(fn, ubi, gv, tol, nc)
+            ratio = " -" if thr_1t == 0 else "%5.2fx" % (thr_nt / thr_1t)
+            row += "  %7.0fM %7.0fM %5s" % (thr_1t, thr_nt, ratio)
         print(row)
 
 
@@ -143,45 +165,40 @@ def do_overhead():
     NG = 10000
     ubi, gv, tol = gen_data(NG, np.float64)
     c2ImageD11.cimaged11_omp_set_num_threads(1)
+    nc = 50000
 
     results = {}
-
     try:
         import ImageD11._cImageD11 as old
         old.cimaged11_omp_set_num_threads(1)
-        us, thr = time_calls(old.score_and_refine, ubi, gv, tol, 50000)
-        results["f2py"] = (us, thr)
+        thr = time_calls(old.score_and_refine, ubi, gv, tol, nc)
+        results["f2py"] = thr
     except ImportError:
         pass
 
-    us, thr = time_calls(c2ImageD11.score_and_refine, ubi, gv, tol, 50000)
-    results["c2py"] = (us, thr)
+    thr = time_calls(c2ImageD11.score_and_refine, ubi, gv, tol, nc)
+    results["c2py"] = thr
 
     print("=" * 70)
     print("Wrapper overhead -- ng=%d, 1T (c2py23 dispatch)" % NG)
     print("=" * 70)
     print()
-    print("  %-22s %8s %8s %8s" % ("Wrapper", "us/call", "M gv/s", "vs f2py"))
-    print("  " + "-" * 50)
-    ref = results.get("f2py", results["c2py"])[1]
-    for k, (us, thr) in results.items():
-        label = {"f2py": "1.00x", "c2py": "%.2fx" % (thr / ref)}.get(k, "")
-        print("  %-22s %7.1f us %7.0fM %7s" % (k, us, thr, label))
+    print("  %-22s %8s %8s" % ("Wrapper", "M gv/s", "vs f2py"))
+    print("  " + "-" * 40)
+    ref = results.get("f2py", results["c2py"])
+    for k, thr in results.items():
+        label = "1.00x" if k == "f2py" else ("%.2fx" % (thr / ref))
+        print("  %-22s %7.0fM %7s" % (k, thr, label))
 
     if "f2py" in results and "c2py" in results:
-        c2py_oh = results["c2py"][0] - results["f2py"][0]
-        rthr = results["c2py"][1]
-        r_us = results["c2py"][0]
+        c2py_oh = NG / results["c2py"] / 1e6 * 1e6 - NG / results["f2py"] / 1e6 * 1e6
+        rthr = results["c2py"]
         print()
-        print("  c2py overhead: %.1f us" % c2py_oh)
-        print()
-
-    print("  Extrapolation at ng:")
-    for ng in [10000, 100000, 1000000, 50000000]:
-        cu = ng / rthr / 1e6 * 1e6
-        total = cu + r_us
-        print("    %9d:  %.0f us  (%.0f%% overhead)" %
-              (ng, total, r_us / total * 100))
+        print("  Extrapolation at ng:")
+        for ng in [10000, 100000, 1000000, 50000000]:
+            cu = ng / rthr / 1e6 * 1e6
+            print("    %9d:  %.0f us  (%.0f%% overhead)" %
+                  (ng, cu + c2py_oh, c2py_oh / (cu + c2py_oh) * 100))
 
 
 def main():
