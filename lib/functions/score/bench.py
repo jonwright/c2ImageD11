@@ -15,9 +15,9 @@ ng = 200000
 niter = 30
 n_cores = os.cpu_count() or 4
 
-so = os.path.join(os.path.dirname(__file__), "..", "..", "..",
-                  "c2ImageD11", "_cImageD11_x86_64.so")
-lib = ctypes.CDLL(os.path.abspath(so))
+# Load the .so/.pyd for CPU flag access
+so = c2ImageD11._cImageD11.__file__
+lib = ctypes.CDLL(so)
 
 def get_flag(name):
     return ctypes.c_int.in_dll(lib, name).value
