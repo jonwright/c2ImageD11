@@ -16,6 +16,7 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
+#include "sar_omp.h"
 
 static float hsum8(__m256 v) {
     __m128 lo = _mm256_castps256_ps128(v), hi = _mm256_extractf128_ps(v, 1);
@@ -156,8 +157,7 @@ void score_and_refine_f32_avx2(
 {
     double H[3][3] = {{0}}, R[3][3] = {{0}}, UB[3][3] = {{0}};
     int n; double sumdrlv2;
-    sar_f32_aos_avx2_kernel((const double *)ubi, gv, tol, ng,
-                             (double *)H, (double *)R, &n, &sumdrlv2);
+        SAR_OMP_DISPATCH_AOS(sar_f32_aos_avx2_kernel, (const double *)ubi, gv, sizeof(float), ng, tol, H, R, &n, &sumdrlv2);
     if (n > 0) sumdrlv2 /= n;
     if (inverse3x3(H) == 0) {
         int i, j, l;

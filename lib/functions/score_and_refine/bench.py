@@ -17,8 +17,16 @@ DEFAULT_SIZES = [100000, 500000, 2000000]
 
 
 def gen_data(ng, gv_dtype, seed=42):
-    rng = np.random.RandomState(seed)
-    return rng.randn(3, 3).astype(np.float64), rng.randn(ng, 3).astype(gv_dtype), 0.05
+    """Generate realistic crystallographic data -- g-vectors from random UBI.
+    This ensures the inner loop body executes (peaks match), making
+    threading meaningful."""
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+    from test_data import generate_single_ubi_data
+    ubi, gv, tol = generate_single_ubi_data(ng, seed)
+    # tol from generate_single_ubi_data is 0.05 which is good
+    if gv_dtype == np.float32:
+        gv = gv.astype(np.float32)
+    return ubi, gv, tol
 
 
 def detect_variant(fn, ubi, gv, tol, mod):

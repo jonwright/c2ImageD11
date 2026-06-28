@@ -16,6 +16,7 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
+#include "sar_omp.h"
 
 extern int inverse3x3(double A[3][3]);
 
@@ -86,7 +87,7 @@ sar_f32_aos_avx512_kernel(const double ubi[9], const float *__restrict gv,
 void score_and_refine_f32_avx512(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)
 {
     double H[3][3]={{0}},R[3][3]={{0}},UB[3][3]={{0}}; int n; double sd;
-    sar_f32_aos_avx512_kernel((const double*)ubi,gv,tol,ng,(double*)H,(double*)R,&n,&sd);
+        SAR_OMP_DISPATCH_AOS(sar_f32_aos_avx512_kernel, (const double *)ubi, gv, sizeof(float), ng, tol, H, R, &n, &sd);
     if(n>0)sd/=n;
     if(inverse3x3(H)==0){int i,j,l;for(i=0;i<3;i++)for(j=0;j<3;j++)for(l=0;l<3;l++)UB[i][j]+=R[i][l]*H[l][j];}
     if(inverse3x3(UB)==0){int i,j;for(i=0;i<3;i++)for(j=0;j<3;j++)ubi[i][j]=UB[i][j];}

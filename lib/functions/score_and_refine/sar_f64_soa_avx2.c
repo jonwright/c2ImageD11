@@ -28,6 +28,7 @@ static double hsum4(__m256d v) {
 }
 
 #include <stdint.h>
+#include "sar_omp.h"
 
 extern int inverse3x3(double A[3][3]);
 
@@ -162,8 +163,7 @@ void score_and_refine_f64_soa_avx2(
     int n;
     double sumdrlv2;
 
-    sar_f64_soa_avx2_kernel((const double *)ubi, gvx, gvy, gvz, tol, ng,
-                             (double *)H, (double *)R, &n, &sumdrlv2);
+        SAR_OMP_DISPATCH_SOA(sar_f64_soa_avx2_kernel, (const double *)ubi, gvx, gvy, gvz, sizeof(double), ng, tol, H, R, &n, &sumdrlv2);
 
     if (n > 0) sumdrlv2 /= n;
 
