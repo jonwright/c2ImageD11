@@ -90,8 +90,11 @@ c2_sources_cpp = files(
 # Platform-specific compiler and link flags
 is_msvc = cc.get_id() == 'msvc'
 if is_msvc
-  c2_c_args = ['/openmp', '/O2', '/fp:fast', '/D_DEFAULT_SOURCE']
-  c2_cpp_args = ['/openmp', '/O2', '/fp:fast']
+  # /fp:fast contraction breaks (x+MAGIC)-MAGIC rounding trick used
+  # by the C code and baseline C++.  ISA variants with /arch:AVX2+
+  # use nearbyint() instead, which is safe.
+  c2_c_args = ['/openmp', '/O2', '/D_DEFAULT_SOURCE']
+  c2_cpp_args = ['/openmp', '/O2']
   c2_link_args = []
 else
   c2_c_args = cc.get_supported_arguments(
@@ -112,9 +115,12 @@ c2_inc = include_directories(
 # base flags only (the code compiles correctly without -msse4.1 etc.).
 if host_machine.cpu_family() == 'x86_64'
   if is_msvc
-    # /arch:AVX implies SSE4.2; /arch:AVX2 implies AVX+FMA; AVX-512 needs /arch:AVX512
+    # MSVC has no /arch:SSE4.1. /arch:AVX generates AVX instructions which
+    # would crash on SSE4.1-only CPUs (Penryn).  So SSE4.1 variants use
+    # base flags only -- they compile correctly (magic-int rounding) but
+    # without the nearbyint fast path.  AVX2/AVX-512 get proper ISA flags.
     sse41_f64_flags = ['/openmp', '/O2']
-    sse41_f32_flags = ['/openmp', '/O2', '/fp:fast', '/arch:AVX']
+    sse41_f32_flags = ['/openmp', '/O2']
     avx2_flags      = ['/openmp', '/O2', '/fp:fast', '/arch:AVX2']
     avx512_flags    = ['/openmp', '/O2', '/fp:fast', '/arch:AVX512']
   else

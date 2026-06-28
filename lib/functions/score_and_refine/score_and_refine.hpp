@@ -37,7 +37,7 @@ int inverse3x3(double A[3][3]);
 /* Round to nearest integer. */
 template <typename T>
 static inline T rint_h(T x) {
-#if defined(__SSE4_1__)
+#if defined(__SSE4_1__) || defined(__AVX__)
     if (sizeof(T) == sizeof(float))
         return (T)nearbyintf((float)x);
     return nearbyint(x);
