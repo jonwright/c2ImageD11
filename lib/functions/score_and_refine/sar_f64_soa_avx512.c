@@ -22,6 +22,7 @@
  */
 
 #include <immintrin.h>
+#include "sar_popcnt.h"
 #include <stdint.h>
 
 extern int inverse3x3(double A[3][3]);
@@ -91,7 +92,7 @@ sar_f64_soa_avx512_kernel(
         __mmask8 mask = _mm512_cmp_pd_mask(sumsq, tvec, _CMP_LT_OS);
         if (mask == 0) continue;
 
-        n_scalar += __builtin_popcount((unsigned int)mask);
+        n_scalar += popcnt32((unsigned int)mask);
 
         /* Branchless masked accumulation: v = mask ? v + x : v */
         s_vec = _mm512_mask_add_pd(s_vec, mask, s_vec, sumsq);

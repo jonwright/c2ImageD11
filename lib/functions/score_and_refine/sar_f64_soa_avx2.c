@@ -17,6 +17,16 @@
  */
 
 #include <immintrin.h>
+#include "sar_popcnt.h"
+/* Horizontal sum: 4 doubles in ymm -> scalar */
+static double hsum4(__m256d v) {
+    __m128d lo = _mm256_castpd256_pd128(v);
+    __m128d hi = _mm256_extractf128_pd(v, 1);
+    lo = _mm_add_pd(lo, hi);
+    lo = _mm_hadd_pd(lo, lo);
+    return _mm_cvtsd_f64(lo);
+}
+
 #include <stdint.h>
 
 extern int inverse3x3(double A[3][3]);
@@ -77,7 +87,7 @@ sar_f64_soa_avx2_kernel(const double ubi[9],
         int mm = _mm256_movemask_pd(mask);
         if (mm == 0) continue;
 
-        n_scalar += __builtin_popcount(mm);
+        n_scalar += popcnt32(mm);
         s_vec = _mm256_add_pd(s_vec, _mm256_and_pd(sumsq, mask));
 
 #define MA(a, v) a = _mm256_add_pd(a, _mm256_and_pd(v, mask))
@@ -104,16 +114,13 @@ sar_f64_soa_avx2_kernel(const double ubi[9],
     }
 
     /* Horizontal reduction */
-    #define HS(v) ({ __m128d lo = _mm256_castpd256_pd128(v); \
-                     __m128d hi = _mm256_extractf128_pd(v, 1); \
-                     lo = _mm_add_pd(lo, hi); lo = _mm_hadd_pd(lo, lo); \
-                     _mm_cvtsd_f64(lo); })
-    H[0] = HS(H00); H[1] = HS(H01); H[2] = HS(H02);
-    H[3] = HS(H10); H[4] = HS(H11); H[5] = HS(H12);
-    H[6] = HS(H20); H[7] = HS(H21); H[8] = HS(H22);
-    R[0] = HS(R00); R[1] = HS(R01); R[2] = HS(R02);
-    R[3] = HS(R10); R[4] = HS(R11); R[5] = HS(R12);
-    R[6] = HS(R20); R[7] = HS(R21); R[8] = HS(R22);
+    
+    H[0] = hsum4(H00); H[1] = hsum4(H01); H[2] = hsum4(H02);
+    H[3] = hsum4(H10); H[4] = hsum4(H11); H[5] = hsum4(H12);
+    H[6] = hsum4(H20); H[7] = hsum4(H21); H[8] = hsum4(H22);
+    R[0] = hsum4(R00); R[1] = hsum4(R01); R[2] = hsum4(R02);
+    R[3] = hsum4(R10); R[4] = hsum4(R11); R[5] = hsum4(R12);
+    R[6] = hsum4(R20); R[7] = hsum4(R21); R[8] = hsum4(R22);
     #undef HS
     *n_out = n_scalar;
     *sumdrlv2_out = ({ __m128d lo = _mm256_castpd256_pd128(s_vec);
