@@ -164,7 +164,7 @@
                 {
                     "map": {
                         "gv": "gv.ptr",
-                        "ng": "gv.shape[0]",
+                        "ng": "gv.shape[1]",
                         "tol": "tol",
                         "ubi": "ubi.ptr",
                     },
@@ -172,8 +172,8 @@
                         "n_arg": "int",
                         "sumdrlv2_arg": "double",
                     },
-                    "sig": "void score_and_refine_f64_avx512(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gv.format == 'd' and c2py_amd64_avx512f",
+                    "sig": "void score_and_refine_f64_soa_avx512(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_avx512f",
                 },
                 {
                     "map": {
@@ -186,8 +186,22 @@
                         "n_arg": "int",
                         "sumdrlv2_arg": "double",
                     },
-                    "sig": "void score_and_refine_f32_avx512(double ubi[3][3], const float gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gv.format == 'f' and c2py_amd64_avx512f",
+                    "sig": "void score_and_refine_f64_avx512(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and c2py_amd64_avx512f and gv.shape[1] == 3 and gv.slow_axis == 0",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "n_arg": "int",
+                        "sumdrlv2_arg": "double",
+                    },
+                    "sig": "void score_and_refine_f32_soa_avx512(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_avx512f",
                 },
                 {
                     "map": {
@@ -200,8 +214,22 @@
                         "n_arg": "int",
                         "sumdrlv2_arg": "double",
                     },
-                    "sig": "void score_and_refine_f64_avx2(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gv.format == 'd' and c2py_amd64_avx2",
+                    "sig": "void score_and_refine_f32_avx512(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and c2py_amd64_avx512f and gv.shape[1] == 3 and gv.slow_axis == 0",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "n_arg": "int",
+                        "sumdrlv2_arg": "double",
+                    },
+                    "sig": "void score_and_refine_f64_soa_avx2(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_avx2",
                 },
                 {
                     "map": {
@@ -214,8 +242,22 @@
                         "n_arg": "int",
                         "sumdrlv2_arg": "double",
                     },
-                    "sig": "void score_and_refine_f32_avx2(double ubi[3][3], const float gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gv.format == 'f' and c2py_amd64_avx2",
+                    "sig": "void score_and_refine_f64_avx2(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and c2py_amd64_avx2 and gv.shape[1] == 3 and gv.slow_axis == 0",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "n_arg": "int",
+                        "sumdrlv2_arg": "double",
+                    },
+                    "sig": "void score_and_refine_f32_soa_avx2(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_avx2",
                 },
                 {
                     "map": {
@@ -228,8 +270,8 @@
                         "n_arg": "int",
                         "sumdrlv2_arg": "double",
                     },
-                    "sig": "void score_and_refine_f64_sse41(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gv.format == 'd' and c2py_amd64_sse4_1",
+                    "sig": "void score_and_refine_f32_avx2(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and c2py_amd64_avx2 and gv.shape[1] == 3 and gv.slow_axis == 0",
                 },
                 {
                     "map": {
@@ -242,8 +284,22 @@
                         "n_arg": "int",
                         "sumdrlv2_arg": "double",
                     },
-                    "sig": "void score_and_refine_f32_sse41(double ubi[3][3], const float gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gv.format == 'f' and c2py_amd64_sse4_1",
+                    "sig": "void score_and_refine_f64_sse41(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and c2py_amd64_sse4_1 and gv.shape[1] == 3 and gv.slow_axis == 0",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "n_arg": "int",
+                        "sumdrlv2_arg": "double",
+                    },
+                    "sig": "void score_and_refine_f64_soa_sse41(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_sse4_1",
                 },
                 {
                     "map": {
@@ -256,8 +312,36 @@
                         "n_arg": "int",
                         "sumdrlv2_arg": "double",
                     },
-                    "sig": "void score_and_refine_f64(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gv.format == 'd'",
+                    "sig": "void score_and_refine_f32_sse41(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and c2py_amd64_sse4_1 and gv.shape[1] == 3 and gv.slow_axis == 0",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "n_arg": "int",
+                        "sumdrlv2_arg": "double",
+                    },
+                    "sig": "void score_and_refine_f32_soa_sse41(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_sse4_1",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "n_arg": "int",
+                        "sumdrlv2_arg": "double",
+                    },
+                    "sig": "void score_and_refine_f64_soa(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3",
                 },
                 {
                     "map": {
@@ -270,8 +354,22 @@
                         "n_arg": "int",
                         "sumdrlv2_arg": "double",
                     },
-                    "sig": "void score_and_refine_f32(double ubi[3][3], const float gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gv.format == 'f'",
+                    "sig": "void score_and_refine_f64(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[1] == 3 and gv.slow_axis == 0",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "n_arg": "int",
+                        "sumdrlv2_arg": "double",
+                    },
+                    "sig": "void score_and_refine_f32_soa(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3",
                 },
                 {
                     "map": {
@@ -284,14 +382,28 @@
                         "n_arg": "int",
                         "sumdrlv2_arg": "double",
                     },
-                    "sig": "void score_and_refine(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gv.format == 'd'",
+                    "sig": "void score_and_refine_f32(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[1] == 3 and gv.slow_axis == 0",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[0]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "outputs": {
+                        "n_arg": "int",
+                        "sumdrlv2_arg": "double",
+                    },
+                    "sig": "void score_and_refine(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[1] == 3 and gv.slow_axis == 0",
                 },
             ],
             "checks": [
                 "ubi.format == 'd'",
                 "ubi.n == 9",
-                "gv.ndim >= 1",
+                "gv.ndim == 2",
             ],
             "doc": "score_and_refine also refines the UB matrix using the assigned peaks.",
             "gil_release": True,
@@ -1914,140 +2026,6 @@
                 "val": "Output values.",
             },
             "py_sig": "tosparse_u16(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: int) -> int",
-        },
-        {
-            "c_overloads": [
-                {
-                    "map": {
-                        "gvx": "gvx.ptr",
-                        "gvy": "gvy.ptr",
-                        "gvz": "gvz.ptr",
-                        "ng": "gvx.shape[0]",
-                        "tol": "tol",
-                        "ubi": "ubi.ptr",
-                    },
-                    "outputs": {
-                        "n_arg": "int",
-                        "sumdrlv2_arg": "double",
-                    },
-                    "sig": "void score_and_refine_f64_soa_avx512(double ubi[3][3], const double gvx[], const double gvy[], const double gvz[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gvx.format == 'd' and c2py_amd64_avx512f",
-                },
-                {
-                    "map": {
-                        "gvx": "gvx.ptr",
-                        "gvy": "gvy.ptr",
-                        "gvz": "gvz.ptr",
-                        "ng": "gvx.shape[0]",
-                        "tol": "tol",
-                        "ubi": "ubi.ptr",
-                    },
-                    "outputs": {
-                        "n_arg": "int",
-                        "sumdrlv2_arg": "double",
-                    },
-                    "sig": "void score_and_refine_f32_soa_avx512(double ubi[3][3], const float gvx[], const float gvy[], const float gvz[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gvx.format == 'f' and c2py_amd64_avx512f",
-                },
-                {
-                    "map": {
-                        "gvx": "gvx.ptr",
-                        "gvy": "gvy.ptr",
-                        "gvz": "gvz.ptr",
-                        "ng": "gvx.shape[0]",
-                        "tol": "tol",
-                        "ubi": "ubi.ptr",
-                    },
-                    "outputs": {
-                        "n_arg": "int",
-                        "sumdrlv2_arg": "double",
-                    },
-                    "sig": "void score_and_refine_f64_soa_avx2(double ubi[3][3], const double gvx[], const double gvy[], const double gvz[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gvx.format == 'd' and c2py_amd64_avx2",
-                },
-                {
-                    "map": {
-                        "gvx": "gvx.ptr",
-                        "gvy": "gvy.ptr",
-                        "gvz": "gvz.ptr",
-                        "ng": "gvx.shape[0]",
-                        "tol": "tol",
-                        "ubi": "ubi.ptr",
-                    },
-                    "outputs": {
-                        "n_arg": "int",
-                        "sumdrlv2_arg": "double",
-                    },
-                    "sig": "void score_and_refine_f32_soa_avx2(double ubi[3][3], const float gvx[], const float gvy[], const float gvz[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gvx.format == 'f' and c2py_amd64_avx2",
-                },
-                {
-                    "map": {
-                        "gvx": "gvx.ptr",
-                        "gvy": "gvy.ptr",
-                        "gvz": "gvz.ptr",
-                        "ng": "gvx.shape[0]",
-                        "tol": "tol",
-                        "ubi": "ubi.ptr",
-                    },
-                    "outputs": {
-                        "n_arg": "int",
-                        "sumdrlv2_arg": "double",
-                    },
-                    "sig": "void score_and_refine_f64_soa_sse41(double ubi[3][3], const double gvx[], const double gvy[], const double gvz[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gvx.format == 'd' and c2py_amd64_sse4_1",
-                },
-                {
-                    "map": {
-                        "gvx": "gvx.ptr",
-                        "gvy": "gvy.ptr",
-                        "gvz": "gvz.ptr",
-                        "ng": "gvx.shape[0]",
-                        "tol": "tol",
-                        "ubi": "ubi.ptr",
-                    },
-                    "outputs": {
-                        "n_arg": "int",
-                        "sumdrlv2_arg": "double",
-                    },
-                    "sig": "void score_and_refine_f32_soa_sse41(double ubi[3][3], const float gvx[], const float gvy[], const float gvz[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gvx.format == 'f' and c2py_amd64_sse4_1",
-                },
-                {
-                    "map": {
-                        "gvx": "gvx.ptr",
-                        "gvy": "gvy.ptr",
-                        "gvz": "gvz.ptr",
-                        "ng": "gvx.shape[0]",
-                        "tol": "tol",
-                        "ubi": "ubi.ptr",
-                    },
-                    "outputs": {
-                        "n_arg": "int",
-                        "sumdrlv2_arg": "double",
-                    },
-                    "sig": "void score_and_refine_f64_soa(double ubi[3][3], const double gvx[], const double gvy[], const double gvz[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gvx.format == 'd'",
-                },
-                {
-                    "map": {
-                        "gvx": "gvx.ptr",
-                        "gvy": "gvy.ptr",
-                        "gvz": "gvz.ptr",
-                        "ng": "gvx.shape[0]",
-                        "tol": "tol",
-                        "ubi": "ubi.ptr",
-                    },
-                    "outputs": {
-                        "n_arg": "int",
-                        "sumdrlv2_arg": "double",
-                    },
-                    "sig": "void score_and_refine_f32_soa(double ubi[3][3], const float gvx[], const float gvy[], const float gvz[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
-                    "when": "ubi.format == 'd' and gvx.format == 'f'",
-                },
-            ],
-            "doc": "",
-            "py_sig": "score_and_refine_soa(ubi: buffer, gvx: buffer, gvy: buffer, gvz: buffer, tol: float) -> int",
         },
     ],
     "headers": [

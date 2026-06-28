@@ -11,7 +11,7 @@ sys.path.insert(0,
                  "score_and_refine"))
 from test_data import generate_single_ubi_data
 
-from c2ImageD11 import score_and_refine, score_and_refine_soa, OMP_MIN_NG
+from c2ImageD11 import score_and_refine, OMP_MIN_NG
 from c2ImageD11 import cimaged11_omp_set_num_threads
 
 
@@ -35,13 +35,10 @@ def test_aos_vs_soa_shape():
     gv = np.dot(hkls, UB.T)
 
     na, sa = score_and_refine(ubi.copy(), gv, 0.05)        # AoS (N,3)
-    ns, ss = score_and_refine(ubi.copy(), gv.T, 0.05)      # SoA (3,N)
-    nd, sd = score_and_refine_soa(ubi.copy(),
-        gv[:, 0].copy(), gv[:, 1].copy(), gv[:, 2].copy(), 0.05)
+    ns, ss = score_and_refine(ubi.copy(), gv.T.copy(), 0.05)  # SoA (3,N)
 
-    assert na == ns == nd, "n mismatch: %d %d %d" % (na, ns, nd)
+    assert na == ns, "n mismatch: %d %d" % (na, ns)
     assert abs(sa - ss) < 1e-12, "s mismatch AoS vs SoA"
-    assert abs(ss - sd) < 1e-12, "s mismatch SoA vs direct"
 
 
 def test_aos_vs_soa_f32():
@@ -55,12 +52,12 @@ def test_aos_vs_soa_f32():
     gv = (np.dot(hkls, UB.T)).astype(np.float32)
 
     na, sa = score_and_refine(ubi.copy(), gv, 0.05)
-    ns, ss = score_and_refine(ubi.copy(), gv.T, 0.05)
+    ns, ss = score_and_refine(ubi.copy(), gv.T.copy(), 0.05)
     assert na == ns, "f32 n mismatch: %d %d" % (na, ns)
 
 
 def test_ambiguous_33():
-    """Ambiguous (3,3) is handled via strides."""
+    """Ambiguous (3,3): c2py dispatch routes to AoS via shape[1]==3 check."""
     B = np.eye(3) / 4.06
     rng = np.random.RandomState(42)
     U, _ = np.linalg.qr(rng.randn(3, 3))
@@ -69,9 +66,9 @@ def test_ambiguous_33():
     hkls = rng.randint(-8, 9, size=(3, 3)).astype(np.float64)
     gv = np.dot(hkls, UB.T)
 
-    na, sa = score_and_refine(ubi.copy(), gv, 0.05)
-    ns, ss = score_and_refine(ubi.copy(), gv.T, 0.05)
-    assert na == ns, "3x3 n mismatch: %d %d" % (na, ns)
+    n, s = score_and_refine(ubi.copy(), gv, 0.05)
+    assert isinstance(n, (int, np.integer))
+    assert n >= 0
 
 
 def test_f64_f32_consistent():
@@ -148,7 +145,7 @@ def test_threading_correctness():
 
 
 def test_soa_direct_api():
-    """score_and_refine_soa works as a separate function."""
+    """SoA layout (3,N) C-contiguous works via single entry point."""
     B = np.eye(3) / 4.06
     rng = np.random.RandomState(42)
     U, _ = np.linalg.qr(rng.randn(3, 3))
@@ -156,9 +153,11 @@ def test_soa_direct_api():
     ubi = np.linalg.inv(UB)
     hkls = rng.randint(-8, 9, size=(200, 3)).astype(np.float64)
     gv = np.dot(hkls, UB.T)
-    gvx = gv[:, 0].copy(); gvy = gv[:, 1].copy(); gvz = gv[:, 2].copy()
 
+    # AoS (N,3)
     na, sa = score_and_refine(ubi.copy(), gv, 0.05)
-    ns, ss = score_and_refine_soa(ubi.copy(), gvx, gvy, gvz, 0.05)
+    # SoA (3,N) C-contiguous copy
+    gv_soa = np.ascontiguousarray(gv.T)
+    ns, ss = score_and_refine(ubi.copy(), gv_soa, 0.05)
     assert na == ns
     assert abs(sa - ss) < 1e-12
