@@ -183,14 +183,16 @@ if host_machine.cpu_family() == 'x86_64'
   score_avx512_soa_f64 = static_library('score_avx512_soa_f64','functions/score/score_f64_soa_avx512.c',c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
   score_avx512_soa_f32 = static_library('score_avx512_soa_f32','functions/score/score_f32_soa_avx512.c',c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
 else
-  score_avx2_f64   = []
-  score_avx2_f32   = []
-  score_avx2_soa_f64 = []
-  score_avx2_soa_f32 = []
-  score_avx512_f64 = []
-  score_avx512_f32 = []
-  score_avx512_soa_f64 = []
-  score_avx512_soa_f32 = []
+  # non-x86_64: stub symbols that delegate to scalar loops
+  score_avx2_f64 = static_library('score_avx2_f64',
+    'functions/score/score_stubs.c', include_directories: c2_inc, dependencies: [m_dep])
+  score_avx2_f32   = score_avx2_f64
+  score_avx2_soa_f64 = score_avx2_f64
+  score_avx2_soa_f32 = score_avx2_f64
+  score_avx512_f64 = score_avx2_f64
+  score_avx512_f32 = score_avx2_f64
+  score_avx512_soa_f64 = score_avx2_f64
+  score_avx512_soa_f32 = score_avx2_f64
 endif
 
 shared_module('_cImageD11',

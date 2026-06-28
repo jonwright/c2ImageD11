@@ -170,6 +170,7 @@ jobs:
         if: matrix.python-version == '3.12'
         run: |
           cd %TEMP% && python %GITHUB_WORKSPACE%\lib\functions\score\bench.py
+          cd %TEMP% && python %GITHUB_WORKSPACE%\lib\functions\score_and_refine\bench.py
         continue-on-error: true
 
   linux-test:

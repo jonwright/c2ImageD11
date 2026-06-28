@@ -108,12 +108,26 @@ def extract_c2py_blocks(text):
 
 
 def find_c_sources(src_dir):
-    """Find all .c files in src_dir recursively, sorted."""
+    """Find all .c files in src_dir recursively, sorted by ISA priority
+    for files under score_and_refine/, alphabetical for others."""
     sources = []
     for root, dirs, files in os.walk(src_dir):
         for f in sorted(files):
             if f.endswith(".c") and not f.startswith("."):
                 sources.append(os.path.join(root, f))
+
+    def _isa_priority(filepath):
+        name = os.path.basename(filepath)
+        if "avx512" in name:
+            return 3
+        if "avx2" in name:
+            return 2
+        if "sse41" in name:
+            return 1
+        return 0
+
+    # Sort: ISA priority first (for score_and_refine kernels), then alphabetical
+    sources.sort(key=lambda f: (_isa_priority(f), f))
     return sources
 
 
@@ -204,11 +218,24 @@ def assemble_c2py(src_dir, output_dir):
     c_sources = find_c_sources(src_dir)
     cpp_sources = find_cpp_sources(src_dir)
     h_headers = find_h_headers(src_dir)
+
+    def _isa_priority(filepath):
+        name = os.path.basename(filepath)
+        if "avx512" in name: return 3
+        if "avx2" in name:   return 2
+        if "sse41" in name:   return 1
+        return 0
+
+    # Combine and sort by ISA priority so that higher-ISA files
+    # (avx512) are processed last and their overloads prepended first.
+    all_sources = c_sources + cpp_sources
+    all_sources.sort(key=_isa_priority)
+
     # py_sig -> entry (merge overloads across .c, .cpp, .h files)
     func_entries = {}
     all_consts = {}
 
-    for filepath in c_sources + cpp_sources + h_headers:
+    for filepath in all_sources + h_headers:
         funcs, consts = extract_blocks_from_file(filepath)
         if consts:
             print("  %s: constants" % os.path.relpath(filepath, output_dir),
