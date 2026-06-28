@@ -93,9 +93,9 @@ if _mod is not None:
     # -----------------------------------------------------------------------
     # OpenMP minimum ng threshold.  Must match the `ng > 50000` guard in
     # lib/functions/score_and_refine/score_and_refine.hpp.  Measured cutoff:
-    # ng <= 50000 | single-thread; ng >= 75000 | ~2x speedup on x86_64.
+    # ng <= 10000 | single-thread; ng > 10000 | ~2x speedup on x86_64.
     # -----------------------------------------------------------------------
-    OMP_MIN_NG = 50000
+    OMP_MIN_NG = 10000
 
 
     # -----------------------------------------------------------------------

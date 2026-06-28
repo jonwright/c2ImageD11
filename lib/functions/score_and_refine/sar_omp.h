@@ -12,7 +12,7 @@
 #include <stdint.h>
 
 #ifndef SAR_OMP_MIN_NG
-#define SAR_OMP_MIN_NG 50000
+#define SAR_OMP_MIN_NG 10000
 #endif
 
 #ifdef _OPENMP

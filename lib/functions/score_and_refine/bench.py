@@ -139,7 +139,7 @@ def do_threads(args):
 
     fn = c2ImageD11.score_and_refine
     n_cores = os.cpu_count() or 4
-    sizes = [10000, 25000, 50000, 75000, 100000, 200000, 500000, 1000000]
+    sizes = [5000, 10000, 25000, 50000, 75000, 100000, 200000, 500000, 1000000]
 
     print("Threading scaling (%d cores, c2py23 dispatch)" % n_cores)
     print("OMP_MIN_NG = %d" % c2ImageD11.OMP_MIN_NG)

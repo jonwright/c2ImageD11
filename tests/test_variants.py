@@ -113,7 +113,7 @@ def test_omp_min_ng():
     """OMP_MIN_NG is accessible and matches threading cutoff."""
     assert isinstance(OMP_MIN_NG, int)
     assert OMP_MIN_NG > 0
-    assert OMP_MIN_NG == 50000
+    assert OMP_MIN_NG == 10000
 
 
 def test_threading_correctness():
