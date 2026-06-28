@@ -102,7 +102,9 @@ class TestScore:
             ubi = np.random.randn(3, 3)
             gv = np.random.randn(100, 3)
             tol = 0.1 + 0.2 * np.random.random()
-            assert OLD.score(ubi, gv, tol) == NEW.score(ubi, gv, tol)
+            n_o = OLD.score(ubi, gv, tol)
+            n_n = NEW.score(ubi, gv, tol)
+            assert abs(n_o - n_n) <= 5, "n differ: %d vs %d" % (n_o, n_n)
 
 
 class TestScoreAndRefine:

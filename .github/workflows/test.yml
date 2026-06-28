@@ -169,8 +169,7 @@ jobs:
       - name: Benchmark (Python 3.12 only)
         if: matrix.python-version == '3.12'
         run: |
-          cd %TEMP% && python %GITHUB_WORKSPACE%\lib\functions\score_and_refine\bench.py
-          cd %TEMP% && python %GITHUB_WORKSPACE%\lib\functions\score_and_refine\bench.py --threads
+          cd %TEMP% && python %GITHUB_WORKSPACE%\lib\functions\score\bench.py
         continue-on-error: true
 
   linux-test:
