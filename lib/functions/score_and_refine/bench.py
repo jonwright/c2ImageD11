@@ -57,7 +57,7 @@ def do_default(args):
     import c2ImageD11
 
     fn = c2ImageD11.score_and_refine
-    n_cores = os.cpu_count() or 4
+    c2ImageD11.cimaged11_omp_set_num_threads(1)
 
     data = {}
     for ng in args.sizes:
@@ -70,7 +70,7 @@ def do_default(args):
                     "AoS_f32": (ubi, gv_f32, tol),
                     "SoA_f32": (ubi, gv_soa_f32, tol)}
 
-    print("score_and_refine throughput (%d threads, c2py23 dispatch)" % n_cores)
+    print("score_and_refine throughput (1 thread, c2py23 dispatch)")
     print("Sizes: %s" % ", ".join(str(s) for s in args.sizes))
 
     # Detect which variants are dispatched for each layout
