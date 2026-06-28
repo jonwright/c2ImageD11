@@ -20,10 +20,10 @@ extern int inverse3x3(double A[3][3]);
 
 static void
 sar_f32_soa_avx2_kernel(const double ubi[9],
-                         const float *gvx, const float *gvy, const float *gvz,
+                         const float *__restrict gvx, const float *__restrict gvy, const float *__restrict gvz,
                          double tol, intptr_t ng,
-                         double H[9], double R[9],
-                         int *n_out, double *sumdrlv2_out)
+                         double *__restrict H, double *__restrict R,
+                         int *__restrict n_out, double *__restrict sumdrlv2_out)
 {
     /* UBI is f64; cast to f32 for computation */
     __m256 u00 = _mm256_set1_ps((float)ubi[0]), u01 = _mm256_set1_ps((float)ubi[1]),

@@ -24,10 +24,10 @@ extern int inverse3x3(double A[3][3]);
 /* ── f64 SoA AVX2 kernel (4 doubles/ymm) ──────────────────────────── */
 static void
 sar_f64_soa_avx2_kernel(const double ubi[9],
-                         const double *gvx, const double *gvy, const double *gvz,
+                         const double *__restrict gvx, const double *__restrict gvy, const double *__restrict gvz,
                          double tol, intptr_t ng,
-                         double H[9], double R[9],
-                         int *n_out, double *sumdrlv2_out)
+                         double *__restrict H, double *__restrict R,
+                         int *__restrict n_out, double *__restrict sumdrlv2_out)
 {
     __m256d u00 = _mm256_set1_pd(ubi[0]), u01 = _mm256_set1_pd(ubi[1]),
             u02 = _mm256_set1_pd(ubi[2]);
