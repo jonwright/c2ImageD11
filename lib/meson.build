@@ -172,6 +172,29 @@ else
   sar_avx512_f32soa=static_library('sar_avx512_f32soa','functions/score_and_refine/score_and_refine_f32_soa_avx512.cpp',cpp_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
 endif
 
+# score() ISA variants
+if host_machine.cpu_family() == 'x86_64'
+  score_avx2_f64   = static_library('score_avx2_f64',   'functions/score/score_f64_avx2.c',     c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  score_avx2_f32   = static_library('score_avx2_f32',   'functions/score/score_f32_avx2.c',     c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  score_avx2_soa_f64  = static_library('score_avx2_soa_f64',  'functions/score/score_f64_soa_avx2.c',  c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  score_avx2_soa_f32  = static_library('score_avx2_soa_f32',  'functions/score/score_f32_soa_avx2.c',  c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  score_avx512_f64 = static_library('score_avx512_f64', 'functions/score/score_f64_avx512.c',   c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  score_avx512_f32 = static_library('score_avx512_f32', 'functions/score/score_f32_avx512.c',   c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  score_avx512_soa_f64 = static_library('score_avx512_soa_f64','functions/score/score_f64_soa_avx512.c',c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  score_avx512_soa_f32 = static_library('score_avx512_soa_f32','functions/score/score_f32_soa_avx512.c',c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+else
+  # non-x86_64: stub symbols that delegate to scalar loops
+  score_avx2_f64 = static_library('score_avx2_f64',
+    'functions/score/score_stubs.c', include_directories: c2_inc, dependencies: [m_dep])
+  score_avx2_f32   = score_avx2_f64
+  score_avx2_soa_f64 = score_avx2_f64
+  score_avx2_soa_f32 = score_avx2_f64
+  score_avx512_f64 = score_avx2_f64
+  score_avx512_f32 = score_avx2_f64
+  score_avx512_soa_f64 = score_avx2_f64
+  score_avx512_soa_f32 = score_avx2_f64
+endif
+
 shared_module('_cImageD11',
   [c2_sources, c2_sources_cpp],
   files('interface/c2py_runtime.c', 'interface/_cImageD11_wrapper.c'),
@@ -182,7 +205,9 @@ shared_module('_cImageD11',
   link_args: c2_link_args,
   link_whole: [sar_sse41_f64, sar_sse41_f32, sar_sse41_soa, sar_sse41_f32soa,
                sar_avx2_f64, sar_avx2_f32, sar_avx2_soa, sar_avx2_f32soa,
-               sar_avx512_f64, sar_avx512_f32, sar_avx512_soa, sar_avx512_f32soa],
+               sar_avx512_f64, sar_avx512_f32, sar_avx512_soa, sar_avx512_f32soa,
+               score_avx2_f64, score_avx2_f32, score_avx2_soa_f64, score_avx2_soa_f32,
+               score_avx512_f64, score_avx512_f32, score_avx512_soa_f64, score_avx512_soa_f32],
   name_prefix: '',
   install: false,
 )

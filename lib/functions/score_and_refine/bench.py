@@ -10,7 +10,7 @@ Usage:
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import os, sys, time, argparse, struct, ctypes
+import os, sys, time, argparse, struct, numpy as np
 import numpy as np
 
 DEFAULT_SIZES = [100000, 500000, 2000000]
@@ -41,9 +41,10 @@ def detect_variant(fn, ubi, gv, tol, mod):
     mod._c2py_perf_set_enabled(1)
     fn(ubi.copy(), gv, tol)
     mod._c2py_perf_set_enabled(0)
+    buf = bytearray(128)
     for name, ptr in ol_ptrs.items():
-        raw = ctypes.string_at(ptr, 8)
-        if struct.unpack('Q', raw)[0]:
+        mod._c2py_perf_read(ptr, buf)
+        if struct.unpack_from('Q', buf)[0]:
             return name
     return "unknown"
 
