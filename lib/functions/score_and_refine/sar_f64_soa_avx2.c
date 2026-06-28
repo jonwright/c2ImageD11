@@ -121,12 +121,8 @@ sar_f64_soa_avx2_kernel(const double ubi[9],
     R[0] = hsum4(R00); R[1] = hsum4(R01); R[2] = hsum4(R02);
     R[3] = hsum4(R10); R[4] = hsum4(R11); R[5] = hsum4(R12);
     R[6] = hsum4(R20); R[7] = hsum4(R21); R[8] = hsum4(R22);
-    #undef HS
     *n_out = n_scalar;
-    *sumdrlv2_out = ({ __m128d lo = _mm256_castpd256_pd128(s_vec);
-                        __m128d hi = _mm256_extractf128_pd(s_vec, 1);
-                        lo = _mm_add_pd(lo, hi); lo = _mm_hadd_pd(lo, lo);
-                        _mm_cvtsd_f64(lo); });
+    *sumdrlv2_out = hsum4(s_vec);
 
     /* Scalar tail */
     double tol2 = tol * tol, magic = 6755399441055744.0;
