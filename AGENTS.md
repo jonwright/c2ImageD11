@@ -9,6 +9,21 @@ shared library `_cImageD11.so` that can be distributed like a ctypes library
 All C functions are exposed directly by c2py23's generated wrapper -- no
 hand-written adapter code.
 
+## RULES
+
+### NO CTYPES
+
+**Never use `ctypes` anywhere in this project.**  Not in benchmarks, not in
+tests, not in tools.  The sole exception is `lib/functions/score_and_refine/
+measure_flags.py` which is a standalone research tool that builds its own .so
+files and measures them directly -- it does not ship.
+
+The c2py23 module exposes every C function as a Python-callable name.
+Variant dispatch uses `when:` conditions in the C2PY_BEGIN YAML blocks.
+Performance counters use `_c2py_perf_read(ptr, bytearray)`, not ctypes.
+CPU feature flags are checked internally by the wrapper C code -- there is
+no reason to read or write them from Python.
+
 ## Current Status
 
 - Meson (in `lib/`) builds `_cImageD11.so` directly via `shared_module()`

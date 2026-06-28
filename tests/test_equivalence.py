@@ -10,7 +10,6 @@ Skips entirely if ImageD11 is not installed.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import numpy as np
-import ctypes
 import pytest
 
 pytest.importorskip("ImageD11._cImageD11", reason="ImageD11 not installed")
