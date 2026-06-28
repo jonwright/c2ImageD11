@@ -10,7 +10,7 @@ Usage:
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import os, sys, time, argparse
+import os, sys, time, argparse, struct, ctypes
 import numpy as np
 
 DEFAULT_SIZES = [100000, 500000, 2000000]
@@ -19,6 +19,25 @@ DEFAULT_SIZES = [100000, 500000, 2000000]
 def gen_data(ng, gv_dtype, seed=42):
     rng = np.random.RandomState(seed)
     return rng.randn(3, 3).astype(np.float64), rng.randn(ng, 3).astype(gv_dtype), 0.05
+
+
+def detect_variant(fn, ubi, gv, tol, mod):
+    """Return the name of the ISA variant dispatched for a given call."""
+    ol_ptrs = {}
+    prefix = "_c2py_ol_ptr_score_and_refine__"
+    for attr in dir(mod):
+        if attr.startswith(prefix):
+            ptr = getattr(mod, attr)
+            mod._c2py_perf_reset(ptr)
+            ol_ptrs[attr[len(prefix):]] = ptr
+    mod._c2py_perf_set_enabled(1)
+    fn(ubi.copy(), gv, tol)
+    mod._c2py_perf_set_enabled(0)
+    for name, ptr in ol_ptrs.items():
+        raw = ctypes.string_at(ptr, 8)
+        if struct.unpack('Q', raw)[0]:
+            return name
+    return "unknown"
 
 
 def time_calls(fn, ubi, gv, tol, n_calls):
@@ -53,6 +72,20 @@ def do_default(args):
 
     print("score_and_refine throughput (%d threads, c2py23 dispatch)" % n_cores)
     print("Sizes: %s" % ", ".join(str(s) for s in args.sizes))
+
+    # Detect which variants are dispatched for each layout
+    ng0 = args.sizes[0]
+    ubi0, gv_f64_0, tol0 = gen_data(ng0, np.float64)
+    mod = c2ImageD11._cImageD11
+    variants = {}
+    for name, (ubi, gv, tol) in [
+            ("AoS_f64", (ubi0, gv_f64_0, tol0)),
+            ("SoA_f64", (ubi0, gv_f64_0.T.copy(), tol0)),
+            ("AoS_f32", (ubi0, gv_f64_0.astype(np.float32), tol0)),
+            ("SoA_f32", (ubi0, gv_f64_0.T.copy().astype(np.float32), tol0))]:
+        variants[name] = detect_variant(fn, ubi, gv, tol, mod)
+    for name in ("AoS_f64", "SoA_f64", "AoS_f32", "SoA_f32"):
+        print("  %s => %s" % (name, variants.get(name, "?")))
     print()
     print("%10s  %8s  %10s  %8s  %10s  %8s  %10s  %8s  %10s" %
           ("ng", "AoS_f64", "M/s", "SoA_f64", "M/s", "AoS_f32", "M/s", "SoA_f32", "M/s"))
