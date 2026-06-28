@@ -1,4 +1,4 @@
-/* score_and_refine_f32_sse41.cpp — f32_sse41 variant */
+/* score_and_refine_f32_sse41.cpp  -- f32_sse41 variant */
 #define SAR_IMPL_NAME score_and_refine_impl_f32_sse41
 #ifdef SAR_SOA
 #undef SAR_SOA

@@ -1,4 +1,4 @@
-/* score_and_refine_f64_soa_avx512.cpp — f64_soa_avx512 variant */
+/* score_and_refine_f64_soa_avx512.cpp  -- f64_soa_avx512 variant */
 #define SAR_IMPL_NAME score_and_refine_impl_f64_soa_avx512
 #ifdef SAR_SOA
 #undef SAR_SOA

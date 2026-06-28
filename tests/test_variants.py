@@ -94,7 +94,7 @@ def test_f64_f32_consistent():
 
 
 def test_dispatch_f32_without_sse41():
-    """f32 path works — exercises the f32 fallback in the overload chain."""
+    """f32 path works  -- exercises the f32 fallback in the overload chain."""
     B = np.eye(3) / 4.06
     rng = np.random.RandomState(999)
     U, _ = np.linalg.qr(rng.randn(3, 3))

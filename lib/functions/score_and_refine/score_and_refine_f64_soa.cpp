@@ -1,4 +1,4 @@
-/* score_and_refine_f64_soa.cpp — f64 SoA baseline variant */
+/* score_and_refine_f64_soa.cpp  -- f64 SoA baseline variant */
 #define SAR_SOA
 #define SAR_IMPL_NAME score_and_refine_impl_f64_soa
 #include "score_and_refine.hpp"

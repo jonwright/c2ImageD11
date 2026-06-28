@@ -1,4 +1,4 @@
-/* score_and_refine_f32.cpp — f32 AoS baseline variant */
+/* score_and_refine_f32.cpp  -- f32 AoS baseline variant */
 #define SAR_IMPL_NAME score_and_refine_impl_f32
 #include "score_and_refine.hpp"
 

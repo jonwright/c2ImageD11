@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark score_and_refine — throughput, threading, f2py comparison.
+"""Benchmark score_and_refine -- throughput, threading, f2py comparison.
 
 Usage:
     python bench.py                     throughput at 3 sizes
@@ -125,7 +125,7 @@ def do_overhead():
     results["c2py"] = (us, thr)
 
     print("=" * 70)
-    print("Wrapper overhead — ng=%d, 1T (c2py23 dispatch)" % NG)
+    print("Wrapper overhead -- ng=%d, 1T (c2py23 dispatch)" % NG)
     print("=" * 70)
     print()
     print("  %-22s %8s %8s %8s" % ("Wrapper", "us/call", "M gv/s", "vs f2py"))

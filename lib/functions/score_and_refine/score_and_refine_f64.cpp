@@ -1,4 +1,4 @@
-/* score_and_refine_f64.cpp — f64 AoS baseline variant */
+/* score_and_refine_f64.cpp  -- f64 AoS baseline variant */
 #include "score_and_refine.hpp"
 
 /* C2PY_BEGIN

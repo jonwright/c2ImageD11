@@ -83,13 +83,10 @@ double my_get_time(void);
 
 /* CPU feature flags for SIMD dispatch (from c2py23 runtime).
  * These are extern globals probed at load time by c2py_runtime.c.
- * The c2py23 harvester may reference them in when: conditions. */
-#if defined(__x86_64__) || defined(_M_X64)
+ * All three headers are included unconditionally so that the wrapper
+ * code compiles on every platform (flags for absent ISAs resolve to 0). */
 #include "c2py_amd64.h"
-#elif defined(__aarch64__)
 #include "c2py_arm64.h"
-#elif defined(__powerpc64__)
 #include "c2py_ppc64.h"
-#endif
 
 #endif
