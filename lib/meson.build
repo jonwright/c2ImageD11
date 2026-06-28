@@ -144,8 +144,8 @@ sar_sse41_f32soa= static_library('sar_sse41_f32soa','functions/score_and_refine/
 
 sar_avx2_f64   = static_library('sar_avx2_f64',   'functions/score_and_refine/score_and_refine_f64_avx2.cpp',     cpp_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
 sar_avx2_f32   = static_library('sar_avx2_f32',   'functions/score_and_refine/score_and_refine_f32_avx2.cpp',     cpp_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
-sar_avx2_soa   = static_library('sar_avx2_soa',   'functions/score_and_refine/score_and_refine_f64_soa_avx2.cpp',  cpp_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
-sar_avx2_f32soa= static_library('sar_avx2_f32soa','functions/score_and_refine/score_and_refine_f32_soa_avx2.cpp',  cpp_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+sar_avx2_soa   = static_library('sar_avx2_soa',   'functions/score_and_refine/sar_f64_soa_avx2.c',         c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+sar_avx2_f32soa= static_library('sar_avx2_f32soa','functions/score_and_refine/sar_f32_soa_avx2.c',         c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
 
 sar_avx512_f64  = static_library('sar_avx512_f64',  'functions/score_and_refine/score_and_refine_f64_avx512.cpp',     cpp_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
 sar_avx512_f32  = static_library('sar_avx512_f32',  'functions/score_and_refine/score_and_refine_f32_avx512.cpp',     cpp_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
