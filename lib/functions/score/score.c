@@ -22,7 +22,7 @@
  *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
  *     }, {
  *         "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[1] == 3 and gv.slow_axis == 0",
- *         "sig": "int score(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
+ *         "sig": "int score_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
  *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
  *     }],
  * }
@@ -47,6 +47,24 @@ int score(const vec ubi[3], const double gv[], double tol, intptr_t ng) {
         if (sumsq < atol) {
             n = n + 1;
         }
+    }
+    return n;
+}
+
+/* f32 scalar fallback (called by dispatch on non-x86 or when ISA unavailable) */
+int score_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) {
+    int n = 0;
+    double t2 = tol * tol, magic = 6755399441055744.0;
+    intptr_t k;
+    for (k = 0; k < ng; k++) {
+        double gx = gv[k*3], gy = gv[k*3+1], gz = gv[k*3+2];
+        double h0 = ubi[0][0]*gx + ubi[0][1]*gy + ubi[0][2]*gz;
+        h0 -= ((h0 + magic) - magic);
+        double h1 = ubi[1][0]*gx + ubi[1][1]*gy + ubi[1][2]*gz;
+        h1 -= ((h1 + magic) - magic);
+        double h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz;
+        h2 -= ((h2 + magic) - magic);
+        if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
     }
     return n;
 }

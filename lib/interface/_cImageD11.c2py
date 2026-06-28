@@ -1327,7 +1327,7 @@
                         "tol": "tol",
                         "ubi": "ubi.ptr",
                     },
-                    "sig": "int score(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
+                    "sig": "int score_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
                     "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[1] == 3 and gv.slow_axis == 0",
                 },
             ],
