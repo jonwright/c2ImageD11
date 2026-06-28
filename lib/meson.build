@@ -111,7 +111,7 @@ c2_inc = include_directories(
 # Their C2PY_BEGIN blocks are found by the harvester via directory scan.
 # Order in link_with determines dispatch chain priority (last = highest,
 # since harvester prepends.  Alphabetical scan order = last file wins.
-if not is_msvc
+if not is_msvc and host_machine.cpu_family() == 'x86_64'
   # f64 SSE4.1: -O3 -ffast-math hurts f64 (measure_flags.py: O2-fm 295M > O3+fm 235M).
   # f32 SSE4.1: -O3 -ffast-math helps f32 (measure_flags.py: O3+fm 366M > O2-fm 294M).
   sse41_f64_flags = ['-O2',             '-fopenmp', '-fPIC', '-msse4.1']
