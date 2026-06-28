@@ -265,3 +265,40 @@ is deferred.
   `_cImageD11_AMD64.pyd`. Linux test matrix 3.8-3.13, Windows 3.10-3.13.
 - **Compiler warnings:** all fixed (RAD/DEG, printf %td, explicit casts).
 - **c2py23 HEAD tracking:** regenerated wrappers committed in git, un-pinned.
+
+## Build copy step
+
+After `ninja`, always copy to both names:
+
+```bash
+cp build/libc2ImageD11/_cImageD11.so c2ImageD11/_cImageD11.so
+cp build/libc2ImageD11/_cImageD11.so c2ImageD11/_cImageD11_$(python3 -c "import platform; print(platform.machine())").so
+```
+
+Or use a helper script.
+
+## score_and_refine optimization workflow
+
+Files live in `lib/functions/score_and_refine/`:
+
+- `score_and_refine.c` — original C reference, kept as baseline
+- `score_and_refine.hpp` — C++ template (C99 + templates, no stdlib)
+- `score_and_refine_f64.cpp` — f64 instantiation (gv.type == double)
+- `score_and_refine_f32.cpp` — f32 instantiation (gv.type == float)
+- `bench.py` — benchmarks f64 vs f32 at multiple problem sizes
+- `test_data.py` — reproducible test data generator
+- `score_and_refine_f64_avx2.cpp` (future)
+- `score_and_refine_f64_avx512.cpp` (future)
+- `score_and_refine_f32_avx2.cpp` (future)
+- `score_and_refine_f32_avx512.cpp` (future)
+
+Variants share the same Python name `score_and_refine`. c2py23 dispatches via
+`when:` conditions on `gv.format` and CPU feature flags.  Overloads from
+variant `.cpp` files are prepended before the `.c` baseline in the
+generated dispatch chain (first-match wins).
+
+Harvester now scans `.cpp` files and merges `C2PY_BEGIN` blocks with the
+same `py_sig` by prepending `c_overloads` from each variant.
+
+Meson: `project()` includes `'cpp'`.  C++ sources in `c2_sources_cpp`.
+Per-ISA flags via separate `static_library()` targets (future).

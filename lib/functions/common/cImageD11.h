@@ -71,9 +71,25 @@ int cimaged11_omp_get_max_threads(void);
 DLL_LOCAL
 double my_get_time(void);
 
-/* Rounding helper used by score/refine/misori functions */
+/* Rounding helper used by score/refine/misori functions
+ * Magic integer trick: safe without -ffast-math (no libm call).
+ * Returns a double that is exactly integer-valued for |x| < 2^51.
+ * See: https://stackoverflow.com/questions/59632005/
+ * ImageD11 uses the same trick.
+ */
 #ifndef conv_double_to_int_fast
-#define conv_double_to_int_fast(x) nearbyint(x)
+#define conv_double_to_int_fast(x) ((x + 6755399441055744.0) - 6755399441055744.0)
+#endif
+
+/* CPU feature flags for SIMD dispatch (from c2py23 runtime).
+ * These are extern globals probed at load time by c2py_runtime.c.
+ * The c2py23 harvester may reference them in when: conditions. */
+#if defined(__x86_64__) || defined(_M_X64)
+#include "c2py_amd64.h"
+#elif defined(__aarch64__)
+#include "c2py_arm64.h"
+#elif defined(__powerpc64__)
+#include "c2py_ppc64.h"
 #endif
 
 #endif

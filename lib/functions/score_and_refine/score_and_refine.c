@@ -14,7 +14,6 @@
  *     "checks": [
  *         "ubi.format == 'd'",
  *         "ubi.n == 9",
- *         "gv.format == 'd'",
  *         "gv.ndim >= 1",
  *     ],
  *     "gil_release": true,

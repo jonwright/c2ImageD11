@@ -61,33 +61,87 @@ if _mod is not None:
     # Make _cImageD11 importable as c2ImageD11._cImageD11
     sys.modules[__name__]._cImageD11 = _mod
 
+    # Save raw C functions before any overwrites
+    _score_and_refine_c = _mod.score_and_refine
+    _score_and_refine_soa_c = _mod.score_and_refine_soa
+    _blobproperties_c = _mod.blobproperties
+    _sparse_blob2Dproperties_c = _mod.sparse_blob2Dproperties
+
     # Re-export all non-private names from the loaded module
     for _k in dir(_mod):
         if not _k.startswith("_"):
             globals()[_k] = getattr(_mod, _k)
 
+    # -----------------------------------------------------------------------
+    # Shape-based dispatch: AoS (N,3) vs SoA (3,N)
+    # -----------------------------------------------------------------------
+    import numpy as np
 
-    _blobproperties_c = _mod.blobproperties  # save raw C function
+    def score_and_refine(ubi, gv, tol, **kw):
+        """Score and refine UBI using g-vectors.
+
+        Auto-detects layout from gv shape:
+          (N,3) → AoS (interleaved x/y/z, default)
+          (3,N) → SoA (rows are gvx,gvy,gvz components)
+        Handles float32 and float64.
+
+        To force single-threaded:
+          c2ImageD11.cimaged11_omp_set_num_threads(1)
+
+        Returns (n, sumdrlv2) where n is the number of inlier peaks
+        and sumdrlv2 is the mean squared deviation.
+        """
+        if gv.ndim != 2:
+            raise ValueError("gv must be 2D, got shape %s" % (gv.shape,))
+
+        nrows, ncols = gv.shape[0], gv.shape[1]
+
+        # Detect layout from shape
+        if ncols == 3 and nrows != 3:
+            layout = 'AoS'  # (N,3) — interleaved
+        elif nrows == 3 and ncols != 3:
+            layout = 'SoA'  # (3,N) — component rows
+        elif nrows == 3 and ncols == 3:
+            # Ambiguous (3,3): use stride to disambiguate
+            layout = 'AoS' if gv.strides[0] > gv.strides[1] else 'SoA'
+        else:
+            raise ValueError(
+                "gv must have one axis of size 3, got shape %s" % (gv.shape,))
+
+        if layout == 'AoS':
+            return _score_and_refine_c(ubi, gv, tol)
+        else:
+            # SoA: extract rows as 1D arrays (may need copy for contiguity)
+            gvx = np.ascontiguousarray(gv[0])
+            gvy = np.ascontiguousarray(gv[1])
+            gvz = np.ascontiguousarray(gv[2])
+            return _score_and_refine_soa_c(ubi, gvx, gvy, gvz, tol)
+
+    # Overwrite the C function with the Python dispatch
+    globals()['score_and_refine'] = score_and_refine
 
     def blobproperties(data, labels, npk, omega=0.0, verbose=0):
         """Allocate results and call C blobproperties, matching f2py convention."""
-        import numpy as np
         results = np.zeros((npk, 36), dtype=np.float64)
         _blobproperties_c(data, labels, npk, results, omega, verbose)
         return results
 
-    _sparse_blob2Dproperties_c = _mod.sparse_blob2Dproperties
-
     def sparse_blob2Dproperties(v, i, j, labels, npk):
         """Allocate results and call C sparse_blob2Dproperties, matching f2py convention."""
-        import numpy as np
         results = np.zeros((npk, 11), dtype=np.float64)
         _sparse_blob2Dproperties_c(v, i, j, labels, npk, results)
         return results
 
-    # Replace raw C functions on submodule with allocation wrappers
+    # Replace raw C functions on submodule with wrappers
     _mod.blobproperties = blobproperties
     _mod.sparse_blob2Dproperties = sparse_blob2Dproperties
+
+    # -----------------------------------------------------------------------
+    # OpenMP minimum ng threshold.  Must match the `ng > 50000` guard in
+    # lib/functions/score_and_refine/score_and_refine.hpp.  Measured cutoff:
+    # ng <= 50000 → single-thread; ng >= 75000 → ~2x speedup on x86_64.
+    # -----------------------------------------------------------------------
+    OMP_MIN_NG = 50000
 
 
     # -----------------------------------------------------------------------
