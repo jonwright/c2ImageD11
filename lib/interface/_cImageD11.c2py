@@ -1559,6 +1559,26 @@
                 {
                     "map": {
                         "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "int score_f64_soa_avx512(const double ubi[3][3], const double gv[], double tol, intptr_t ng) -> int",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_avx512f",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "int score_f64_soa_avx2(const double ubi[3][3], const double gv[], double tol, intptr_t ng) -> int",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_avx2",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
                         "ng": "gv.shape[0]",
                         "tol": "tol",
                         "ubi": "ubi.ptr",
@@ -1575,6 +1595,26 @@
                     },
                     "sig": "int score_f64_avx2(const double ubi[3][3], const double gv[], double tol, intptr_t ng) -> int",
                     "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[1] == 3 and gv.slow_axis == 0 and c2py_amd64_avx2",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "int score_f32_soa_avx512(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_avx512f",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "int score_f32_soa_avx2(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_avx2",
                 },
                 {
                     "map": {
@@ -2182,8 +2222,12 @@
         "../functions/score/score.c",
         "../functions/score/score_f32_avx2.c",
         "../functions/score/score_f32_avx512.c",
+        "../functions/score/score_f32_soa_avx2.c",
+        "../functions/score/score_f32_soa_avx512.c",
         "../functions/score/score_f64_avx2.c",
         "../functions/score/score_f64_avx512.c",
+        "../functions/score/score_f64_soa_avx2.c",
+        "../functions/score/score_f64_soa_avx512.c",
         "../functions/bloboverlaps/bloboverlaps.c",
         "../functions/uint16_to_float_darksub/uint16_to_float_darksub.c",
         "../functions/sparse_connectedpixels/sparse_connectedpixels.c",
