@@ -9,12 +9,13 @@
 #
 # Output: build/libc2ImageD11/_cImageD11.so
 
-project('c2ImageD11', 'c',
-  default_options: ['c_std=c11', 'warning_level=1', 'buildtype=release', 'strip=true'],
+project('c2ImageD11', 'c', 'cpp',
+  default_options: ['c_std=c11', 'warning_level=1', 'buildtype=release', 'optimization=2', 'strip=true'],
   # Keep in sync with c2ImageD11/__init__.py __version__ (single source of truth)
   version: '0.3.0')
 
 cc = meson.get_compiler('c')
+cpp = meson.get_compiler('cpp')
 
 # ------------------------------------------------------------------
 # Compilation
@@ -79,15 +80,28 @@ c2_sources = files(
   'functions/uint16_to_float_darksub/uint16_to_float_darksub.c',
 )
 
+c2_sources_cpp = files(
+  'functions/score_and_refine/score_and_refine_f64.cpp',
+  'functions/score_and_refine/score_and_refine_f32.cpp',
+  'functions/score_and_refine/score_and_refine_f64_soa.cpp',
+  'functions/score_and_refine/score_and_refine_f32_soa.cpp',
+)
+
 # Platform-specific compiler and link flags
 is_msvc = cc.get_id() == 'msvc'
 if is_msvc
-  c2_c_args = ['/openmp', '/O2', '/fp:fast', '/D_DEFAULT_SOURCE']
+  # /fp:fast contraction breaks (x+MAGIC)-MAGIC rounding trick used
+  # by the C code and baseline C++.  ISA variants with /arch:AVX2+
+  # use nearbyint() instead, which is safe.
+  c2_c_args = ['/openmp', '/O2', '/D_DEFAULT_SOURCE']
+  c2_cpp_args = ['/openmp', '/O2']
   c2_link_args = []
 else
   c2_c_args = cc.get_supported_arguments(
-    '-fPIC', '-O3', '-ffast-math', '-fopenmp', '-D_DEFAULT_SOURCE',
+    '-fPIC', '-O2', '-fopenmp', '-D_DEFAULT_SOURCE',
     '-Wno-format', '-Wno-incompatible-pointer-types')
+  c2_cpp_args = cpp.get_supported_arguments(
+    '-fPIC', '-O2', '-fopenmp')
   c2_link_args = ['-lgomp']
 endif
 
@@ -96,13 +110,79 @@ m_dep = cc.find_library('m', required: false)
 c2_inc = include_directories(
   'functions', 'functions/common', 'interface')
 
+# Compile ISA-specific variants on every platform so the wrapper always
+# has the symbols.  x86_64 gets ISA-optimizing flags; other platforms get
+# base flags only (the code compiles correctly without -msse4.1 etc.).
+if host_machine.cpu_family() == 'x86_64'
+  if is_msvc
+    # MSVC has no /arch:SSE4.1. /arch:AVX generates AVX instructions which
+    # would crash on SSE4.1-only CPUs (Penryn).  So SSE4.1 variants use
+    # base flags only -- they compile correctly (magic-int rounding) but
+    # without the nearbyint fast path.  AVX2/AVX-512 get proper ISA flags.
+    sse41_f64_flags = ['/openmp', '/O2']
+    sse41_f32_flags = ['/openmp', '/O2']
+    avx2_flags      = ['/openmp', '/O2', '/fp:fast', '/arch:AVX2']
+    avx512_flags    = ['/openmp', '/O2', '/fp:fast', '/arch:AVX512']
+  else
+    sse41_f64_flags = ['-O2',             '-fopenmp', '-fPIC', '-msse4.1']
+    sse41_f32_flags = ['-O3', '-ffast-math', '-fopenmp', '-fPIC', '-msse4.1']
+    avx2_flags      = ['-O3', '-ffast-math', '-fopenmp', '-fPIC', '-mavx2', '-mfma']
+    avx512_flags    = ['-O3', '-ffast-math', '-fopenmp', '-fPIC', '-mavx512f', '-mavx2', '-mfma']
+  endif
+else
+  # aarch64 / other: base compilation, no ISA flags needed
+  sse41_f64_flags = c2_cpp_args
+  sse41_f32_flags = c2_cpp_args
+  avx2_flags      = c2_cpp_args
+  avx512_flags    = c2_cpp_args
+endif
+
+sar_sse41_f64  = static_library('sar_sse41_f64',  'functions/score_and_refine/score_and_refine_f64_sse41.cpp',    cpp_args: sse41_f64_flags,  include_directories: c2_inc, dependencies: [m_dep])
+sar_sse41_f32  = static_library('sar_sse41_f32',  'functions/score_and_refine/score_and_refine_f32_sse41.cpp',    cpp_args: sse41_f32_flags,  include_directories: c2_inc, dependencies: [m_dep])
+sar_sse41_soa  = static_library('sar_sse41_soa',  'functions/score_and_refine/score_and_refine_f64_soa_sse41.cpp', cpp_args: sse41_f64_flags,  include_directories: c2_inc, dependencies: [m_dep])
+sar_sse41_f32soa= static_library('sar_sse41_f32soa','functions/score_and_refine/score_and_refine_f32_soa_sse41.cpp',cpp_args: sse41_f32_flags,  include_directories: c2_inc, dependencies: [m_dep])
+
+if host_machine.cpu_family() == 'x86_64'
+  sar_avx2_f64   = static_library('sar_avx2_f64',   'functions/score_and_refine/sar_f64_aos_avx2.c',  c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  sar_avx2_f32   = static_library('sar_avx2_f32',   'functions/score_and_refine/sar_f32_aos_avx2.c',  c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+else
+  sar_avx2_f64   = static_library('sar_avx2_f64',   'functions/score_and_refine/score_and_refine_f64_avx2.cpp',     cpp_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  sar_avx2_f32   = static_library('sar_avx2_f32',   'functions/score_and_refine/score_and_refine_f32_avx2.cpp',     cpp_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+endif
+if host_machine.cpu_family() == 'x86_64'
+  sar_avx2_soa   = static_library('sar_avx2_soa',   'functions/score_and_refine/sar_f64_soa_avx2.c',         c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  sar_avx2_f32soa= static_library('sar_avx2_f32soa','functions/score_and_refine/sar_f32_soa_avx2.c',         c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+else
+  sar_avx2_soa   = static_library('sar_avx2_soa',   'functions/score_and_refine/score_and_refine_f64_soa_avx2.cpp',  cpp_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  sar_avx2_f32soa= static_library('sar_avx2_f32soa','functions/score_and_refine/score_and_refine_f32_soa_avx2.cpp',  cpp_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+endif
+
+if host_machine.cpu_family() == 'x86_64'
+  sar_avx512_f64  = static_library('sar_avx512_f64',  'functions/score_and_refine/sar_f64_aos_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  sar_avx512_f32  = static_library('sar_avx512_f32',  'functions/score_and_refine/sar_f32_aos_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+else
+  sar_avx512_f64  = static_library('sar_avx512_f64',  'functions/score_and_refine/score_and_refine_f64_avx512.cpp',     cpp_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  sar_avx512_f32  = static_library('sar_avx512_f32',  'functions/score_and_refine/score_and_refine_f32_avx512.cpp',     cpp_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+endif
+if host_machine.cpu_family() == 'x86_64'
+  sar_avx512_soa  = static_library('sar_avx512_soa',  'functions/score_and_refine/sar_f64_soa_avx512.c',       c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  sar_avx512_f32soa=static_library('sar_avx512_f32soa','functions/score_and_refine/sar_f32_soa_avx512.c',       c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+else
+  sar_avx512_soa  = static_library('sar_avx512_soa',  'functions/score_and_refine/score_and_refine_f64_soa_avx512.cpp',  cpp_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  sar_avx512_f32soa=static_library('sar_avx512_f32soa','functions/score_and_refine/score_and_refine_f32_soa_avx512.cpp',cpp_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+endif
+
 shared_module('_cImageD11',
-  c2_sources,
+  [c2_sources, c2_sources_cpp],
   files('interface/c2py_runtime.c', 'interface/_cImageD11_wrapper.c'),
   c_args: c2_c_args,
+  cpp_args: c2_cpp_args,
   include_directories: [c2_inc],
   dependencies: [m_dep],
   link_args: c2_link_args,
+  link_whole: [sar_sse41_f64, sar_sse41_f32, sar_sse41_soa, sar_sse41_f32soa,
+               sar_avx2_f64, sar_avx2_f32, sar_avx2_soa, sar_avx2_f32soa,
+               sar_avx512_f64, sar_avx512_f32, sar_avx512_soa, sar_avx512_f32soa],
   name_prefix: '',
   install: false,
 )

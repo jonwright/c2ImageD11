@@ -14,13 +14,12 @@
  *     "checks": [
  *         "ubi.format == 'd'",
  *         "ubi.n == 9",
- *         "gv.format == 'd'",
- *         "gv.ndim >= 1",
+ *         "gv.ndim == 2",
  *     ],
  *     "gil_release": true,
  *     "c_overloads": [{
- *         "when": "ubi.format == 'd' and gv.format == 'd'",
- *         "sig": "void score_and_refine(double ubi[3][3], const double gv[][3], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+ *         "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[1] == 3 and gv.slow_axis == 0",
+ *         "sig": "void score_and_refine(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
  *         "outputs": {"n_arg": "int", "sumdrlv2_arg": "double"},
  *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
  *     }],

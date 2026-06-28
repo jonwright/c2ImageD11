@@ -117,6 +117,32 @@ def find_c_sources(src_dir):
     return sources
 
 
+def find_cpp_sources(src_dir):
+    """Find all .cpp files in src_dir recursively, sorted by ISA priority.
+    
+    ISA priority (lowest to highest, so highest is prepended first):
+      baseline (no ISA suffix) < sse41 < avx2 < avx512
+    """
+    sources = []
+    for root, dirs, files in os.walk(src_dir):
+        for f in sorted(files):
+            if f.endswith(".cpp") and not f.startswith("."):
+                sources.append(os.path.join(root, f))
+    
+    def _isa_priority(filepath):
+        name = os.path.basename(filepath)
+        if "avx512" in name:
+            return 3
+        if "avx2" in name:
+            return 2
+        if "sse41" in name:
+            return 1
+        return 0
+    
+    sources.sort(key=_isa_priority)
+    return sources
+
+
 def find_h_headers(src_dir):
     """Find all .h files in src_dir recursively, sorted, skipping vendor dirs."""
     headers = []
@@ -176,11 +202,13 @@ def extract_blocks_from_file(filepath):
 def assemble_c2py(src_dir, output_dir):
     """Assemble the complete c2py interface dict."""
     c_sources = find_c_sources(src_dir)
+    cpp_sources = find_cpp_sources(src_dir)
     h_headers = find_h_headers(src_dir)
-    func_entries = []
+    # py_sig -> entry (merge overloads across .c, .cpp, .h files)
+    func_entries = {}
     all_consts = {}
 
-    for filepath in c_sources + h_headers:
+    for filepath in c_sources + cpp_sources + h_headers:
         funcs, consts = extract_blocks_from_file(filepath)
         if consts:
             print("  %s: constants" % os.path.relpath(filepath, output_dir),
@@ -191,7 +219,18 @@ def assemble_c2py(src_dir, output_dir):
             print("  %s: %d function(s)" % (rel, len(funcs)),
                   file=sys.stderr)
             for line_no, block in funcs:
-                func_entries.append(block_to_func_entry(block))
+                entry = block_to_func_entry(block)
+                py_sig = block["py_sig"]
+                if py_sig in func_entries:
+                    # Merge: variant .cpp adds c_overloads,
+                    # PREPENDED so they win first-match dispatch
+                    existing = func_entries[py_sig]
+                    c_overloads = entry.get("c_overloads", [])
+                    if c_overloads:
+                        existing_overloads = existing.get("c_overloads", [])
+                        existing["c_overloads"] = c_overloads + existing_overloads
+                else:
+                    func_entries[py_sig] = entry
 
     result = {
         "module": "_cImageD11",
@@ -203,6 +242,10 @@ def assemble_c2py(src_dir, output_dir):
         os.path.relpath(src, output_dir) for src in c_sources
     ]
 
+    result["cpp_source"] = [
+        os.path.relpath(src, output_dir) for src in cpp_sources
+    ]
+
     result["headers"] = [
         os.path.relpath(hdr, output_dir) for hdr in h_headers
     ]
@@ -210,7 +253,7 @@ def assemble_c2py(src_dir, output_dir):
     if all_consts:
         result["constants"] = all_consts
 
-    result["functions"] = func_entries
+    result["functions"] = list(func_entries.values())
 
     return result
 
