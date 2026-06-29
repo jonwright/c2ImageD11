@@ -40,9 +40,9 @@ sa_f32_aos_avx512_v2_kernel(const double ubi[9], const float *gv, double tol,
     __m512 u20=_mm512_set1_ps((float)ubi[6]),u21=_mm512_set1_ps((float)ubi[7]),u22=_mm512_set1_ps((float)ubi[8]);
     float tol2=(float)(tol*tol); __m512 tvec=_mm512_set1_ps(tol2);
     __m512i lbl_vec=_mm512_set1_epi32(label), neg=_mm512_set1_epi32(-1);
-    __m512i idx1x=_mm512_load_si512(I1X), idx2x=_mm512_load_si512(I2X);
-    __m512i idx1y=_mm512_load_si512(I1Y), idx2y=_mm512_load_si512(I2Y);
-    __m512i idx1z=_mm512_load_si512(I1Z), idx2z=_mm512_load_si512(I2Z);
+    __m512i idx1x=_mm512_loadu_si512(I1X), idx2x=_mm512_loadu_si512(I2X);
+    __m512i idx1y=_mm512_loadu_si512(I1Y), idx2y=_mm512_loadu_si512(I2Y);
+    __m512i idx1z=_mm512_loadu_si512(I1Z), idx2z=_mm512_loadu_si512(I2Z);
     int n=0; intptr_t k;
 
     for(k=0;k+16<=ng;k+=16){
