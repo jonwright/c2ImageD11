@@ -24,12 +24,12 @@
 #endif
 
 /* Computed permute indices for AoS->SoA deinterleave of 16 f32 triples (48 floats) */
-static const int I1X[16] _Alignas(64) = {0,3,6,9,12,15,18,21,24,27,30,0,0,0,0,0};
-static const int I2X[16] _Alignas(64) = {0,1,2,3,4,5,6,7,8,9,10,17,20,23,26,29};
-static const int I1Y[16] _Alignas(64) = {1,4,7,10,13,16,19,22,25,28,31,0,0,0,0,0};
-static const int I2Y[16] _Alignas(64) = {0,1,2,3,4,5,6,7,8,9,10,18,21,24,27,30};
-static const int I1Z[16] _Alignas(64) = {2,5,8,11,14,17,20,23,26,29,0,0,0,0,0,0};
-static const int I2Z[16] _Alignas(64) = {0,1,2,3,4,5,6,7,8,9,16,19,22,25,28,31};
+static const int I1X[16] = {0,3,6,9,12,15,18,21,24,27,30,0,0,0,0,0};
+static const int I2X[16] = {0,1,2,3,4,5,6,7,8,9,10,17,20,23,26,29};
+static const int I1Y[16] = {1,4,7,10,13,16,19,22,25,28,31,0,0,0,0,0};
+static const int I2Y[16] = {0,1,2,3,4,5,6,7,8,9,10,18,21,24,27,30};
+static const int I1Z[16] = {2,5,8,11,14,17,20,23,26,29,0,0,0,0,0,0};
+static const int I2Z[16] = {0,1,2,3,4,5,6,7,8,9,16,19,22,25,28,31};
 
 static int
 sa_f32_aos_avx512_v2_kernel(const double ubi[9], const float *gv, double tol,
