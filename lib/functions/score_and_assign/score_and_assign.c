@@ -43,15 +43,15 @@ C2PY_END */
 int score_and_assign_f32(double ubi[3][3], const float gv[], double tol,
                          float *restrict drlv2, int *restrict labels, int label,
                          intptr_t ng) {
-    double h0, h1, h2, t0, t1, t2, sumsq, tolsq, magic=6755399441055744.0;
+    double h0, h1, h2, t0, t1, t2, sumsq, tolsq;
     intptr_t k; int n;
     tolsq = tol * tol;
     n = 0;
     for (k = 0; k < ng; k++) {
         double gx=gv[k*3],gy=gv[k*3+1],gz=gv[k*3+2];
-        h0 = ubi[0][0]*gx + ubi[0][1]*gy + ubi[0][2]*gz; h0-=((h0+magic)-magic);
-        h1 = ubi[1][0]*gx + ubi[1][1]*gy + ubi[1][2]*gz; h1-=((h1+magic)-magic);
-        h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz; h2-=((h2+magic)-magic);
+        h0 = ubi[0][0]*gx + ubi[0][1]*gy + ubi[0][2]*gz; h0-=nearbyint(h0);
+        h1 = ubi[1][0]*gx + ubi[1][1]*gy + ubi[1][2]*gz; h1-=nearbyint(h1);
+        h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz; h2-=nearbyint(h2);
         sumsq = h0*h0 + h1*h1 + h2*h2;
         if ((sumsq < tolsq) && (sumsq < (double)drlv2[k])) {
             labels[k] = label;
@@ -68,17 +68,17 @@ int score_and_assign(double ubi[3][3], const double gv[], double tol,
                      double *restrict drlv2, int *restrict labels, int label,
                      intptr_t ng) {
 
-    double h0, h1, h2, sumsq, tolsq, magic=6755399441055744.0;
+    double h0, h1, h2, sumsq, tolsq;
     intptr_t k; int n;
     tolsq = tol * tol;
     n = 0;
     for (k = 0; k < ng; k++) {
         h0 = ubi[0][0] * gv[k*3] + ubi[0][1] * gv[k*3+1] + ubi[0][2] * gv[k*3+2];
-        h0 -= ((h0+magic)-magic);
+        h0 -= nearbyint(h0);
         h1 = ubi[1][0] * gv[k*3] + ubi[1][1] * gv[k*3+1] + ubi[1][2] * gv[k*3+2];
-        h1 -= ((h1+magic)-magic);
+        h1 -= nearbyint(h1);
         h2 = ubi[2][0] * gv[k*3] + ubi[2][1] * gv[k*3+1] + ubi[2][2] * gv[k*3+2];
-        h2 -= ((h2+magic)-magic);
+        h2 -= nearbyint(h2);
         sumsq = h0*h0 + h1*h1 + h2*h2;
         if ((sumsq < tolsq) && (sumsq < drlv2[k])) {
             labels[k] = label;
@@ -98,14 +98,14 @@ int score_and_assign_sov_f64(double ubi[3][3], const double gv[], double tol,
     const double *restrict gvx = gv;
     const double *restrict gvy = gv + ng;
     const double *restrict gvz = gv + ng * 2;
-    double h0, h1, h2, sumsq, tolsq, magic=6755399441055744.0;
+    double h0, h1, h2, sumsq, tolsq;
     intptr_t k; int n;
     tolsq = tol * tol;
     n = 0;
     for (k = 0; k < ng; k++) {
-        h0 = ubi[0][0]*gvx[k] + ubi[0][1]*gvy[k] + ubi[0][2]*gvz[k]; h0-=((h0+magic)-magic);
-        h1 = ubi[1][0]*gvx[k] + ubi[1][1]*gvy[k] + ubi[1][2]*gvz[k]; h1-=((h1+magic)-magic);
-        h2 = ubi[2][0]*gvx[k] + ubi[2][1]*gvy[k] + ubi[2][2]*gvz[k]; h2-=((h2+magic)-magic);
+        h0 = ubi[0][0]*gvx[k] + ubi[0][1]*gvy[k] + ubi[0][2]*gvz[k]; h0-=nearbyint(h0);
+        h1 = ubi[1][0]*gvx[k] + ubi[1][1]*gvy[k] + ubi[1][2]*gvz[k]; h1-=nearbyint(h1);
+        h2 = ubi[2][0]*gvx[k] + ubi[2][1]*gvy[k] + ubi[2][2]*gvz[k]; h2-=nearbyint(h2);
         sumsq = h0*h0 + h1*h1 + h2*h2;
         if ((sumsq < tolsq) && (sumsq < drlv2[k])) {
             labels[k] = label; drlv2[k] = sumsq; n++;
@@ -122,15 +122,15 @@ int score_and_assign_sov_f32(double ubi[3][3], const float gv[], double tol,
     const float *restrict gvx = gv;
     const float *restrict gvy = gv + ng;
     const float *restrict gvz = gv + ng * 2;
-    double h0, h1, h2, sumsq, tolsq, magic=6755399441055744.0;
+    double h0, h1, h2, sumsq, tolsq;
     intptr_t k; int n;
     tolsq = tol * tol;
     n = 0;
     for (k = 0; k < ng; k++) {
         double gx=gvx[k], gy=gvy[k], gz=gvz[k];
-        h0 = ubi[0][0]*gx + ubi[0][1]*gy + ubi[0][2]*gz; h0-=((h0+magic)-magic);
-        h1 = ubi[1][0]*gx + ubi[1][1]*gy + ubi[1][2]*gz; h1-=((h1+magic)-magic);
-        h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz; h2-=((h2+magic)-magic);
+        h0 = ubi[0][0]*gx + ubi[0][1]*gy + ubi[0][2]*gz; h0-=nearbyint(h0);
+        h1 = ubi[1][0]*gx + ubi[1][1]*gy + ubi[1][2]*gz; h1-=nearbyint(h1);
+        h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz; h2-=nearbyint(h2);
         sumsq = h0*h0 + h1*h1 + h2*h2;
         if ((sumsq < tolsq) && (sumsq < (double)drlv2[k])) {
             labels[k] = label; drlv2[k] = (float)sumsq; n++;

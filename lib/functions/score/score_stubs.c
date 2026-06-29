@@ -4,18 +4,19 @@
  */
 
 #include <stdint.h>
+#include <math.h>
 
 static int score_scalar_f64(const double ubi[9], const double *gv, double tol, intptr_t ng)
 {
-    double t2 = tol * tol, magic = 6755399441055744.0;
+    double t2 = tol * tol;
     int n = 0; intptr_t k;
     for (k = 0; k < ng; k++) {
         double h0 = ubi[0]*gv[k*3] + ubi[1]*gv[k*3+1] + ubi[2]*gv[k*3+2];
-        h0 -= ((h0 + magic) - magic);
+        h0 -= nearbyint(h0);
         double h1 = ubi[3]*gv[k*3] + ubi[4]*gv[k*3+1] + ubi[5]*gv[k*3+2];
-        h1 -= ((h1 + magic) - magic);
+        h1 -= nearbyint(h1);
         double h2 = ubi[6]*gv[k*3] + ubi[7]*gv[k*3+1] + ubi[8]*gv[k*3+2];
-        h2 -= ((h2 + magic) - magic);
+        h2 -= nearbyint(h2);
         if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
     }
     return n;
@@ -23,16 +24,16 @@ static int score_scalar_f64(const double ubi[9], const double *gv, double tol, i
 
 static int score_scalar_f32(const double ubi[9], const float *gv, double tol, intptr_t ng)
 {
-    double t2 = tol * tol, magic = 6755399441055744.0;
+    double t2 = tol * tol;
     int n = 0; intptr_t k;
     for (k = 0; k < ng; k++) {
         double gx = gv[k*3], gy = gv[k*3+1], gz = gv[k*3+2];
         double h0 = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz;
-        h0 -= ((h0 + magic) - magic);
+        h0 -= nearbyint(h0);
         double h1 = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz;
-        h1 -= ((h1 + magic) - magic);
+        h1 -= nearbyint(h1);
         double h2 = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz;
-        h2 -= ((h2 + magic) - magic);
+        h2 -= nearbyint(h2);
         if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
     }
     return n;
@@ -41,13 +42,13 @@ static int score_scalar_f32(const double ubi[9], const float *gv, double tol, in
 static int score_scalar_f64_soa(const double ubi[9],
     const double *gvx, const double *gvy, const double *gvz, double tol, intptr_t ng)
 {
-    double t2 = tol * tol, magic = 6755399441055744.0;
+    double t2 = tol * tol;
     int n = 0; intptr_t k;
     for (k = 0; k < ng; k++) {
         double gx = gvx[k], gy = gvy[k], gz = gvz[k];
-        double h0 = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz; h0 -= ((h0 + magic) - magic);
-        double h1 = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz; h1 -= ((h1 + magic) - magic);
-        double h2 = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz; h2 -= ((h2 + magic) - magic);
+        double h0 = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz; h0 -= nearbyint(h0);
+        double h1 = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz; h1 -= nearbyint(h1);
+        double h2 = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz; h2 -= nearbyint(h2);
         if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
     }
     return n;
@@ -56,13 +57,13 @@ static int score_scalar_f64_soa(const double ubi[9],
 static int score_scalar_f32_soa(const double ubi[9],
     const float *gvx, const float *gvy, const float *gvz, double tol, intptr_t ng)
 {
-    double t2 = tol * tol, magic = 6755399441055744.0;
+    double t2 = tol * tol;
     int n = 0; intptr_t k;
     for (k = 0; k < ng; k++) {
         double gx = gvx[k], gy = gvy[k], gz = gvz[k];
-        double h0 = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz; h0 -= ((h0 + magic) - magic);
-        double h1 = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz; h1 -= ((h1 + magic) - magic);
-        double h2 = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz; h2 -= ((h2 + magic) - magic);
+        double h0 = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz; h0 -= nearbyint(h0);
+        double h1 = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz; h1 -= nearbyint(h1);
+        double h2 = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz; h2 -= nearbyint(h2);
         if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
     }
     return n;

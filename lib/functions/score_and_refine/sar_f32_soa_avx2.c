@@ -27,6 +27,7 @@ static float hsum8(__m256 v) {
 
 #include <stdint.h>
 #include "sar_omp.h"
+#include <math.h>
 
 extern int inverse3x3(double A[3][3]);
 
@@ -131,10 +132,9 @@ sar_f32_soa_avx2_kernel(const double ubi[9],
         double hx_ = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz;
         double hy_ = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz;
         double hz_ = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz;
-        double magic = 6755399441055744.0;
-        double ix = (hx_ + magic) - magic;
-        double iy = (hy_ + magic) - magic;
-        double iz = (hz_ + magic) - magic;
+        double ix = nearbyint(hx_);
+        double iy = nearbyint(hy_);
+        double iz = nearbyint(hz_);
         double tx_ = hx_ - ix, ty_ = hy_ - iy, tz_ = hz_ - iz;
         double s = tx_*tx_ + ty_*ty_ + tz_*tz_;
         if (s < tol2) {

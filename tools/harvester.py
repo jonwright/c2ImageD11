@@ -282,6 +282,11 @@ def assemble_c2py(src_dir, output_dir):
 
     result["functions"] = list(func_entries.values())
 
+    # Group ISA variants: merge overloads that differ only in c2py_amd64_*
+    # into variants: groups → generates switch() dispatch instead of linear if/else
+    from _variant_grouper import _group_isa_variants
+    _group_isa_variants(func_entries)
+
     return result
 
 

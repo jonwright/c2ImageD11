@@ -17,6 +17,7 @@
 #include <stdint.h>
 #ifdef _OPENMP
 #include <omp.h>
+#include <math.h>
 #endif
 
 static int
@@ -56,15 +57,15 @@ score_f32_avx2_kernel(const double ubi[9], const float *gv, double tol, intptr_t
         if (mm) n += popcnt32(mm);
     }
 
-    double tol2 = tol * tol, magic = 6755399441055744.0;
+    double tol2 = tol * tol;
     for (; k < ng; k++) {
         double gx = gv[k*3], gy = gv[k*3+1], gz = gv[k*3+2];
         double hx_ = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz;
-        hx_ -= ((hx_ + magic) - magic);
+        hx_ -= nearbyint(hx_);
         double hy_ = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz;
-        hy_ -= ((hy_ + magic) - magic);
+        hy_ -= nearbyint(hy_);
         double hz_ = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz;
-        hz_ -= ((hz_ + magic) - magic);
+        hz_ -= nearbyint(hz_);
         if (hx_*hx_ + hy_*hy_ + hz_*hz_ < tol2) n++;
     }
     return n;

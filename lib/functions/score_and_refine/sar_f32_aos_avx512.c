@@ -17,6 +17,7 @@
 #include "sar_popcnt.h"
 #include <stdint.h>
 #include "sar_omp.h"
+#include <math.h>
 
 extern int inverse3x3(double A[3][3]);
 
@@ -77,7 +78,7 @@ sar_f32_aos_avx512_kernel(const double ubi[9], const float *__restrict gv,
     double tol2=tol*tol;
     for(;k<ng;k++){double gx=gv[k*3],gy=gv[k*3+1],gz=gv[k*3+2];
         double hx_=ubi[0]*gx+ubi[1]*gy+ubi[2]*gz,hy_=ubi[3]*gx+ubi[4]*gy+ubi[5]*gz,hz_=ubi[6]*gx+ubi[7]*gy+ubi[8]*gz;
-        double magic=6755399441055744.0,ix=(hx_+magic)-magic,iy=(hy_+magic)-magic,iz=(hz_+magic)-magic;
+        double ix=nearbyint(hx_),iy=nearbyint(hy_),iz=nearbyint(hz_);
         double tx_=hx_-ix,ty_=hy_-iy,tz_=hz_-iz,s=tx_*tx_+ty_*ty_+tz_*tz_;
         if(s<tol2){(*n_out)++;*sumdrlv2_out+=s;
             H[0]+=ix*ix;H[1]+=ix*iy;H[2]+=ix*iz;H[3]+=iy*ix;H[4]+=iy*iy;H[5]+=iy*iz;H[6]+=iz*ix;H[7]+=iz*iy;H[8]+=iz*iz;

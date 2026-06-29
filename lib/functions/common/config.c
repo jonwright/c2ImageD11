@@ -40,3 +40,31 @@ int _c2py_set_avx2(int val) {
     c2py_amd64_avx2 = val;
     return old;
 }
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "_c2py_has_avx512f() -> int",
+ *     "doc": "Returns 1 if the CPU supports AVX-512F, 0 otherwise. Read-only.",
+ *     "c_overloads": [{
+ *         "sig": "int _c2py_has_avx512f() -> int",
+ *         "map": {},
+ *     }],
+ * }
+ * C2PY_END */
+int _c2py_has_avx512f(void) {
+    return c2py_amd64_avx512f;
+}
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "_c2py_has_avx2() -> int",
+ *     "doc": "Returns 1 if the CPU supports AVX2, 0 otherwise. Read-only.",
+ *     "c_overloads": [{
+ *         "sig": "int _c2py_has_avx2() -> int",
+ *         "map": {},
+ *     }],
+ * }
+ * C2PY_END */
+int _c2py_has_avx2(void) {
+    return c2py_amd64_avx2;
+}

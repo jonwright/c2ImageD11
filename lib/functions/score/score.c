@@ -62,16 +62,16 @@ int score(const vec ubi[3], const double gv[], double tol, intptr_t ng) {
 /* f32 scalar fallback (called by dispatch on non-x86 or when ISA unavailable) */
 int score_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) {
     int n = 0;
-    double t2 = tol * tol, magic = 6755399441055744.0;
+    double t2 = tol * tol;
     intptr_t k;
     for (k = 0; k < ng; k++) {
         double gx = gv[k*3], gy = gv[k*3+1], gz = gv[k*3+2];
         double h0 = ubi[0][0]*gx + ubi[0][1]*gy + ubi[0][2]*gz;
-        h0 -= ((h0 + magic) - magic);
+        h0 -= nearbyint(h0);
         double h1 = ubi[1][0]*gx + ubi[1][1]*gy + ubi[1][2]*gz;
-        h1 -= ((h1 + magic) - magic);
+        h1 -= nearbyint(h1);
         double h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz;
-        h2 -= ((h2 + magic) - magic);
+        h2 -= nearbyint(h2);
         if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
     }
     return n;
@@ -81,12 +81,12 @@ int score_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng)
 int score_sov_f64(const double ubi[3][3], const double gv[], double tol, intptr_t ng) {
     const double *restrict gvx = gv, *restrict gvy = gv + ng, *restrict gvz = gv + ng * 2;
     int n = 0;
-    double t2 = tol * tol, magic = 6755399441055744.0;
+    double t2 = tol * tol;
     intptr_t k;
     for (k = 0; k < ng; k++) {
-        double h0 = ubi[0][0]*gvx[k] + ubi[0][1]*gvy[k] + ubi[0][2]*gvz[k]; h0 -= ((h0 + magic) - magic);
-        double h1 = ubi[1][0]*gvx[k] + ubi[1][1]*gvy[k] + ubi[1][2]*gvz[k]; h1 -= ((h1 + magic) - magic);
-        double h2 = ubi[2][0]*gvx[k] + ubi[2][1]*gvy[k] + ubi[2][2]*gvz[k]; h2 -= ((h2 + magic) - magic);
+        double h0 = ubi[0][0]*gvx[k] + ubi[0][1]*gvy[k] + ubi[0][2]*gvz[k]; h0 -= nearbyint(h0);
+        double h1 = ubi[1][0]*gvx[k] + ubi[1][1]*gvy[k] + ubi[1][2]*gvz[k]; h1 -= nearbyint(h1);
+        double h2 = ubi[2][0]*gvx[k] + ubi[2][1]*gvy[k] + ubi[2][2]*gvz[k]; h2 -= nearbyint(h2);
         if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
     }
     return n;
@@ -95,13 +95,13 @@ int score_sov_f64(const double ubi[3][3], const double gv[], double tol, intptr_
 int score_sov_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) {
     const float *restrict gvx = gv, *restrict gvy = gv + ng, *restrict gvz = gv + ng * 2;
     int n = 0;
-    double t2 = tol * tol, magic = 6755399441055744.0;
+    double t2 = tol * tol;
     intptr_t k;
     for (k = 0; k < ng; k++) {
         double gx = gvx[k], gy = gvy[k], gz = gvz[k];
-        double h0 = ubi[0][0]*gx + ubi[0][1]*gy + ubi[0][2]*gz; h0 -= ((h0 + magic) - magic);
-        double h1 = ubi[1][0]*gx + ubi[1][1]*gy + ubi[1][2]*gz; h1 -= ((h1 + magic) - magic);
-        double h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz; h2 -= ((h2 + magic) - magic);
+        double h0 = ubi[0][0]*gx + ubi[0][1]*gy + ubi[0][2]*gz; h0 -= nearbyint(h0);
+        double h1 = ubi[1][0]*gx + ubi[1][1]*gy + ubi[1][2]*gz; h1 -= nearbyint(h1);
+        double h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz; h2 -= nearbyint(h2);
         if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
     }
     return n;

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #ifdef _OPENMP
 #include <omp.h>
+#include <math.h>
 #endif
 
 /* C2PY_BEGIN
@@ -37,11 +38,11 @@ static int score_f64_soa_avx2_kernel(const double ubi[9],
         __m256d mask=_mm256_cmp_pd(sumsq,tvec,_CMP_LT_OS);
         int mm=_mm256_movemask_pd(mask); if(mm)n+=popcnt32(mm);
     }
-    double t2=tol*tol,magic=6755399441055744.0;
+    double t2=tol*tol;
     for(;k<ng;k++){double gx=gvx[k],gy=gvy[k],gz=gvz[k];
-        double hx_=ubi[0]*gx+ubi[1]*gy+ubi[2]*gz;hx_-=((hx_+magic)-magic);
-        double hy_=ubi[3]*gx+ubi[4]*gy+ubi[5]*gz;hy_-=((hy_+magic)-magic);
-        double hz_=ubi[6]*gx+ubi[7]*gy+ubi[8]*gz;hz_-=((hz_+magic)-magic);
+        double hx_=ubi[0]*gx+ubi[1]*gy+ubi[2]*gz;hx_-=nearbyint(hx_);
+        double hy_=ubi[3]*gx+ubi[4]*gy+ubi[5]*gz;hy_-=nearbyint(hy_);
+        double hz_=ubi[6]*gx+ubi[7]*gy+ubi[8]*gz;hz_-=nearbyint(hz_);
         if(hx_*hx_+hy_*hy_+hz_*hz_<t2)n++;}
     return n;
 }

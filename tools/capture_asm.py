@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""capture_asm.py — Clang-captured cross-platform NASM kernels.
+"""capture_asm.py -- Clang-captured cross-platform NASM kernels.
 
 For each SoA ISA kernel, extracts the inner SIMD function, compiles it
 with clang-18 for both Linux (System V) and Windows (MinGW) ABIs,
@@ -21,7 +21,7 @@ ASMDIR = os.path.join(SADIR, "asm")
 G2N    = os.path.join(ROOT, "tools", "gas_to_nasm.py")
 CLANG  = "clang-18"
 
-INCLUDES = f"-I {ROOT}/lib/functions -I {ROOT}/lib/functions/common -I {ROOT}/lib/interface"
+INCLUDES = "-I {0}/lib/functions -I {0}/lib/functions/common -I {0}/lib/interface".format(ROOT)
 
 # All SoA ISA kernel definitions
 ALL_KERNELS = [
@@ -46,7 +46,7 @@ def capture_one_abi(src_base, inner_name, ctype, dtype, isa_flags, target, abi_l
     orig_name = "sa_" + src_base[3:] + "_kernel"
     sig_start = c_text.find(orig_name + "(")
     if sig_start < 0:
-        print(f"  {abi_label}: function '{orig_name}' not found in {src_base}.c")
+        print("  {0}: function '{1}' not found in {2}.c".format(abi_label, orig_name, src_base))
         return None
     brace_pos = c_text.find('{', sig_start)
     depth, end = 0, brace_pos
@@ -59,35 +59,36 @@ def capture_one_abi(src_base, inner_name, ctype, dtype, isa_flags, target, abi_l
 
     # Build standalone C file
     standalone = (
-        f"#include <immintrin.h>\n"
-        f"#include <stdint.h>\n"
-        f"#include <math.h>\n"
-        f'#include "../score_and_refine/sar_popcnt.h"\n'
-        f"\n"
-        f"__attribute__((noinline))\n"
-        f"static int {inner_name}(const double ubi[9], const {ctype} *gvx,"
-        f" const {ctype} *gvy, const {ctype} *gvz, double tol,"
-        f" {dtype} *drlv2, int *labels, int label, intptr_t ng)\n"
-        f"{{{body}\n"
-        f"}}\n"
-        f"\n"
-        f"int call_{inner_name}(const double ubi[9], const {ctype} *gvx,"
-        f" const {ctype} *gvy, const {ctype} *gvz, double tol,"
-        f" {dtype} *drlv2, int *labels, int label, intptr_t ng)\n"
-        f"{{ return {inner_name}(ubi, gvx, gvy, gvz, tol, drlv2, labels, label, ng); }}\n"
-    )
+        "#include <immintrin.h>\n"
+        "#include <stdint.h>\n"
+        "#include <math.h>\n"
+        '#include "../score_and_refine/sar_popcnt.h"\n'
+        "\n"
+        "__attribute__((noinline))\n"
+        "static int {0}(const double ubi[9], const {1} *gvx,"
+        " const {1} *gvy, const {1} *gvz, double tol,"
+        " {2} *drlv2, int *labels, int label, intptr_t ng)\n"
+        "{{{3}\n"
+        "}}\n"
+        "\n"
+        "int call_{0}(const double ubi[9], const {1} *gvx,"
+        " const {1} *gvy, const {1} *gvz, double tol,"
+        " {2} *drlv2, int *labels, int label, intptr_t ng)\n"
+        "{{ return {0}(ubi, gvx, gvy, gvz, tol, drlv2, labels, label, ng); }}\n"
+    ).format(inner_name, ctype, dtype, body)
 
-    tmp_c = f"/tmp/{src_base}_{abi_label}.c"
-    tmp_s = f"/tmp/{src_base}_{abi_label}.s"
+    tmp_c = "/tmp/{0}_{1}.c".format(src_base, abi_label)
+    tmp_s = "/tmp/{0}_{1}.s".format(src_base, abi_label)
     with open(tmp_c, 'w') as f:
         f.write(standalone)
 
     # Compile
-    target_flag = f"-target {target} " if target else ""
-    cmd = f"{CLANG} -O3 -ffast-math {target_flag}{isa_flags} -masm=intel -S -o {tmp_s} {tmp_c} {INCLUDES}"
+    target_flag = "-target {0} ".format(target) if target else ""
+    cmd = "{0} -O3 -ffast-math {1}{2} -masm=intel -S -o {3} {4} {5}".format(
+        CLANG, target_flag, isa_flags, tmp_s, tmp_c, INCLUDES)
     r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if r.returncode != 0:
-        print(f"  {abi_label}: clang-18 failed:\n{r.stderr[:300]}")
+        print("  {0}: clang-18 failed:\n{1}".format(abi_label, r.stderr[:300]))
         return None
 
     # Convert to NASM
@@ -102,7 +103,7 @@ def capture_one_abi(src_base, inner_name, ctype, dtype, isa_flags, target, abi_l
         if pos >= 0:
             start = nasm_text.rfind('\n', 0, pos) + 1
             return nasm_text[start:]
-    print(f"  {abi_label}: inner function '{inner_name}' not found in NASM output")
+    print("  {0}: inner function '{1}' not found in NASM output".format(abi_label, inner_name))
     return None
 
 
@@ -118,17 +119,17 @@ def capture(src_base, inner_name, ctype, dtype, isa_flags):
 
     # Merge with %ifidn
     final = (
-        f"SECTION .note.GNU-stack noalloc noexec nowrite progbits\n"
-        f'%include "c2_abi.asm"\n'
-        f"SECTION .text\n"
-        f"\n"
-        f"%ifidn __OUTPUT_FORMAT__, win64\n"
-        f"global {inner_name}\n"
-        f"{win64_asm}"
-        f"%else\n"
-        f"global {inner_name}\n"
-        f"{linux_asm}"
-        f"%endif\n"
+        "SECTION .note.GNU-stack noalloc noexec nowrite progbits\n"
+        '%include "c2_abi.asm"\n'
+        "SECTION .text\n"
+        "\n"
+        "%ifidn __OUTPUT_FORMAT__, win64\n"
+        "global {0}\n".format(inner_name) +
+        win64_asm +
+        "%else\n"
+        "global {0}\n".format(inner_name) +
+        linux_asm +
+        "%endif\n"
     )
 
     asm_path = os.path.join(ASMDIR, src_base + ".asm")
@@ -142,10 +143,10 @@ def capture(src_base, inner_name, ctype, dtype, isa_flags):
             ["nasm", "-f", fmt, "-I", ASMDIR, "-o", "/dev/null", asm_path],
             capture_output=True, text=True)
         if r.returncode != 0:
-            print(f"  {label}: NASM ERROR: {r.stderr[:200]}")
+            print("  {0}: NASM ERROR: {1}".format(label, r.stderr[:200]))
             ok = False
         else:
-            print(f"  {label}: NASM OK")
+            print("  {0}: NASM OK".format(label))
     return ok
 
 
@@ -158,14 +159,14 @@ def main():
     if args.kernel:
         kernels = [k for k in ALL_KERNELS if k[0] == args.kernel]
         if not kernels:
-            print(f"Unknown kernel: {args.kernel}")
+            print("Unknown kernel: {0}".format(args.kernel))
             sys.exit(1)
 
     ok = True
     for src_base, inner_name, ctype, dtype, isa_flags in kernels:
-        print(f"\n--- {src_base}.c ---")
+        print("\n--- {0}.c ---".format(src_base))
         if not capture(src_base, inner_name, ctype, dtype, isa_flags):
-            print(f"  FAILED")
+            print("  FAILED")
             ok = False
 
     if ok:
