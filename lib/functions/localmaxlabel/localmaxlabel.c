@@ -18,7 +18,7 @@ int localmaxlabel(const float *restrict im, // input
                   intptr_t dim0,                 // Image dimensions
                   intptr_t dim1) {
     // old msvc for python 2.7 requires ALL variables declared up here.
-    intptr_t i, j, p, q, nt, lo, hi; int k, npk, t, tid, npks;
+    intptr_t i, j, p, q, nt, lo, hi; int k, npk, t, npks;
     //   int noisy=0;
 #define noisy 0
     double tic, toc;
@@ -47,7 +47,6 @@ int localmaxlabel(const float *restrict im, // input
         tic = toc;
     }
     // Now pass with row offsets in place
-#pragma omp parallel for private(nt, t, j, p) schedule(dynamic)
     for (i = 0; i < (dim0 - 1); i++) {
         t = lout[i * dim1];
         nt = lout[(i + 1) * dim1];
@@ -84,17 +83,9 @@ int localmaxlabel(const float *restrict im, // input
     // This is the same for all versions (optimised or not)
     //  ... perhaps re-write to be a manual loop and fill in
     //  ... the steps that are thread local
-#pragma omp parallel private(q, i, tid, nt, k, lo, hi)
     {
-#ifdef _OPENMP
-        tid = omp_get_thread_num();
-        nt = omp_get_num_threads();
-#else
-        tid = 0;
-        nt = 1;
-#endif
-        lo = dim0 * dim1 * tid / nt;
-        hi = dim0 * dim1 * (tid + 1) / nt;
+        lo = 0;
+        hi = dim0 * dim1;
         for (i = lo; i < hi; i++) {
             if (l[i] == 0)
                 continue; // done
