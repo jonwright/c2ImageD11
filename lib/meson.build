@@ -17,6 +17,10 @@ project('c2ImageD11', 'c', 'cpp',
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
 
+# NASM is optional — only needed for ASM variant kernels (Clang-captured).
+# Falls back to C intrinsics if NASM is not available.
+nasm_found = add_languages('nasm', required: false)
+
 # ------------------------------------------------------------------
 # Compilation
 # ------------------------------------------------------------------
@@ -62,6 +66,10 @@ c2_sources = files(
   'functions/reorder_u16_a32_a16/reorder_u16_a32_a16.c',
   'functions/reorder_u16_a32/reorder_u16_a32.c',
   'functions/score_and_assign/score_and_assign.c',
+  'functions/score_and_assign/sa_f64_sov_avx512_asm.c',
+  'functions/score_and_assign/sa_f64_sov_avx2_asm.c',
+  'functions/score_and_assign/sa_f32_sov_avx512_asm.c',
+  'functions/score_and_assign/sa_f32_sov_avx2_asm.c',
   'functions/score_and_refine/score_and_refine.c',
   'functions/score_gvec_z/score_gvec_z.c',
   'functions/score/score.c',
@@ -105,10 +113,20 @@ else
   c2_link_args = ['-lgomp']
 endif
 
+# When NASM is available, define C2_ASM_AVAILABLE so the C fallback
+# in the ASM stub .c files is skipped (the NASM .o provides the
+# stronger symbol definition).
+if nasm_found
+  c2_c_args += ['-DC2_ASM_AVAILABLE']
+endif
+
 m_dep = cc.find_library('m', required: false)
 
 c2_inc = include_directories(
   'functions', 'functions/common', 'interface')
+
+asm_inc = include_directories(
+  'functions/score_and_assign/asm')
 
 # Compile ISA-specific variants on every platform so the wrapper always
 # has the symbols.  x86_64 gets ISA-optimizing flags; other platforms get
@@ -127,7 +145,7 @@ if host_machine.cpu_family() == 'x86_64'
     sse41_f64_flags = ['-O2',             '-fopenmp', '-fPIC', '-msse4.1']
     sse41_f32_flags = ['-O3', '-ffast-math', '-fopenmp', '-fPIC', '-msse4.1']
     avx2_flags      = ['-O3', '-ffast-math', '-fopenmp', '-fPIC', '-mavx2', '-mfma']
-    avx512_flags    = ['-O3', '-ffast-math', '-fopenmp', '-fPIC', '-mavx512f', '-mavx2', '-mfma']
+    avx512_flags    = ['-O3', '-ffast-math', '-fopenmp', '-fPIC', '-mavx512f', '-mavx2', '-mfma', '-mavx512vl', '-mavx512dq', '-mavx512bw']
   endif
 else
   # aarch64 / other: base compilation, no ISA flags needed
@@ -195,6 +213,49 @@ else
   score_avx512_soa_f32 = score_avx2_f64
 endif
 
+# score_and_assign() ISA variants
+if host_machine.cpu_family() == 'x86_64'
+  sa_avx2_f64      = static_library('sa_avx2_f64',      'functions/score_and_assign/sa_f64_aos_avx2.c',    c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  sa_avx2_f32      = static_library('sa_avx2_f32',      'functions/score_and_assign/sa_f32_aos_avx2.c',    c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  sa_avx2_soa_f64  = static_library('sa_avx2_soa_f64',  'functions/score_and_assign/sa_f64_sov_avx2.c',    c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  sa_avx2_soa_f32  = static_library('sa_avx2_soa_f32',  'functions/score_and_assign/sa_f32_sov_avx2.c',    c_args: avx2_flags,   include_directories: c2_inc, dependencies: [m_dep])
+  sa_avx512_f64    = static_library('sa_avx512_f64',    'functions/score_and_assign/sa_f64_aos_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  sa_avx512_f32    = static_library('sa_avx512_f32',    'functions/score_and_assign/sa_f32_aos_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  sa_avx512_soa_f64= static_library('sa_avx512_soa_f64','functions/score_and_assign/sa_f64_sov_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  sa_avx512_soa_f32= static_library('sa_avx512_soa_f32','functions/score_and_assign/sa_f32_sov_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+else
+  sa_avx2_f64 = static_library('sa_avx2_f64',
+    'functions/score_and_assign/sa_stubs.c', include_directories: c2_inc, dependencies: [m_dep])
+  sa_avx2_f32       = sa_avx2_f64
+  sa_avx2_soa_f64   = sa_avx2_f64
+  sa_avx2_soa_f32   = sa_avx2_f64
+  sa_avx512_f64     = sa_avx2_f64
+  sa_avx512_f32     = sa_avx2_f64
+  sa_avx512_soa_f64 = sa_avx2_f64
+  sa_avx512_soa_f32 = sa_avx2_f64
+endif
+
+# ── Clang-captured NASM assembly variants (better codegen than GCC) ──
+if nasm_found and host_machine.cpu_family() == 'x86_64'
+  sa_avx512_soa_f64_asm = static_library('sa_avx512_soa_f64_asm',
+    'functions/score_and_assign/asm/sa_f64_sov_avx512.asm',
+    nasm_args: ['-I', meson.current_source_dir() + '/functions/score_and_assign/asm'])
+  sa_avx2_soa_f64_asm = static_library('sa_avx2_soa_f64_asm',
+    'functions/score_and_assign/asm/sa_f64_sov_avx2.asm',
+    nasm_args: ['-I', meson.current_source_dir() + '/functions/score_and_assign/asm'])
+  sa_avx512_soa_f32_asm = static_library('sa_avx512_soa_f32_asm',
+    'functions/score_and_assign/asm/sa_f32_sov_avx512.asm',
+    nasm_args: ['-I', meson.current_source_dir() + '/functions/score_and_assign/asm'])
+  sa_avx2_soa_f32_asm = static_library('sa_avx2_soa_f32_asm',
+    'functions/score_and_assign/asm/sa_f32_sov_avx2.asm',
+    nasm_args: ['-I', meson.current_source_dir() + '/functions/score_and_assign/asm'])
+else
+  sa_avx512_soa_f64_asm = sa_avx512_soa_f64
+  sa_avx2_soa_f64_asm   = sa_avx2_soa_f64
+  sa_avx512_soa_f32_asm = sa_avx512_soa_f32
+  sa_avx2_soa_f32_asm   = sa_avx2_soa_f32
+endif
+
 shared_module('_cImageD11',
   [c2_sources, c2_sources_cpp],
   files('interface/c2py_runtime.c', 'interface/_cImageD11_wrapper.c'),
@@ -207,7 +268,11 @@ shared_module('_cImageD11',
                sar_avx2_f64, sar_avx2_f32, sar_avx2_soa, sar_avx2_f32soa,
                sar_avx512_f64, sar_avx512_f32, sar_avx512_soa, sar_avx512_f32soa,
                score_avx2_f64, score_avx2_f32, score_avx2_soa_f64, score_avx2_soa_f32,
-               score_avx512_f64, score_avx512_f32, score_avx512_soa_f64, score_avx512_soa_f32],
+               score_avx512_f64, score_avx512_f32, score_avx512_soa_f64, score_avx512_soa_f32,
+               sa_avx2_f64, sa_avx2_f32, sa_avx2_soa_f64, sa_avx2_soa_f32,
+               sa_avx512_f64, sa_avx512_f32, sa_avx512_soa_f64, sa_avx512_soa_f32,
+               sa_avx512_soa_f64_asm, sa_avx2_soa_f64_asm,
+               sa_avx512_soa_f32_asm, sa_avx2_soa_f32_asm],
   name_prefix: '',
   install: false,
 )

@@ -14,6 +14,7 @@ jobs:
           export PATH="/opt/python/cp312-cp312/bin:$PATH"
           pip install git+https://github.com/jonwright/c2py23.git
           pip install meson ninja setuptools auditwheel
+          dnf install -y nasm || true  # optional: for Clang-captured ASM kernels
           echo "PATH=/opt/python/cp312-cp312/bin:$PATH" >> "$GITHUB_ENV"
 
       - name: Regenerate lib/interface from C sources
@@ -96,6 +97,11 @@ jobs:
       - name: Install build deps
         run: |
           pip install meson ninja numpy setuptools
+
+      - name: Install NASM (optional, for ASM kernels)
+        run: |
+          choco install nasm --no-progress -y
+        continue-on-error: true
 
       - name: Build _cImageD11
         run: |

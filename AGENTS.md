@@ -246,8 +246,52 @@ is deferred.
   instruction encoding bytes and infers the required ISA level (e.g. `c2py_amd64_avx2`).
   No human writes `-mavx2` in a manifest. This prevents illegal instruction crashes
   from mismatched human-entered tags.
-- **Assembly format:** Intel syntax (NASM, or gcc `-masm=intel`) for LLM readability.
-  NASM assembles to `.o` which links into the same `.so` regardless of source language.
+- **Assembly format:** Intel syntax (NASM) for LLM readability and cross-platform
+  assembly.  NASM assembles to `.o` which links into the same `.so` regardless of
+  source language.
+- **Assembly capture workflow:** Clang-captured NASM kernels ship alongside C99
+  intrinsics variants.  Both are compiled and the dispatch picks the ASM version
+  via `when:` ordering (ASM overload prepended before C).  The pipeline is:
+
+  1. **Capture**: `python3 tools/capture_asm.py` — compiles each C kernel with
+     clang-18 + `-masm=intel -S`, runs `tools/gas_to_nasm.py` (GAS-Intel→NASM
+     converter), writes `.asm` files to `lib/functions/<name>/asm/`.
+  2. **ABI abstraction**: `asm/c2_abi.asm` provides FFmpeg-style macros
+     (`ARG1`..`ARG6`, `XMM_ARG1`, `STACK_ARG*`, `DECLARE_FUNC`) that abstract
+     System V (Linux) vs Microsoft x64 (Windows) calling conventions.
+  3. **Cross-platform assembly**: each kernel is compiled TWICE:
+     - Linux ABI: `clang-18 -O3 -ffast-math -masm=intel -S`
+     - Windows ABI: `clang-18 -O3 -ffast-math -target x86_64-pc-windows-gnu -masm=intel -S`
+     Both outputs are converted to NASM and merged into one `.asm` file behind
+     `%ifidn __OUTPUT_FORMAT__, win64` / `%else` / `%endif`.  The MinGW
+     cross-compilation target (`x86_64-pc-windows-gnu`) generates the same x64
+     ABI as MSVC.  Requires `gcc-mingw-w64-x86-64` package on the capture machine.
+  4. **Inner/outer split**: only the heavy inner SIMD kernel goes into NASM (no
+     OpenMP).  The outer function (gv→gvx/gvy/gvz split + `#pragma omp parallel`
+     dispatch) lives in a C2PY_BEGIN stub `.c` file.  This keeps the NASM simple
+     and lets the platform's native compiler handle threading.
+  5. **C2PY_BEGIN stubs**: each ASM kernel gets a companion `.c` file containing
+     the `C2PY_BEGIN` block (for the harvester), an `extern` declaration of the
+     NASM inner function, the outer wrapper with OpenMP, and a `#ifndef
+     C2_ASM_AVAILABLE` fallback that delegates to the C intrinsics kernel when
+     NASM is absent.
+  6. **meson integration**: `add_languages('nasm', required: false)` detects NASM.
+     If found, static_libraries from `.asm` files are compiled and linked with
+     `link_whole:`.  If not found, the ASM targets alias the C targets (fallback).
+     The `-DC2_ASM_AVAILABLE` flag is set globally so the C stubs skip their
+     fallback bodies when the NASM `.o` provides the symbol.
+  7. **CI**: `manylinux` installs nasm via `dnf -y install nasm`, Windows via
+     `choco install nasm` (both `continue-on-error: true`).  The manylinux
+     container must also have `mingw-w64-tools` for cross-compilation capture.
+  8. **Regeneration**: re-run `tools/capture_asm.py` after changing C intrinsics
+     or upgrading clang, then re-run `tools/harvester.py` and rebuild.
+  9. **Validation**: `nasm -f elf64 -I asm asm/foo.asm` AND `nasm -f win64 -I asm asm/foo.asm`
+     must both assemble clean.  `tests/` and `lib/functions/<name>/test_correctness.py`
+     must pass.  Perf must remain within 5% of the clang direct-compile baseline.
+  10. **When to capture**: SoA kernels benefit most from clang codegen (+34-48%
+     over GCC on Zen3).  AoS kernels are better left as C (GCC scalar-gather
+     intrinsics beat clang).  Check with `tools/bench_all_tiers.sh` before
+     deciding.
 - **C++ templates for type dispatch:** one C++ template per algorithm instantiated
   for float32/float64, exposed via `extern "C"` wrappers. c2py23 only sees the extern
   C ABI -- type dispatch happens at the c2py23 `when: "format == 'd'"` / `"format == 'f'"`
@@ -280,6 +324,12 @@ is deferred.
   `_cImageD11_AMD64.pyd`. Linux test matrix 3.8-3.13, Windows 3.10-3.13.
 - **Compiler warnings:** all fixed (RAD/DEG, printf %td, explicit casts).
 - **c2py23 HEAD tracking:** regenerated wrappers committed in git, un-pinned.
+- **NASM assembly capture pipeline:** `tools/capture_asm.py` + `gas_to_nasm.py` +
+  `asm/c2_abi.asm`.  4 SoA ISA kernels captured for `score_and_assign` (f64/f32 ×
+  AVX2/AVX-512).  NASM variants dispatch before C intrinsics.  C stubs with
+  `#ifndef C2_ASM_AVAILABLE` provide fallback when NASM is absent.  meson detects
+  NASM via `add_languages('nasm', required: false)`, CI installs it on Linux
+  (dnf) and Windows (choco).
 
 ## Build copy step
 
