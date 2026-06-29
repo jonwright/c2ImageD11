@@ -88,6 +88,29 @@ def main():
     print(header)
     print("-" * 110)
 
+    # detect default variants (all flags on)
+    mod._c2py_set_avx512f(1); mod._c2py_set_avx2(1)
+    defaults = {}  # label -> variant_name
+    for ng in args.sizes[:1]:
+        ubis, gv_f64, tol = gen_data(ng)
+        for label, gv in [("AoS_f64", gv_f64), ("SoA_f64", gv_f64.T.copy()),
+                           ("AoS_f32", gv_f64.astype(np.float32)), ("SoA_f32", gv_f64.T.copy().astype(np.float32))]:
+            for a in sorted(dir(mod)):
+                if "_c2py_ol_ptr_score_and_refine__" in a:
+                    mod._c2py_perf_reset(int(getattr(mod, a)))
+            mod._c2py_perf_set_enabled(1)
+            try: fn(ubis[0].copy(), gv, tol)
+            except: pass
+            mod._c2py_perf_set_enabled(0)
+            for a in sorted(dir(mod)):
+                if "_c2py_ol_ptr_score_and_refine__" in a:
+                    ptr = int(getattr(mod, a))
+                    buf = bytearray(128)
+                    mod._c2py_perf_read(ptr, buf)
+                    if struct.unpack_from("Q", buf)[0] > 0:
+                        defaults[label] = a.replace("_c2py_ol_ptr_score_and_refine__", "")
+                        break
+
     for tier, avx512_v, avx2_v in [("avx512", 1, 1), ("avx2", 0, 1), ("baseline", 0, 0)]:
         mod._c2py_set_avx512f(avx512_v)
         mod._c2py_set_avx2(avx2_v)
@@ -110,8 +133,9 @@ def main():
                     fp = f2py.get(ng, 0)
                     v1 = thr / fp if fp > 0 else 0
                     shape = "({},{})".format(ng, 3) if "AoS" in label else "(3,{})".format(ng)
-                    print("{:>8d}  {:>5d}  {:>8s}  {:>8s}  {:>9.0f}  {:>5.1f}x  {:>4s}  {:s}".format(
-                        ng, nthr, tier, label, thr, v1, shape, variant), flush=True)
+                    print("{:>8d}  {:>5d}  {:>8s}  {:>8s}  {:>9.0f}  {:>5.1f}x  {:>4s}  {:s}{:s}".format(
+                        ng, nthr, tier, label, thr, v1, shape, variant,
+                        " *" if defaults.get(label) == variant else ""), flush=True)
 
     mod._c2py_set_avx512f(1)
     mod._c2py_set_avx2(1)

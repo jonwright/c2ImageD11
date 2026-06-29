@@ -71,6 +71,31 @@ def main():
     print(header)
     print("-" * 140)
 
+    # detect default variants (all flags on)
+    mod._c2py_set_avx512f(1); mod._c2py_set_avx2(1)
+    defaults = {}
+    for ng in args.sizes[:1]:
+        ubis, gv_f64, tol, dv_f64, lb = gen_data(ng)
+        for label, gv, dv in [("AoS_f64", gv_f64, dv_f64),
+                               ("SoA_f64", gv_f64.T.copy(), dv_f64),
+                               ("AoS_f32", gv_f64.astype(np.float32), np.full(ng, 999.0, dtype=np.float32)),
+                               ("SoA_f32", gv_f64.T.copy().astype(np.float32), np.full(ng, 999.0, dtype=np.float32))]:
+            for a in sorted(dir(mod)):
+                if "_c2py_ol_ptr_score_and_assign__" in a:
+                    mod._c2py_perf_reset(int(getattr(mod, a)))
+            mod._c2py_perf_set_enabled(1)
+            try: fn(ubis[0].copy(), gv, tol, dv.copy(), lb.copy(), 1)
+            except: pass
+            mod._c2py_perf_set_enabled(0)
+            for a in sorted(dir(mod)):
+                if "_c2py_ol_ptr_score_and_assign__" in a:
+                    ptr = int(getattr(mod, a))
+                    buf = bytearray(128)
+                    mod._c2py_perf_read(ptr, buf)
+                    if struct.unpack_from("Q", buf)[0] > 0:
+                        defaults[label] = a.replace("_c2py_ol_ptr_score_and_assign__", "")
+                        break
+
     for tier, avx512_val, avx2_val in [("avx512", 1, 1), ("avx2", 0, 1), ("baseline", 0, 0)]:
         mod._c2py_set_avx512f(avx512_val)
         mod._c2py_set_avx2(avx2_val)
@@ -131,8 +156,9 @@ def main():
                 v1 = thr_1t / fp if fp > 0 else 0
                 vn = thr_nt / fp if fp > 0 else 0
                 shape = "({},{})".format(ng, 3) if "AoS" in label else "(3,{})".format(ng)
-                print("{:>8d}  {:>8s}  {:>8s}  {:>9.0f}  {:>9.0f}  {:>5.1f}x  {:>5.1f}x  {:>4d}  {:>8s}  {:s}".format(
-                    ng, tier, label, thr_1t, thr_nt, v1, vn, n_cores, shape, variant), flush=True)
+                print("{:>8d}  {:>8s}  {:>8s}  {:>9.0f}  {:>9.0f}  {:>5.1f}x  {:>5.1f}x  {:>4d}  {:>8s}  {:s}{:s}".format(
+                    ng, tier, label, thr_1t, thr_nt, v1, vn, n_cores, shape, variant,
+                    " *" if defaults.get(label) == variant else ""), flush=True)
 
     mod._c2py_set_avx512f(1)
     mod._c2py_set_avx2(1)
