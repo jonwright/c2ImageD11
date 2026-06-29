@@ -39,6 +39,7 @@ c2_sources = files(
   'functions/cluster1d/cluster1d.c',
   'functions/common/blobs.c',
   'functions/common/cimaged11utils.c',
+  'functions/common/config.c',
   'functions/compress_duplicates/compress_duplicates.c',
   'functions/compute_geometry/compute_geometry.c',
   'functions/compute_gv/compute_gv.c',
