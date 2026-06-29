@@ -628,6 +628,9 @@ class TestV2Kernels(object):
 
     def test_f64_v2_matches_original(self):
         """score_and_assign_f64_avx512_v2 matches score_and_assign_f64_avx512."""
+        _has_avx512 = getattr(c2ImageD11._cImageD11, "_c2py_has_avx512f", lambda: 0)()
+        if not _has_avx512:
+            pytest.skip("AVX-512 not available on this CPU")
         _rebind = getattr(c2ImageD11._cImageD11, "_rebind_score_and_assign", None)
         _variants = getattr(c2ImageD11._cImageD11, "_variants_score_and_assign", lambda: ())()
         if "score_and_assign_f64_avx512_v2" not in _variants:
@@ -651,6 +654,9 @@ class TestV2Kernels(object):
         _rebind(None)
 
     def test_f32_v2_matches_original(self):
+        _has_avx512 = getattr(c2ImageD11._cImageD11, "_c2py_has_avx512f", lambda: 0)()
+        if not _has_avx512:
+            pytest.skip("AVX-512 not available on this CPU")
         _rebind = getattr(c2ImageD11._cImageD11, "_rebind_score_and_assign", None)
         _variants = getattr(c2ImageD11._cImageD11, "_variants_score_and_assign", lambda: ())()
         if "score_and_assign_f32_aos_avx512_v2" not in _variants:
