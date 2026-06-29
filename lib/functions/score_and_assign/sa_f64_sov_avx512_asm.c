@@ -9,8 +9,8 @@
  * }
  * C2PY_END */
 
-#if defined C2_ASM_AVAILABLE
 #include <stdint.h>
+#if defined C2_ASM_AVAILABLE
 #ifdef _OPENMP
 #include <omp.h>
 #endif
