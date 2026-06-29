@@ -96,7 +96,16 @@ int score_and_assign_f64_avx512(double ubi[3][3], const double gv[], double tol,
 { return sa_scalar_f64_aos((const double*)ubi,gv,tol,drlv2,labels,label,ng); }
 
 int score_and_assign_f32_aos_avx512(double ubi[3][3], const float gv[], double tol,
-                                 float *drlv2, int *labels, int label, intptr_t ng)
+                                  float *drlv2, int *labels, int label, intptr_t ng)
+{ return sa_scalar_f32_aos((const double*)ubi,gv,tol,drlv2,labels,label,ng); }
+
+/* v2 stubs (delegate to scalar) */
+int score_and_assign_f64_avx512_v2(double ubi[3][3], const double gv[], double tol,
+                                    double *drlv2, int *labels, int label, intptr_t ng)
+{ return sa_scalar_f64_aos((const double*)ubi,gv,tol,drlv2,labels,label,ng); }
+
+int score_and_assign_f32_aos_avx512_v2(double ubi[3][3], const float gv[], double tol,
+                                        float *drlv2, int *labels, int label, intptr_t ng)
 { return sa_scalar_f32_aos((const double*)ubi,gv,tol,drlv2,labels,label,ng); }
 
 /* ---- SoA dispatch stubs ---- */
