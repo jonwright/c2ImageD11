@@ -9,7 +9,7 @@
 #include <omp.h>
 #endif
 
-/* ── Scalar kernels ── */
+/* ---- Scalar kernels ---- */
 
 static int
 sa_scalar_f64_aos(const double ubi[9], const double *gv, double tol,
@@ -81,13 +81,13 @@ sa_scalar_f32_soa(const double ubi[9], const float *gvx, const float *gvy,
     return n;
 }
 
-/* ── AoS dispatch stubs ── */
+/* ---- AoS dispatch stubs ---- */
 
 int score_and_assign_f64_avx2(double ubi[3][3], const double gv[], double tol,
                                double *drlv2, int *labels, int label, intptr_t ng)
 { return sa_scalar_f64_aos((const double*)ubi,gv,tol,drlv2,labels,label,ng); }
 
-int score_and_assign_f32_avx2(double ubi[3][3], const float gv[], double tol,
+int score_and_assign_f32_aos_avx2(double ubi[3][3], const float gv[], double tol,
                                float *drlv2, int *labels, int label, intptr_t ng)
 { return sa_scalar_f32_aos((const double*)ubi,gv,tol,drlv2,labels,label,ng); }
 
@@ -95,11 +95,11 @@ int score_and_assign_f64_avx512(double ubi[3][3], const double gv[], double tol,
                                  double *drlv2, int *labels, int label, intptr_t ng)
 { return sa_scalar_f64_aos((const double*)ubi,gv,tol,drlv2,labels,label,ng); }
 
-int score_and_assign_f32_avx512(double ubi[3][3], const float gv[], double tol,
+int score_and_assign_f32_aos_avx512(double ubi[3][3], const float gv[], double tol,
                                  float *drlv2, int *labels, int label, intptr_t ng)
 { return sa_scalar_f32_aos((const double*)ubi,gv,tol,drlv2,labels,label,ng); }
 
-/* ── SoA dispatch stubs ── */
+/* ---- SoA dispatch stubs ---- */
 
 int score_and_assign_f64_sov_avx2(double ubi[3][3], const double gv[], double tol,
                                    double *drlv2, int *labels, int label, intptr_t ng)
