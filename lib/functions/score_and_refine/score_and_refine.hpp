@@ -43,11 +43,9 @@ static inline T rint_h(T x) {
     return nearbyint(x);
 #else
     if (sizeof(T) == sizeof(float)) {
-        const float magic = 12582912.0f;          /* 1.5 * 2^23 */
-        return (T)(((float)x + magic) - magic);
+        return (T)nearbyintf((float)x);
     } else {
-        const double magic = 6755399441055744.0;  /* 1.5 * 2^52 */
-        return (T)((x + magic) - magic);
+        return (T)nearbyint(x);
     }
 #endif
 }

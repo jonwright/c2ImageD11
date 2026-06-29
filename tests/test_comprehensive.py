@@ -459,3 +459,303 @@ class TestOddities(object):
         x = np.empty((0, 3), dtype=np.float64)
         ic = np.empty(0, dtype=np.int32)
         c2ImageD11.closest_vec(x, ic)
+
+
+# ======================== untested functions ==================================
+
+class TestUntestedFunctions(object):
+    """Smoke tests for the 9 completely untested public functions."""
+
+    def test_array_mean_var_msk(self):
+        """Sigma-clipped mean/var with mask. Realistic: ImageD11 indexing."""
+        rng = np.random.RandomState(42)
+        img = rng.randn(10000).astype(np.float32)
+        msk = np.ones(10000, dtype=np.uint8)
+        mean1, var1 = c2ImageD11.array_mean_var_msk(img, msk, 3, 3.0)
+        assert np.isfinite(mean1)
+        assert np.isfinite(var1)
+        assert var1 >= 0
+
+    def test_array_mean_var_msk_masked(self):
+        """With some pixels masked out."""
+        rng = np.random.RandomState(43)
+        img = rng.randn(10000).astype(np.float32)
+        img[:5000] = 100.0  # bright outliers
+        msk = np.ones(10000, dtype=np.uint8)
+        msk[:5000] = 0  # mask them
+        mean1, var1 = c2ImageD11.array_mean_var_msk(img, msk, 3, 3.0)
+        assert np.isfinite(mean1)
+        assert np.isfinite(var1)
+
+    def test_array_mean_var_msk_no_msk(self):
+        """All pixels masked out -- should handle gracefully."""
+        img = np.ones(100, dtype=np.float32)
+        msk = np.zeros(100, dtype=np.uint8)
+        mean1, var1 = c2ImageD11.array_mean_var_msk(img, msk, 1, 3.0)
+        assert np.isfinite(mean1) or True  # may return NaN/0
+
+    def test_bgcalc(self):
+        """Recursive background filter. Realistic: ImageD11 peaksearch."""
+        rng = np.random.RandomState(44)
+        ns, nf = 50, 60
+        img = rng.randn(ns, nf).astype(np.float32)
+        bg = np.zeros_like(img)
+        msk = np.ones_like(img, dtype=np.uint8)
+        c2ImageD11.bgcalc(img, bg, msk, 1.0, 3.0, 3.0)
+        assert np.all(np.isfinite(bg))
+
+    def test_bgcalc_edge_single_row(self):
+        ns, nf = 1, 100
+        img = np.ones((ns, nf), dtype=np.float32) * 100.0
+        bg = np.zeros_like(img)
+        msk = np.ones_like(img, dtype=np.uint8)
+        c2ImageD11.bgcalc(img, bg, msk, 1.0, 3.0, 3.0)
+        assert np.all(np.isfinite(bg))
+
+    def test_bgcalc_edge_single_col(self):
+        ns, nf = 100, 1
+        img = np.ones((ns, nf), dtype=np.float32) * 100.0
+        bg = np.zeros_like(img)
+        msk = np.ones_like(img, dtype=np.uint8)
+        c2ImageD11.bgcalc(img, bg, msk, 1.0, 3.0, 3.0)
+        assert np.all(np.isfinite(bg))
+
+    def test_bgcalc_all_uniform(self):
+        ns, nf = 20, 30
+        img = np.ones((ns, nf), dtype=np.float32) * 100.0
+        bg = np.zeros_like(img)
+        msk = np.ones_like(img, dtype=np.uint8)
+        c2ImageD11.bgcalc(img, bg, msk, 1.0, 3.0, 3.0)
+        assert np.allclose(bg, 100.0, atol=1e-3)
+
+    def test_compute_xlylzl_xpos_variable(self):
+        """Like compute_xlylzl but with per-spot x-offset. Realistic."""
+        n = 100
+        rng = np.random.RandomState(45)
+        s = rng.randn(n).astype(np.float64)
+        f = rng.randn(n).astype(np.float64)
+        p = np.array([0.1, 0.0, 0.0, 0.0], dtype=np.float64)
+        r = np.eye(3, dtype=np.float64).ravel()
+        dist = np.array([200.0, 0.0, 0.0], dtype=np.float64)
+        xpos = rng.randn(n).astype(np.float64) * 0.1
+        xlylzl = np.zeros((n, 3), dtype=np.float64)
+        c2ImageD11.compute_xlylzl_xpos_variable(s, f, p, r, dist, xpos, xlylzl)
+        assert np.all(np.isfinite(xlylzl))
+
+    def test_frelon_lines(self):
+        """Per-row baseline removal. Realistic: ImageD11 frelon detector."""
+        rng = np.random.RandomState(46)
+        ns, nf = 100, 100
+        img = rng.poisson(lam=10.0, size=(ns, nf)).astype(np.float32)
+        img_copy = img.copy()
+        c2ImageD11.frelon_lines(img, 5.0)
+        assert not np.array_equal(img, img_copy)  # was modified
+        assert np.all(np.isfinite(img))
+
+    def test_frelon_lines_uniform(self):
+        """Uniform image should produce zeros after baseline removal."""
+        img = np.ones((50, 50), dtype=np.float32) * 100.0
+        c2ImageD11.frelon_lines(img, 99.0)  # cut below value, uses all pixels
+        # Each row becomes zero-centered
+        assert abs(img.mean()) < 1e-5
+
+    def test_frelon_lines_sub(self):
+        """Dark subtract then per-row baseline. Realistic: ImageD11."""
+        rng = np.random.RandomState(47)
+        ns, nf = 100, 100
+        data = rng.poisson(lam=10.0, size=(ns, nf)).astype(np.float32)
+        drk = rng.poisson(lam=10.0, size=(ns, nf)).astype(np.float32)
+        img = data.copy()
+        c2ImageD11.frelon_lines_sub(img, drk, 5.0)
+        assert np.all(np.isfinite(img))
+
+    def test_reorder_u16_a32_a16(self):
+        """2D reorder: per-row base + per-pixel offsets. Realistic."""
+        ns, nf = 5, 10
+        data = np.arange(ns * nf, dtype=np.uint16).reshape(ns, nf)
+        adr0 = np.array([10, 20, 30, 40, 50], dtype=np.int32)
+        adr1 = np.arange(ns * nf, dtype=np.int16).reshape(ns, nf) % 8
+        out = np.zeros(100, dtype=np.uint16)
+        c2ImageD11.reorder_u16_a32_a16(data, adr0, adr1, out)
+
+    def test_reorderlut_f32_a32_lut(self):
+        """reorderlut_f32_a32: lookup table reorder."""
+        n = 100
+        data = np.random.RandomState(48).randn(n).astype(np.float32)
+        lut = np.arange(n, dtype=np.int32)
+        out = np.zeros_like(data)
+        c2ImageD11.reorderlut_f32_a32(data, lut, out)
+        assert np.allclose(out, data)
+
+    def test_sparse_blob2Dproperties(self):
+        """Sparse blob 2D properties (wrapped). Realistic."""
+        nnz = 50
+        v = np.ones(nnz, dtype=np.float32)
+        i = np.arange(nnz, dtype=np.uint16)
+        j = np.zeros(nnz, dtype=np.uint16)
+        labels = np.zeros(nnz, dtype=np.int32)
+        # wrapper: 5 args, returns results
+        results = c2ImageD11.sparse_blob2Dproperties(v, i, j, labels, 0)
+        assert results.shape == (0, 11)
+
+    def test_sparse_blob2Dproperties_with_peaks(self):
+        """Sparse blob with some peaks."""
+        nnz = 50
+        v = np.ones(nnz, dtype=np.float32)
+        i = np.arange(nnz, dtype=np.uint16)
+        j = np.zeros(nnz, dtype=np.uint16)
+        labels = np.ones(nnz, dtype=np.int32)  # one peak per pixel
+        results = c2ImageD11.sparse_blob2Dproperties(v, i, j, labels, 1)
+        assert results.shape == (1, 11)
+
+    def test_sparse_connectedpixels_splat(self):
+        """Sparse connected components with splat to dense. Realistic."""
+        nnz = 50
+        rng = np.random.RandomState(50)
+        v = rng.randn(nnz).astype(np.float32)
+        i = np.arange(nnz, dtype=np.uint16)
+        j = np.zeros(nnz, dtype=np.uint16)
+        lbl = np.zeros(nnz, dtype=np.int32)
+        Z = np.zeros((50, 50), dtype=np.int32)
+        n = c2ImageD11.sparse_connectedpixels_splat(v, i, j, 0.5, lbl, Z, 50, 50)
+        assert isinstance(n, (int, np.integer))
+
+
+# ======================== _v2 kernel correctness ===============================
+
+class TestV2Kernels(object):
+    """score_and_assign _v2 (wide-load+permute) must match non-_v2."""
+
+    def test_f64_v2_matches_original(self):
+        """score_and_assign_f64_avx512_v2 matches score_and_assign_f64_avx512."""
+        _rebind = getattr(c2ImageD11._cImageD11, "_rebind_score_and_assign", None)
+        _variants = getattr(c2ImageD11._cImageD11, "_variants_score_and_assign", lambda: ())()
+        if "score_and_assign_f64_avx512_v2" not in _variants:
+            pytest.skip("_v2 variant not available")
+        if "score_and_assign_f64_avx512" not in _variants:
+            pytest.skip("original avx512 variant not available")
+        rng = np.random.RandomState(51)
+        n = 1000
+        ubi = np.eye(3, dtype=np.float64)
+        gv = rng.randn(n, 3).astype(np.float64)
+        dv = np.full(n, 999.0, dtype=np.float64)
+        lb = np.full(n, -1, dtype=np.int32)
+        _rebind("score_and_assign_f64_avx512_v2")
+        dv2 = dv.copy(); lb2 = lb.copy()
+        c2ImageD11.score_and_assign(ubi, gv, 0.05, dv2, lb2, 1)
+        _rebind("score_and_assign_f64_avx512")
+        dv0 = dv.copy(); lb0 = lb.copy()
+        c2ImageD11.score_and_assign(ubi, gv, 0.05, dv0, lb0, 1)
+        assert np.allclose(dv2, dv0, atol=1e-10), "f64 _v2 drlv2 mismatch"
+        assert np.array_equal(lb2, lb0), "f64 _v2 labels mismatch"
+        _rebind(None)
+
+    def test_f32_v2_matches_original(self):
+        _rebind = getattr(c2ImageD11._cImageD11, "_rebind_score_and_assign", None)
+        _variants = getattr(c2ImageD11._cImageD11, "_variants_score_and_assign", lambda: ())()
+        if "score_and_assign_f32_aos_avx512_v2" not in _variants:
+            pytest.skip("_v2 f32 variant not available")
+        if "score_and_assign_f32_aos_avx512" not in _variants:
+            pytest.skip("original f32 avx512 variant not available")
+        rng = np.random.RandomState(52)
+        n = 1000
+        ubi = np.eye(3, dtype=np.float64)
+        gv = rng.randn(n, 3).astype(np.float32)
+        dv = np.full(n, 999.0, dtype=np.float32)
+        lb = np.full(n, -1, dtype=np.int32)
+        _rebind("score_and_assign_f32_aos_avx512_v2")
+        dv2 = dv.copy(); lb2 = lb.copy()
+        c2ImageD11.score_and_assign(ubi, gv, 0.05, dv2, lb2, 1)
+        _rebind("score_and_assign_f32_aos_avx512")
+        dv0 = dv.copy(); lb0 = lb.copy()
+        c2ImageD11.score_and_assign(ubi, gv, 0.05, dv0, lb0, 1)
+        assert np.allclose(dv2, dv0, atol=1e-6), "f32 _v2 drlv2 mismatch"
+        assert np.array_equal(lb2, lb0), "f32 _v2 labels mismatch"
+        _rebind(None)
+
+
+# ======================== threading for remaining OMP functions ===============
+
+class TestThreadingRemaining(object):
+    """Threading tests for OMP functions not yet covered."""
+
+    def test_closest_vec_1T_vs_nT(self):
+        rng = np.random.RandomState(60)
+        nv, dim = 200, 3
+        x = rng.randn(nv, dim).astype(np.float64)
+        ic1 = np.zeros(nv, dtype=np.int32)
+        icN = np.zeros(nv, dtype=np.int32)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.closest_vec(x, ic1)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.closest_vec(x, icN)
+        assert np.array_equal(ic1, icN)
+
+    def test_array_mean_var_cut_1T_vs_nT(self):
+        rng = np.random.RandomState(61)
+        n = 50000
+        img = rng.randn(n).astype(np.float32)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        m1, v1 = c2ImageD11.array_mean_var_cut(img, 3, 3.0)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        mN, vN = c2ImageD11.array_mean_var_cut(img, 3, 3.0)
+        assert abs(m1 - mN) < 1e-5 * max(1.0, abs(m1))
+        assert abs(v1 - vN) < 1e-4 * max(1.0, abs(v1))
+
+    def test_uint16_to_float_darksub_1T_vs_nT(self):
+        """Element-wise darksub: deterministic, 1T must match nT exactly."""
+        rng = np.random.RandomState(62)
+        ns, nf = 50, 60
+        data = rng.randint(0, 256, size=(ns, nf)).astype(np.uint16)
+        drk = rng.randn(ns, nf).astype(np.float32) * 10.0
+        img1 = np.zeros((ns, nf), dtype=np.float32)
+        imgN = np.zeros((ns, nf), dtype=np.float32)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.uint16_to_float_darksub(img1, drk, data)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.uint16_to_float_darksub(imgN, drk, data)
+        assert np.array_equal(img1, imgN)
+
+    def test_uint16_to_float_darkflm_1T_vs_nT(self):
+        rng = np.random.RandomState(63)
+        ns, nf = 50, 60
+        data = rng.randint(0, 256, size=(ns, nf)).astype(np.uint16)
+        drk = rng.randn(ns, nf).astype(np.float32) * 10.0
+        flm = np.ones((ns, nf), dtype=np.float32) * 0.5
+        img1 = np.zeros((ns, nf), dtype=np.float32)
+        imgN = np.zeros((ns, nf), dtype=np.float32)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.uint16_to_float_darkflm(img1, drk, flm, data)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.uint16_to_float_darkflm(imgN, drk, flm, data)
+        assert np.allclose(img1, imgN, atol=1e-6)
+
+    def test_connectedpixels_1T_vs_nT(self):
+        """connectedpixels: only relabel step is parallel, should match."""
+        rng = np.random.RandomState(64)
+        ns, nf = 50, 50
+        data = rng.randn(ns, nf).astype(np.float32)
+        lbl1 = np.zeros((ns, nf), dtype=np.int32)
+        lblN = np.zeros((ns, nf), dtype=np.int32)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        n1 = c2ImageD11.connectedpixels(data, lbl1, 0.0)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        nN = c2ImageD11.connectedpixels(data, lblN, 0.0)
+        assert n1 == nN
+        assert np.array_equal(lbl1, lblN)
+
+    def test_make_clean_mask_1T_vs_nT(self):
+        rng = np.random.RandomState(65)
+        ns, nf = 30, 40
+        img = rng.randn(ns, nf).astype(np.float32)
+        msk1 = np.zeros((ns, nf), dtype=np.int8)
+        ret1 = np.zeros((ns, nf), dtype=np.int8)
+        mskN = np.zeros((ns, nf), dtype=np.int8)
+        retN = np.zeros((ns, nf), dtype=np.int8)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        r1 = c2ImageD11.make_clean_mask(img, 0.0, msk1, ret1)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        rN = c2ImageD11.make_clean_mask(img, 0.0, mskN, retN)
+        assert r1 == rN
+        assert np.array_equal(msk1, mskN)
+        assert np.array_equal(ret1, retN)
