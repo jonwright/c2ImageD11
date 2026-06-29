@@ -21,9 +21,17 @@
  *         "sig": "int score(const double ubi[3][3], const double gv[], double tol, intptr_t ng) -> int",
  *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
  *     }, {
+ *         "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3",
+ *         "sig": "int score_sov_f64(const double ubi[3][3], const double gv[], double tol, intptr_t ng) -> int",
+ *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[1]"},
+ *     }, {
  *         "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[1] == 3 and gv.slow_axis == 0",
  *         "sig": "int score_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
  *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
+ *     }, {
+ *         "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3",
+ *         "sig": "int score_sov_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
+ *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[1]"},
  *     }],
  * }
 C2PY_END */
@@ -64,6 +72,36 @@ int score_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng)
         h1 -= ((h1 + magic) - magic);
         double h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz;
         h2 -= ((h2 + magic) - magic);
+        if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
+    }
+    return n;
+}
+
+/* Scalar SoA -- splits gv[] into gvx/gvy/gvz */
+int score_sov_f64(const double ubi[3][3], const double gv[], double tol, intptr_t ng) {
+    const double *restrict gvx = gv, *restrict gvy = gv + ng, *restrict gvz = gv + ng * 2;
+    int n = 0;
+    double t2 = tol * tol, magic = 6755399441055744.0;
+    intptr_t k;
+    for (k = 0; k < ng; k++) {
+        double h0 = ubi[0][0]*gvx[k] + ubi[0][1]*gvy[k] + ubi[0][2]*gvz[k]; h0 -= ((h0 + magic) - magic);
+        double h1 = ubi[1][0]*gvx[k] + ubi[1][1]*gvy[k] + ubi[1][2]*gvz[k]; h1 -= ((h1 + magic) - magic);
+        double h2 = ubi[2][0]*gvx[k] + ubi[2][1]*gvy[k] + ubi[2][2]*gvz[k]; h2 -= ((h2 + magic) - magic);
+        if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
+    }
+    return n;
+}
+
+int score_sov_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) {
+    const float *restrict gvx = gv, *restrict gvy = gv + ng, *restrict gvz = gv + ng * 2;
+    int n = 0;
+    double t2 = tol * tol, magic = 6755399441055744.0;
+    intptr_t k;
+    for (k = 0; k < ng; k++) {
+        double gx = gvx[k], gy = gvy[k], gz = gvz[k];
+        double h0 = ubi[0][0]*gx + ubi[0][1]*gy + ubi[0][2]*gz; h0 -= ((h0 + magic) - magic);
+        double h1 = ubi[1][0]*gx + ubi[1][1]*gy + ubi[1][2]*gz; h1 -= ((h1 + magic) - magic);
+        double h2 = ubi[2][0]*gx + ubi[2][1]*gy + ubi[2][2]*gz; h2 -= ((h2 + magic) - magic);
         if (h0*h0 + h1*h1 + h2*h2 < t2) n++;
     }
     return n;

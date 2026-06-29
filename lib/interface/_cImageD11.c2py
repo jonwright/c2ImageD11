@@ -1353,12 +1353,32 @@
                 {
                     "map": {
                         "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "int score_sov_f64(const double ubi[3][3], const double gv[], double tol, intptr_t ng) -> int",
+                    "when": "ubi.format == 'd' and gv.format == 'd' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
                         "ng": "gv.shape[0]",
                         "tol": "tol",
                         "ubi": "ubi.ptr",
                     },
                     "sig": "int score_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
                     "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[1] == 3 and gv.slow_axis == 0",
+                },
+                {
+                    "map": {
+                        "gv": "gv.ptr",
+                        "ng": "gv.shape[1]",
+                        "tol": "tol",
+                        "ubi": "ubi.ptr",
+                    },
+                    "sig": "int score_sov_f32(const double ubi[3][3], const float gv[], double tol, intptr_t ng) -> int",
+                    "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3",
                 },
             ],
             "checks": [
