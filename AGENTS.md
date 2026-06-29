@@ -24,6 +24,16 @@ Performance counters use `_c2py_perf_read(ptr, bytearray)`, not ctypes.
 CPU feature flags are checked internally by the wrapper C code -- there is
 no reason to read or write them from Python.
 
+### NO BENCHMARK PIPE TRUNCATION
+
+**Never pipe benchmark output through `head` or `tail`.**  All three
+bench scripts (`lib/functions/*/bench.py`) have a guard that detects if
+stdout is connected to `head` or `tail` and errors out.  You must see
+ALL benchmark output -- never hide it behind a truncating pipe.
+
+When running benchmarks, do NOT use `| tail -N` or `| head -N`.  Redirect
+to a file with `> results.txt` if you need to capture output.
+
 ## Current Status
 
 - Meson (in `lib/`) builds `_cImageD11.so` directly via `shared_module()`

@@ -1,17 +1,63 @@
 #!/usr/bin/env python3
-"""Benchmark score_and_assign -- all ISA tiers via runtime flag toggling.
-
-One .so, one build.  Toggles c2py_amd64_avx512f / c2py_amd64_avx2
-to measure avx512, avx2, and baseline tiers without rebuilding.
-"""
+"""Benchmark score_and_assign() -- all ISA tiers via _rebind_ variant switching."""
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os, sys, time, argparse, struct, numpy as np
 
+# ---- guard: refuse to pipe to head/tail ----
+def _check_pipe_truncator():
+    if sys.stdout.isatty():
+        return
+    s = os.fstat(1)
+    if not s.st_mode & 0o010000:
+        return
+    try:
+        my_ino = os.stat("/proc/self/fd/1").st_ino
+        for pid_dir in os.listdir("/proc"):
+            if not pid_dir.isdigit():
+                continue
+            try:
+                fd0_ino = os.stat("/proc/%s/fd/0" % pid_dir).st_ino
+            except OSError:
+                continue
+            if fd0_ino == my_ino:
+                with open("/proc/%s/cmdline" % pid_dir, "rb") as f:
+                    cmd = f.read().replace(b"\x00", b" ").decode("utf-8", "replace")
+                basename = os.path.basename(cmd.split()[0]) if cmd.strip() else ""
+                if basename in ("head", "tail"):
+                    sys.exit("ERROR: DO NOT pipe bench.py output through head or tail. "
+                             "You must see ALL benchmark output.")
+                break
+    except Exception:
+        pass
+
+_check_pipe_truncator()
+
 PROJECT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-DEFAULT_SIZES = [50000, 200000, 1000000]
 N_UBIS  = 1000
+DEFAULT_SIZES = [50000, 200000]
+
+TIER_VARIANTS = {
+    "avx512": {
+        "AoS_f64": "score_and_assign_f64_avx512_v2",
+        "SoA_f64": "score_and_assign_f64_sov_avx512_asm",
+        "AoS_f32": "score_and_assign_f32_aos_avx512_v2",
+        "SoA_f32": "score_and_assign_f32_sov_avx512_asm",
+    },
+    "avx2": {
+        "AoS_f64": "score_and_assign_f64_avx2",
+        "SoA_f64": "score_and_assign_f64_sov_avx2_asm",
+        "AoS_f32": "score_and_assign_f32_aos_avx2",
+        "SoA_f32": "score_and_assign_f32_sov_avx2_asm",
+    },
+    "baseline": {
+        "AoS_f64": "score_and_assign",
+        "SoA_f64": "score_and_assign_sov_f64",
+        "AoS_f32": "score_and_assign_f32",
+        "SoA_f32": "score_and_assign_sov_f32",
+    },
+}
 
 
 def gen_data(ng, seed=42, tol=0.05):
@@ -36,10 +82,13 @@ def main():
     p.add_argument("--sizes", type=int, nargs="+", default=DEFAULT_SIZES)
     args = p.parse_args()
 
+    import c2ImageD11
+    fn = c2ImageD11.score_and_assign
+    mod = c2ImageD11._cImageD11
+    rebind = getattr(mod, "_rebind_score_and_assign", None)
     n_cores = 2
 
-    # --- f2py ---
-    print("=== f2py (f64 AoS, 1T) ===")
+    # f2py
     f2py = {}
     for ng in args.sizes:
         ubis, gv, tol, dv, lb = gen_data(ng)
@@ -51,28 +100,20 @@ def main():
             for _ in range(5): old.score_and_assign(ubis[0].copy(), gv, tol, dv2, lb2, 1)
             dv2 = dv.copy(); lb2 = lb.copy()
             t0 = time.perf_counter()
-            for i in range(nc):
-                old.score_and_assign(ubis[i % N_UBIS].copy(), gv, tol, dv2, lb2, 1)
+            for i in range(nc): old.score_and_assign(ubis[i % N_UBIS].copy(), gv, tol, dv2, lb2, 1)
             t1 = time.perf_counter()
             f2py[ng] = ng * nc / (t1 - t0) / 1e6
-            print("  ng={:>8d}  {:>7.0f}M gv/s".format(ng, f2py[ng]))
+            print("f2py ng={:>8d} {:>7.0f}M".format(ng, f2py[ng]))
         except ImportError:
             f2py[ng] = 0
-            print("  ng={:>8d}  (not found)".format(ng))
+            print("f2py ng={:>8d} (not found)".format(ng))
 
-    # --- measurements ---
-    import c2ImageD11
-    fn = c2ImageD11.score_and_assign
-    mod = c2ImageD11._cImageD11
-
-    header = "{:>8s}  {:>8s}  {:>8s}  {:>9s}  {:>9s}  {:>6s}  {:>6s}  {:>4s}  {:>8s}  {:s}".format(
-        "ng", "tier", "layout", "1T_Mgv/s", "nT_Mgv/s", "xf2py1T", "xf2pynT", "nthr", "gve", "variant")
+    header = "{:>8s}  {:>5s}  {:>8s}  {:>8s}  {:>9s}  {:>6s}  {:>4s}  {:s}".format(
+        "ng", "nthr", "tier", "layout", "M_gv/s", "xf2py", "gve", "variant")
     print()
     print(header)
-    print("-" * 140)
+    print("-" * 110)
 
-    # detect default variants (all flags on)
-    mod._c2py_set_avx512f(1); mod._c2py_set_avx2(1)
     defaults = {}
     for ng in args.sizes[:1]:
         ubis, gv_f64, tol, dv_f64, lb = gen_data(ng)
@@ -80,9 +121,7 @@ def main():
                                ("SoA_f64", gv_f64.T.copy(), dv_f64),
                                ("AoS_f32", gv_f64.astype(np.float32), np.full(ng, 999.0, dtype=np.float32)),
                                ("SoA_f32", gv_f64.T.copy().astype(np.float32), np.full(ng, 999.0, dtype=np.float32))]:
-            for a in sorted(dir(mod)):
-                if "_c2py_ol_ptr_score_and_assign__" in a:
-                    mod._c2py_perf_reset(int(getattr(mod, a)))
+            if rebind: rebind(None)
             mod._c2py_perf_set_enabled(1)
             try: fn(ubis[0].copy(), gv, tol, dv.copy(), lb.copy(), 1)
             except: pass
@@ -96,9 +135,20 @@ def main():
                         defaults[label] = a.replace("_c2py_ol_ptr_score_and_assign__", "")
                         break
 
-    for tier, avx512_val, avx2_val in [("avx512", 1, 1), ("avx2", 0, 1), ("baseline", 0, 0)]:
-        mod._c2py_set_avx512f(avx512_val)
-        mod._c2py_set_avx2(avx2_val)
+    available_tiers = {"baseline"}
+    for v in defaults.values():
+        if "avx512" in v:
+            available_tiers.update(("avx512", "avx2"))
+            break
+        if "avx2" in v:
+            available_tiers.add("avx2")
+
+    for tier in ("avx512", "avx2", "baseline"):
+        if tier not in available_tiers:
+            print("{:>8s}  {:>5s}  {:>8s}  {:>8s}  {:>9s}  {:>6s}  {:>4s}  {:s}".format(
+                "---", "---", tier, "---", "---", "---", "---", "not available on this CPU"), flush=True)
+            continue
+        tier_vars = TIER_VARIANTS.get(tier, {})
 
         for ng in args.sizes:
             ubis, gv_f64, tol, dv_f64, lb = gen_data(ng)
@@ -107,61 +157,29 @@ def main():
             dv_f32 = np.full(ng, 999.0, dtype=np.float32)
             gv_s64 = gv_f64.T.copy()
             gv_s32 = gv_f64.T.copy().astype(np.float32)
-            for label, gv, dv in [
-                    ("AoS_f64", gv_f64, dv_f64),
-                    ("SoA_f64", gv_s64, dv_f64),
-                    ("AoS_f32", gv_f32, dv_f32),
-                    ("SoA_f32", gv_s32, dv_f32)]:
-                for a in sorted(dir(mod)):
-                    if "_c2py_ol_ptr_score_and_assign__" in a:
-                        mod._c2py_perf_reset(int(getattr(mod, a)))
-                mod._c2py_perf_set_enabled(1)
-                try:
-                    fn(ubis[0].copy(), gv, tol, dv.copy(), lb.copy(), 1)
-                except (ValueError, SystemError):
-                    print("{:>8d}  {:>8s}  {:>8s}  {:>9s}  {:>9s}  {:>6s}  {:>6s}  {:>4d}  {:>8s}  {:s}".format(
-                        ng, tier, label, "-", "-", "-", "-", n_cores, "-", "no_match"), flush=True)
-                    mod._c2py_perf_set_enabled(0)
-                    continue
-                mod._c2py_perf_set_enabled(0)
-                variant = "none"
-                for a in sorted(dir(mod)):
-                    if "_c2py_ol_ptr_score_and_assign__" in a:
-                        ptr = int(getattr(mod, a))
-                        buf = bytearray(128)
-                        mod._c2py_perf_read(ptr, buf)
-                        if struct.unpack_from("Q", buf)[0] > 0:
-                            v = a.replace("_c2py_ol_ptr_score_and_assign__", "")
-                            variant = v
-                            break
-                c2ImageD11.cimaged11_omp_set_num_threads(1)
-                dv2 = dv.copy(); lb2 = lb.copy()
-                for _ in range(5): fn(ubis[0].copy(), gv, tol, dv2, lb2, 1)
-                dv2 = dv.copy(); lb2 = lb.copy()
-                t0 = time.perf_counter()
-                for i in range(nc):
-                    fn(ubis[i % N_UBIS].copy(), gv, tol, dv2, lb2, 1)
-                t1 = time.perf_counter()
-                thr_1t = ng * nc / (t1 - t0) / 1e6 if t1 > t0 else 0
-                c2ImageD11.cimaged11_omp_set_num_threads(n_cores)
-                dv3 = dv.copy(); lb3 = lb.copy()
-                for _ in range(5): fn(ubis[0].copy(), gv, tol, dv3, lb3, 1)
-                dv3 = dv.copy(); lb3 = lb.copy()
-                t0 = time.perf_counter()
-                for i in range(nc):
-                    fn(ubis[i % N_UBIS].copy(), gv, tol, dv3, lb3, 1)
-                t1 = time.perf_counter()
-                thr_nt = ng * nc / (t1 - t0) / 1e6 if t1 > t0 else 0
-                fp = f2py.get(ng, 0)
-                v1 = thr_1t / fp if fp > 0 else 0
-                vn = thr_nt / fp if fp > 0 else 0
-                shape = "({},{})".format(ng, 3) if "AoS" in label else "(3,{})".format(ng)
-                print("{:>8d}  {:>8s}  {:>8s}  {:>9.0f}  {:>9.0f}  {:>5.1f}x  {:>5.1f}x  {:>4d}  {:>8s}  {:s}{:s}".format(
-                    ng, tier, label, thr_1t, thr_nt, v1, vn, n_cores, shape, variant,
-                    " *" if defaults.get(label) == variant else ""), flush=True)
+            for nthr in [1, 2]:
+                for label, gv, dv in [("AoS_f64", gv_f64, dv_f64),
+                                       ("SoA_f64", gv_s64, dv_f64),
+                                       ("AoS_f32", gv_f32, dv_f32),
+                                       ("SoA_f32", gv_s32, dv_f32)]:
+                    vname = tier_vars.get(label)
+                    if vname and rebind: rebind(vname)
+                    c2ImageD11.cimaged11_omp_set_num_threads(nthr)
+                    dv2 = dv.copy(); lb2 = lb.copy()
+                    for _ in range(5): fn(ubis[0].copy(), gv, tol, dv2, lb2, 1)
+                    dv2 = dv.copy(); lb2 = lb.copy()
+                    t0 = time.perf_counter()
+                    for i in range(nc): fn(ubis[i % N_UBIS].copy(), gv, tol, dv2, lb2, 1)
+                    t1 = time.perf_counter()
+                    thr = ng * nc / (t1 - t0) / 1e6 if t1 > t0 else 0
+                    fp = f2py.get(ng, 0)
+                    v1 = thr / fp if fp > 0 else 0
+                    shape = "({},{})".format(ng, 3) if "AoS" in label else "(3,{})".format(ng)
+                    mark = " *" if defaults.get(label) == vname else ""
+                    print("{:>8d}  {:>5d}  {:>8s}  {:>8s}  {:>9.0f}  {:>5.1f}x  {:>4s}  {:s}{:s}".format(
+                        ng, nthr, tier, label, thr, v1, shape, vname or "?", mark), flush=True)
 
-    mod._c2py_set_avx512f(1)
-    mod._c2py_set_avx2(1)
+    if rebind: rebind(None)
 
 
 if __name__ == "__main__":
