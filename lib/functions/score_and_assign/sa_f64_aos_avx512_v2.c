@@ -23,19 +23,19 @@
 #include <omp.h>
 #endif
 
-/* Permute indices for deinterleaving AoS → SoA within 24 consecutive doubles.
+/* Permute indices for deinterleaving AoS -> SoA within 24 consecutive doubles.
  * The 3 input vectors (zmm0,zmm1,zmm2) contain ABCABC... data.
  * Two rounds of vpermt2pd extract the x, y, z components.
  *
  * Round 1: select from zmm0+zmm1 (16 elements). 6 of 8 are correct.
  * Round 2: select from round-1 temp + zmm2. All 8 correct.
  */
-static const int64_t I1X[8] __attribute__((aligned(64))) = {0,3,6,9,12,15, 0,0};  // x0-x5
-static const int64_t I2X[8] __attribute__((aligned(64))) = {0,1,2,3,4,5,10,13};  // x0-x5 + x6-x7
-static const int64_t I1Y[8] __attribute__((aligned(64))) = {1,4,7,10,13, 0,0,0};  // y0-y4
-static const int64_t I2Y[8] __attribute__((aligned(64))) = {0,1,2,3,4,8,11,14};   // y0-y4 + y5-y7
-static const int64_t I1Z[8] __attribute__((aligned(64))) = {2,5,8,11,14, 0,0,0};  // z0-z4
-static const int64_t I2Z[8] __attribute__((aligned(64))) = {0,1,2,3,4,9,12,15};   // z0-z4 + z5-z7
+static const int64_t I1X[8] _Alignas(64) = {0,3,6,9,12,15, 0,0};  // x0-x5
+static const int64_t I2X[8] _Alignas(64) = {0,1,2,3,4,5,10,13};  // x0-x5 + x6-x7
+static const int64_t I1Y[8] _Alignas(64) = {1,4,7,10,13, 0,0,0};  // y0-y4
+static const int64_t I2Y[8] _Alignas(64) = {0,1,2,3,4,8,11,14};   // y0-y4 + y5-y7
+static const int64_t I1Z[8] _Alignas(64) = {2,5,8,11,14, 0,0,0};  // z0-z4
+static const int64_t I2Z[8] _Alignas(64) = {0,1,2,3,4,9,12,15};   // z0-z4 + z5-z7
 
 static int
 sa_f64_aos_avx512_v2_kernel(const double ubi[9], const double *gv, double tol,

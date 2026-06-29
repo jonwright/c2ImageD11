@@ -236,6 +236,8 @@ else
   sa_avx512_f32     = sa_avx2_f64
   sa_avx512_soa_f64 = sa_avx2_f64
   sa_avx512_soa_f32 = sa_avx2_f64
+  sa_avx512_f64_v2  = sa_avx2_f64
+  sa_avx512_f32_v2  = sa_avx2_f64
 endif
 
 # ── Clang-captured NASM assembly variants (better codegen than GCC) ──
