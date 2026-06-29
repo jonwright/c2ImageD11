@@ -222,6 +222,7 @@ if host_machine.cpu_family() == 'x86_64'
   sa_avx512_f64    = static_library('sa_avx512_f64',    'functions/score_and_assign/sa_f64_aos_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
   sa_avx512_f64_v2 = static_library('sa_avx512_f64_v2', 'functions/score_and_assign/sa_f64_aos_avx512_v2.c',c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
   sa_avx512_f32    = static_library('sa_avx512_f32',    'functions/score_and_assign/sa_f32_aos_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
+  sa_avx512_f32_v2 = static_library('sa_avx512_f32_v2', 'functions/score_and_assign/sa_f32_aos_avx512_v2.c',c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
   sa_avx512_soa_f64= static_library('sa_avx512_soa_f64','functions/score_and_assign/sa_f64_sov_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
   sa_avx512_soa_f32= static_library('sa_avx512_soa_f32','functions/score_and_assign/sa_f32_sov_avx512.c',  c_args: avx512_flags, include_directories: c2_inc, dependencies: [m_dep])
 else
@@ -271,7 +272,7 @@ shared_module('_cImageD11',
                score_avx2_f64, score_avx2_f32, score_avx2_soa_f64, score_avx2_soa_f32,
                score_avx512_f64, score_avx512_f32, score_avx512_soa_f64, score_avx512_soa_f32,
                sa_avx2_f64, sa_avx2_f32, sa_avx2_soa_f64, sa_avx2_soa_f32,
-               sa_avx512_f64, sa_avx512_f64_v2, sa_avx512_f32, sa_avx512_soa_f64, sa_avx512_soa_f32,
+               sa_avx512_f64, sa_avx512_f64_v2, sa_avx512_f32, sa_avx512_f32_v2, sa_avx512_soa_f64, sa_avx512_soa_f32,
                sa_avx512_soa_f64_asm, sa_avx2_soa_f64_asm,
                sa_avx512_soa_f32_asm, sa_avx2_soa_f32_asm],
   name_prefix: '',
