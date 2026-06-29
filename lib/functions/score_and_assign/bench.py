@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark score_and_assign — all ISA tiers via runtime flag toggling.
+"""Benchmark score_and_assign -- all ISA tiers via runtime flag toggling.
 
 One .so, one build.  Toggles c2py_amd64_avx512f / c2py_amd64_avx2
 to measure avx512, avx2, and baseline tiers without rebuilding.
@@ -36,7 +36,7 @@ def main():
     p.add_argument("--sizes", type=int, nargs="+", default=DEFAULT_SIZES)
     args = p.parse_args()
 
-    n_cores = os.cpu_count() or 4
+    n_cores = 2
 
     # --- f2py ---
     print("=== f2py (f64 AoS, 1T) ===")
@@ -107,7 +107,7 @@ def main():
                         mod._c2py_perf_read(ptr, buf)
                         if struct.unpack_from("Q", buf)[0] > 0:
                             v = a.replace("_c2py_ol_ptr_score_and_assign__", "")
-                            variant = v.replace("score_and_assign_", "")
+                            variant = v
                             break
                 c2ImageD11.cimaged11_omp_set_num_threads(1)
                 dv2 = dv.copy(); lb2 = lb.copy()

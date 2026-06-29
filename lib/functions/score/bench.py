@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark score() — all ISA tiers via runtime flag toggling."""
+"""Benchmark score() -- all ISA tiers via runtime flag toggling."""
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -42,7 +42,7 @@ def measure(fn, mod, ubis, gv, tol, ng, nc, n_threads, n_ubis):
             buf = bytearray(128)
             mod._c2py_perf_read(ptr, buf)
             if struct.unpack_from("Q", buf)[0] > 0:
-                variant = a.replace("_c2py_ol_ptr_score__", "").replace("score_", "")
+                variant = a.replace("_c2py_ol_ptr_score__", "")
                 break
     c2ImageD11.cimaged11_omp_set_num_threads(n_threads)
     for _ in range(5): fn(ubis[0].copy(), gv, tol)
@@ -97,7 +97,7 @@ def main():
             gv_f32 = gv_f64.astype(np.float32)
             gv_s64 = gv_f64.T.copy()
             gv_s32 = gv_f64.T.copy().astype(np.float32)
-            for nthr in [1, 4]:
+            for nthr in [1, 2]:
                 for label, gv in [("AoS_f64", gv_f64), ("SoA_f64", gv_s64),
                                    ("AoS_f32", gv_f32), ("SoA_f32", gv_s32)]:
                     try:
