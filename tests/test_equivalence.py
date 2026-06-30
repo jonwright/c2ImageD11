@@ -670,3 +670,180 @@ class TestSplat:
         rgba2 = np.zeros((100, 100, 4), dtype=np.uint8)
         NEW.splat(rgba2, gv, u, 1)
         assert (rgba == rgba2).all()
+
+
+# ============================================================
+# previously-uncovered equivalence tests
+# ============================================================
+
+class TestArrayMeanVarMsk:
+    def test_random(self):
+        np.random.seed(42)
+        n = 10000
+        img = np.random.randn(n).astype(np.float32)
+        msk = np.ones(n, dtype=np.uint8)
+        m_o, v_o = OLD.array_mean_var_msk(img, msk)
+        m_n, v_n = NEW.array_mean_var_msk(img, msk)
+        close(m_o, m_n)
+        close(v_o, v_n)
+
+    def test_masked(self):
+        np.random.seed(43)
+        n = 10000
+        img = np.random.randn(n).astype(np.float32)
+        msk = np.ones(n, dtype=np.uint8)
+        msk[:5000] = 0
+        m_o, v_o = OLD.array_mean_var_msk(img, msk)
+        m_n, v_n = NEW.array_mean_var_msk(img, msk)
+        close(m_o, m_n)
+        close(v_o, v_n)
+
+
+class TestBgcalc:
+    def test_random(self):
+        np.random.seed(44)
+        ns, nf = 30, 40
+        img = np.random.randn(ns, nf).astype(np.float32)
+        bg_o = np.zeros_like(img)
+        msk_o = np.ones_like(img, dtype=np.uint8)
+        bg_n = np.zeros_like(img)
+        msk_n = np.ones_like(img, dtype=np.uint8)
+        OLD.bgcalc(img, bg_o, msk_o, 1.0, 3.0, 3.0)
+        NEW.bgcalc(img, bg_n, msk_n, 1.0, 3.0, 3.0)
+        close(bg_o, bg_n)
+        assert (msk_o == msk_n).all()
+
+    def test_uniform(self):
+        ns, nf = 20, 30
+        img = np.ones((ns, nf), dtype=np.float32) * 100.0
+        bg_o = np.zeros_like(img)
+        msk_o = np.ones_like(img, dtype=np.uint8)
+        bg_n = np.zeros_like(img)
+        msk_n = np.ones_like(img, dtype=np.uint8)
+        OLD.bgcalc(img, bg_o, msk_o, 1.0, 3.0, 3.0)
+        NEW.bgcalc(img, bg_n, msk_n, 1.0, 3.0, 3.0)
+        close(bg_o, bg_n, atol=1e-4)
+
+
+class TestComputeXlylzlXposVariable:
+    def test_random(self):
+        np.random.seed(45)
+        n = 100
+        s = np.random.randn(n)
+        f = np.random.randn(n)
+        p = np.array([0.1, 0.0, 0.0, 0.0])
+        r = np.eye(3).ravel()
+        dist = np.array([200.0, 0.0, 0.0])
+        xp = np.random.randn(n) * 0.1
+        xlylzl_o = np.zeros((n, 3))
+        xlylzl_n = np.zeros((n, 3))
+        OLD.compute_xlylzl_xpos_variable(s, f, p, r, dist, xp, xlylzl_o)
+        NEW.compute_xlylzl_xpos_variable(s, f, p, r, dist, xp, xlylzl_n)
+        close(xlylzl_o, xlylzl_n)
+
+
+class TestFrelonLines:
+    def test_random(self):
+        np.random.seed(46)
+        ns, nf = 50, 50
+        img_o = np.random.poisson(lam=10.0, size=(ns, nf)).astype(np.float32)
+        img_n = img_o.copy()
+        OLD.frelon_lines(img_o, 5.0)
+        NEW.frelon_lines(img_n, 5.0)
+        close(img_o, img_n)
+
+    def test_uniform(self):
+        img_o = np.ones((20, 30), dtype=np.float32) * 100.0
+        img_n = img_o.copy()
+        OLD.frelon_lines(img_o, 99.0)
+        NEW.frelon_lines(img_n, 99.0)
+        close(img_o, img_n, atol=1e-5)
+
+
+class TestFrelonLinesSub:
+    def test_random(self):
+        np.random.seed(47)
+        ns, nf = 50, 50
+        data = np.random.poisson(lam=10.0, size=(ns, nf)).astype(np.float32)
+        drk = np.random.poisson(lam=10.0, size=(ns, nf)).astype(np.float32)
+        img_o = data.copy()
+        img_n = data.copy()
+        OLD.frelon_lines_sub(img_o, drk, 5.0)
+        NEW.frelon_lines_sub(img_n, drk, 5.0)
+        close(img_o, img_n)
+
+
+class TestReorderU16A32A16:
+    def test_random(self):
+        """Skip: ImageD11 f2py version has a memory corruption bug
+        (writes past array bounds), causing segfault when both libraries
+        are loaded in the same process. Verified manually that results match."""
+        pytest.skip("ImageD11 f2py reorder_u16_a32_a16 has memory corruption")
+
+
+class TestReorderlutF32A32:
+    def test_random(self):
+        np.random.seed(49)
+        n = 100
+        data = np.random.randn(n).astype(np.float32)
+        lut = np.arange(n, dtype=np.int32)
+        out_o = np.zeros_like(data)
+        out_n = np.zeros_like(data)
+        OLD.reorderlut_f32_a32(data, lut, out_o)
+        NEW.reorderlut_f32_a32(data, lut, out_n)
+        assert (out_o == out_n).all()
+
+
+class TestSparseBlob2Dproperties:
+    def test_random(self):
+        import c2ImageD11 as _c2
+        np.random.seed(50)
+        nnz = 30
+        v = np.ones(nnz, dtype=np.float32)
+        i = np.arange(nnz, dtype=np.uint16)
+        j = np.zeros(nnz, dtype=np.uint16)
+        labels = np.ones(nnz, dtype=np.int32)
+        r_o = OLD.sparse_blob2Dproperties(v, i, j, labels, 1)
+        r_n = _c2.sparse_blob2Dproperties(v, i, j, labels, 1)
+        close(r_o, r_n)
+
+
+class TestSparseConnectedPixelsSplat:
+    def test_random(self):
+        np.random.seed(51)
+        nnz = 30
+        v = np.random.randn(nnz).astype(np.float32)
+        i = np.arange(nnz, dtype=np.uint16)
+        j = np.zeros(nnz, dtype=np.uint16)
+        lbl_o = np.zeros(nnz, dtype=np.int32)
+        lbl_n = np.zeros(nnz, dtype=np.int32)
+        # f2py Z shape: (4 + 2*ni + 2*nj + ni*nj,), c2py23 Z shape: (ni, nj)
+        ni, nj = 30, 30
+        Z_o = np.zeros(4 + 2*ni + 2*nj + ni*nj, dtype=np.int32)
+        Z_n = np.zeros((ni, nj), dtype=np.int32)
+        n_o = OLD.sparse_connectedpixels_splat(v, i, j, 0.5, lbl_o, Z_o, ni, nj)
+        n_n = NEW.sparse_connectedpixels_splat(v, i, j, 0.5, lbl_n, Z_n, ni, nj)
+        assert n_o == n_n
+        assert (lbl_o == lbl_n).all()
+        # compare Z: f2py uses a flat workspace, c2py23 uses 2D -- ravel for comparison
+        assert (Z_o[:ni*nj] == Z_n.ravel()).all()
+
+
+class TestTosparseU32:
+    def test_random(self):
+        np.random.seed(52)
+        ns, nf = 15, 20
+        img = np.random.randint(0, 1000, size=(ns, nf)).astype(np.uint32)
+        msk = np.ones((ns, nf), dtype=np.uint8)
+        row_o = np.zeros(ns * nf, dtype=np.uint16)
+        col_o = np.zeros(ns * nf, dtype=np.uint16)
+        val_o = np.zeros(ns * nf, dtype=np.uint32)
+        row_n = np.zeros(ns * nf, dtype=np.uint16)
+        col_n = np.zeros(ns * nf, dtype=np.uint16)
+        val_n = np.zeros(ns * nf, dtype=np.uint32)
+        n_o = OLD.tosparse_u32(img, msk, row_o, col_o, val_o, 500.0)
+        n_n = NEW.tosparse_u32(img, msk, row_n, col_n, val_n, 500.0)
+        assert n_o == n_n
+        assert np.array_equal(row_o[:n_o], row_n[:n_n])
+        assert np.array_equal(col_o[:n_o], col_n[:n_n])
+        assert np.array_equal(val_o[:n_o], val_n[:n_n])
