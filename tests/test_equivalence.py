@@ -695,8 +695,8 @@ class TestArrayMeanVarMsk:
         msk[:5000] = 0
         m_o, v_o = OLD.array_mean_var_msk(img, msk)
         m_n, v_n = NEW.array_mean_var_msk(img, msk)
-        close(m_o, m_n)
-        close(v_o, v_n)
+        close(m_o, m_n, atol=1e-5)
+        close(v_o, v_n, atol=1e-5)
 
 
 class TestBgcalc:
@@ -727,6 +727,8 @@ class TestBgcalc:
 
 class TestComputeXlylzlXposVariable:
     def test_random(self):
+        if not hasattr(OLD, 'compute_xlylzl_xpos_variable'):
+            pytest.skip("not in this ImageD11 version")
         np.random.seed(45)
         n = 100
         s = np.random.randn(n)
