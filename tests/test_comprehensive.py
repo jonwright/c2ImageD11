@@ -765,3 +765,250 @@ class TestThreadingRemaining(object):
         assert r1 == rN
         assert np.array_equal(msk1, mskN)
         assert np.array_equal(ret1, retN)
+
+
+# ======================== threading for remaining OMP functions (batch 2) ====
+
+class TestThreadingRemaining2(object):
+    """Threading tests for the 9 OMP functions still lacking 1T/nT."""
+
+    def test_compute_xlylzl_1T_vs_nT(self):
+        rng = np.random.RandomState(70)
+        n = 5000
+        s = rng.randn(n).astype(np.float64)
+        f = rng.randn(n).astype(np.float64)
+        p = np.array([0.1, 0.0, 0.0, 0.0], dtype=np.float64)
+        r = np.eye(3, dtype=np.float64).ravel()
+        dist = np.array([200.0, 0.0, 0.0], dtype=np.float64)
+        x1 = np.zeros((n, 3), dtype=np.float64)
+        xN = np.zeros((n, 3), dtype=np.float64)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.compute_xlylzl(s, f, p, r, dist, x1)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.compute_xlylzl(s, f, p, r, dist, xN)
+        assert np.allclose(x1, xN, atol=1e-12)
+
+    def test_compute_xlylzl_xpos_1T_vs_nT(self):
+        rng = np.random.RandomState(71)
+        n = 5000
+        s = rng.randn(n).astype(np.float64)
+        f = rng.randn(n).astype(np.float64)
+        p = np.array([0.1, 0.0, 0.0, 0.0], dtype=np.float64)
+        r = np.eye(3, dtype=np.float64).ravel()
+        dist = np.array([200.0, 0.0, 0.0], dtype=np.float64)
+        xp = rng.randn(n).astype(np.float64) * 0.1
+        x1 = np.zeros((n, 3), dtype=np.float64)
+        xN = np.zeros((n, 3), dtype=np.float64)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.compute_xlylzl_xpos_variable(s, f, p, r, dist, xp, x1)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.compute_xlylzl_xpos_variable(s, f, p, r, dist, xp, xN)
+        assert np.allclose(x1, xN, atol=1e-12)
+
+    def test_blobproperties_1T_vs_nT(self):
+        rng = np.random.RandomState(72)
+        ns, nf = 40, 50
+        data = rng.randn(ns, nf).astype(np.float32)
+        labels = np.random.randint(0, 5, size=(ns, nf)).astype(np.int32)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        r1 = c2ImageD11.blobproperties(data, labels, 5)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        rN = c2ImageD11.blobproperties(data, labels, 5)
+        assert np.allclose(r1, rN, atol=1e-6)
+
+    def test_put_incr32_1T_vs_nT(self):
+        rng = np.random.RandomState(73)
+        n = 10000
+        data = np.zeros(100, dtype=np.float32)
+        ind = rng.randint(0, 100, size=n).astype(np.int32)
+        vals = rng.randn(n).astype(np.float32)
+        d1 = data.copy(); dN = data.copy()
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.put_incr32(d1, ind, vals)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.put_incr32(dN, ind, vals)
+        assert np.allclose(d1, dN, atol=1e-6)
+
+    def test_put_incr64_1T_vs_nT(self):
+        rng = np.random.RandomState(74)
+        n = 10000
+        data = np.zeros(100, dtype=np.float32)
+        ind = rng.randint(0, 100, size=n).astype(np.int64)
+        vals = rng.randn(n).astype(np.float32)
+        d1 = data.copy(); dN = data.copy()
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.put_incr64(d1, ind, vals)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.put_incr64(dN, ind, vals)
+        assert np.allclose(d1, dN, atol=1e-6)
+
+    def test_reorder_f32_a32_1T_vs_nT(self):
+        n = 1000
+        data = np.random.RandomState(75).randn(n).astype(np.float32)
+        adr = np.arange(n, dtype=np.int32)
+        o1 = np.zeros(n, dtype=np.float32)
+        oN = np.zeros(n, dtype=np.float32)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.reorder_f32_a32(data, adr, o1)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.reorder_f32_a32(data, adr, oN)
+        assert np.array_equal(o1, oN)
+
+    def test_reorder_u16_a32_1T_vs_nT(self):
+        n = 1000
+        data = np.arange(n, dtype=np.uint16)
+        adr = np.arange(n, dtype=np.uint32)
+        o1 = np.zeros(n, dtype=np.uint16)
+        oN = np.zeros(n, dtype=np.uint16)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.reorder_u16_a32(data, adr, o1)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.reorder_u16_a32(data, adr, oN)
+        assert np.array_equal(o1, oN)
+
+    def test_reorderlut_f32_a32_1T_vs_nT(self):
+        n = 1000
+        data = np.random.RandomState(76).randn(n).astype(np.float32)
+        lut = np.arange(n, dtype=np.int32)
+        o1 = np.zeros(n, dtype=np.float32)
+        oN = np.zeros(n, dtype=np.float32)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.reorderlut_f32_a32(data, lut, o1)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.reorderlut_f32_a32(data, lut, oN)
+        assert np.array_equal(o1, oN)
+
+    def test_reorderlut_u16_a32_1T_vs_nT(self):
+        n = 1000
+        data = np.arange(n, dtype=np.uint16)
+        lut = np.arange(n, dtype=np.uint32)
+        o1 = np.zeros(n, dtype=np.uint16)
+        oN = np.zeros(n, dtype=np.uint16)
+        c2ImageD11.cimaged11_omp_set_num_threads(1)
+        c2ImageD11.reorderlut_u16_a32(data, lut, o1)
+        c2ImageD11.cimaged11_omp_set_num_threads(N_CORES)
+        c2ImageD11.reorderlut_u16_a32(data, lut, oN)
+        assert np.array_equal(o1, oN)
+
+
+# ======================== thin coverage =======================================
+
+class TestThinCoverage(object):
+    """Functions with only buffer/equiv coverage."""
+
+    def test_tosparse_u32_smoke(self):
+        """tosparse_u32: integer 32-bit sparse conversion."""
+        rng = np.random.RandomState(80)
+        ns, nf = 20, 30
+        img = rng.randint(0, 1000, size=(ns, nf)).astype(np.uint32)
+        msk = np.ones((ns, nf), dtype=np.uint8)
+        row = np.zeros(ns * nf, dtype=np.uint16)
+        col = np.zeros(ns * nf, dtype=np.uint16)
+        val = np.zeros(ns * nf, dtype=np.uint32)
+        nnz = c2ImageD11.tosparse_u32(img, msk, row, col, val, 500.0)
+        assert isinstance(nnz, (int, np.integer))
+        assert nnz > 0
+
+    def test_tosparse_u32_all_masked(self):
+        img = np.ones((10, 10), dtype=np.uint32) * 100
+        msk = np.zeros((10, 10), dtype=np.uint8)
+        row = np.zeros(100, dtype=np.uint16)
+        col = np.zeros(100, dtype=np.uint16)
+        val = np.zeros(100, dtype=np.uint32)
+        nnz = c2ImageD11.tosparse_u32(img, msk, row, col, val, 50.0)
+        assert nnz == 0
+
+
+# ======================== standalone for equiv-only functions =================
+
+class TestStandaloneEquiv(object):
+    """Standalone verification for equivalence-only functions."""
+
+    def test_bloboverlaps_simple(self):
+        """Two frames with known overlapping blobs."""
+        ns, nf = 20, 20
+        lbl1 = np.zeros((ns, nf), dtype=np.int32)
+        lbl2 = np.zeros((ns, nf), dtype=np.int32)
+        lbl1[5:10, 5:10] = 1
+        lbl2[8:12, 8:12] = 1
+        r1 = np.zeros((2, 36), dtype=np.float64)
+        r2 = np.zeros((2, 36), dtype=np.float64)
+        n = c2ImageD11.bloboverlaps(lbl1, 2, r1, lbl2, 2, r2)
+        assert isinstance(n, (int, np.integer))
+
+    def test_compress_duplicates_simple(self):
+        i = np.array([1, 1, 2, 2, 2, 3], dtype=np.int32)
+        j = np.array([1, 1, 2, 2, 2, 3], dtype=np.int32)
+        oi = np.zeros(6, dtype=np.int32)
+        oj = np.zeros(6, dtype=np.int32)
+        tmp = np.zeros(6, dtype=np.int32)
+        n = c2ImageD11.compress_duplicates(i, j, oi, oj, tmp)
+        assert n == 3  # 3 unique pairs after compression
+
+    def test_coverlaps_simple(self):
+        row1 = np.array([5, 6, 7], dtype=np.uint16)
+        col1 = np.array([5, 6, 7], dtype=np.uint16)
+        lbl1 = np.array([1, 1, 1], dtype=np.int32)
+        row2 = np.array([7, 8, 9], dtype=np.uint16)
+        col2 = np.array([7, 8, 9], dtype=np.uint16)
+        lbl2 = np.array([2, 2, 2], dtype=np.int32)
+        mat = np.zeros((3, 3), dtype=np.int32)
+        results = np.zeros((3, 3), dtype=np.int32)
+        n = c2ImageD11.coverlaps(row1, col1, lbl1, row2, col2, lbl2, mat, results)
+        assert isinstance(n, (int, np.integer))
+
+    def test_splat_basic(self):
+        """Draw g-vectors into RGBA image."""
+        h, w = 100, 100
+        rgba = np.zeros((h, w, 4), dtype=np.uint8)
+        gve = np.array([[50.0, 50.0, 0.0]], dtype=np.float64)
+        u = np.array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], dtype=np.float64)
+        c2ImageD11.splat(rgba, gve, u, 2)
+
+    def test_sparse_connectedpixels_simple(self):
+        nnz = 20
+        v = np.ones(nnz, dtype=np.float32)
+        i = np.arange(nnz, dtype=np.uint16)
+        j = np.zeros(nnz, dtype=np.uint16)
+        labels = np.zeros((1, nnz), dtype=np.int32)
+        n = c2ImageD11.sparse_connectedpixels(v, i, j, 0.5, labels)
+        assert isinstance(n, (int, np.integer))
+
+    def test_sparse_localmaxlabel_simple(self):
+        nnz = 20
+        v = np.ones(nnz, dtype=np.float32)
+        i = np.arange(nnz, dtype=np.uint16)
+        j = np.zeros(nnz, dtype=np.uint16)
+        MV = np.zeros(nnz, dtype=np.float32)
+        iMV = np.zeros(nnz, dtype=np.int32)
+        labels = np.zeros((1, nnz), dtype=np.int32)
+        n = c2ImageD11.sparse_localmaxlabel(v, i, j, MV, iMV, labels)
+        assert isinstance(n, (int, np.integer))
+
+    def test_sparse_overlaps_simple(self):
+        i1 = np.array([0, 1, 2], dtype=np.uint16)
+        j1 = np.array([0, 1, 2], dtype=np.uint16)
+        k1 = np.zeros(3, dtype=np.int32)
+        i2 = np.array([1, 2, 3], dtype=np.uint16)
+        j2 = np.array([1, 2, 3], dtype=np.uint16)
+        k2 = np.zeros(3, dtype=np.int32)
+        n = c2ImageD11.sparse_overlaps(i1, j1, k1, i2, j2, k2)
+        assert isinstance(n, (int, np.integer))
+
+    def test_sparse_smooth_simple(self):
+        nnz = 20
+        v = np.ones(nnz, dtype=np.float32)
+        i = np.arange(nnz, dtype=np.uint16)
+        j = np.zeros(nnz, dtype=np.uint16)
+        s = np.zeros(nnz, dtype=np.float32)
+        c2ImageD11.sparse_smooth(v, i, j, s)
+        assert np.all(np.isfinite(s))
+
+    def test_frelon_lines_sub_simple(self):
+        ns, nf = 20, 30
+        rng = np.random.RandomState(90)
+        data = rng.poisson(lam=10.0, size=(ns, nf)).astype(np.float32)
+        drk = rng.poisson(lam=10.0, size=(ns, nf)).astype(np.float32)
+        img = data.copy()
+        c2ImageD11.frelon_lines_sub(img, drk, 5.0)
+        assert np.all(np.isfinite(img))
