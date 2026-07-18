@@ -197,7 +197,7 @@ endif
 
 shared_module('_cImageD11',
   [c2_sources, c2_sources_cpp],
-  files('interface/c2py_runtime.c', 'interface/_cImageD11_wrapper.c'),
+  files('interface/_cImageD11_wrapper.c'),
   c_args: c2_c_args,
   cpp_args: c2_cpp_args,
   include_directories: [c2_inc],

@@ -76,13 +76,13 @@ if _mod is not None:
 
     def blobproperties(data, labels, npk, omega=0.0, verbose=0):
         """Allocate results and call C blobproperties, matching f2py convention."""
-        results = np.zeros((max(1, npk), 36), dtype=np.float64)[:npk]
+        results = np.zeros((npk, 36), dtype=np.float64)
         _blobproperties_c(data, labels, npk, results, omega, verbose)
         return results
 
     def sparse_blob2Dproperties(v, i, j, labels, npk):
         """Allocate results and call C sparse_blob2Dproperties, matching f2py convention."""
-        results = np.zeros((max(1, npk), 11), dtype=np.float64)[:npk]
+        results = np.zeros((npk, 11), dtype=np.float64)
         _sparse_blob2Dproperties_c(v, i, j, labels, npk, results)
         return results
 

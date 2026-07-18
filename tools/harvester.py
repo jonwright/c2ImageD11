@@ -22,12 +22,7 @@ from c2py23.parser import from_c2py_dict
 from c2py23.generator import generate
 
 C2PY_RUNTIME_FILES = [
-    "c2py_dlsym.c",
-    "c2py_dlsym.h",
-    "c2py_pythonh.c",
-    "c2py_pythonh.h",
-    "c2py_runtime.c",
-    "c2py_runtime.h",
+    "c2py.h",
     "c2py_amd64.h",
     "c2py_arm64.h",
     "c2py_ppc64.h",
@@ -315,7 +310,7 @@ def generate_wrapper(assembled, output_dir):
     wrapper_path = os.path.join(output_dir, "_cImageD11_wrapper.c")
     print("  GENERATING: %s" % wrapper_path, file=sys.stderr)
     mod = from_c2py_dict(assembled, "_cImageD11")
-    wrapper_code = generate(mod)
+    wrapper_code = generate(mod, use_single_header=True)
     with open(wrapper_path, "w") as f:
         f.write(wrapper_code)
 
