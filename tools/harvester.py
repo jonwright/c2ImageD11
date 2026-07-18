@@ -22,6 +22,10 @@ from c2py23.parser import from_c2py_dict
 from c2py23.generator import generate
 
 C2PY_RUNTIME_FILES = [
+    "c2py_dlsym.c",
+    "c2py_dlsym.h",
+    "c2py_pythonh.c",
+    "c2py_pythonh.h",
     "c2py_runtime.c",
     "c2py_runtime.h",
     "c2py_amd64.h",
