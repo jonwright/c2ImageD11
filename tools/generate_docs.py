@@ -358,6 +358,8 @@ def write_mkdocs_nav(functions):
 
     nav = """site_name: c2ImageD11
 site_description: Standalone C extensions for ImageD11 (c2py23 binding)
+docs_dir: .
+site_dir: ../site
 theme:
   name: material
   features:
