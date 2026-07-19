@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""generate_docs.py — Generate API documentation from live module introspection.
+"""generate_docs.py -- Generate API documentation from live module introspection.
 
 Reads every exported C function from c2ImageD11, produces `docs/api/*.md`
 pages with help() output, C2PY_BEGIN doc/params, and (when present)
@@ -69,17 +69,18 @@ def _find_c2py_begin_doc(source_path):
 
 
 def _find_c_sources():
-    """Map function names to their .c source files."""
+    """Map function names to their PRIMARY .c source file (not stubs/variants)."""
     name_to_path = {}
     for root, dirs, files in os.walk(FUNC_DIR):
+        dir_name = os.path.basename(root)
         for f in sorted(files):
             if f.endswith(".c") and not f.startswith("."):
                 fp = os.path.join(root, f)
-                name_to_path[os.path.basename(root)] = fp
-                # Also map the .c filename (without .c) to the path
-                # for functions where directory name != source file name
-                c_name = f.replace(".c", "")
-                name_to_path[c_name] = fp
+                c_file = f.replace(".c", "")
+                # Map the directory name to the file that MATCHES the directory
+                # (e.g., score/score.c, not score/score_stubs.c or score/score_f64_avx2.c)
+                if c_file == dir_name:
+                    name_to_path[dir_name] = fp
     return name_to_path
 
 
@@ -119,22 +120,93 @@ def _gen_cpu_features_page():
 
 
 def _format_help(name, fn):
-    """Capture help(fn) output and format as markdown."""
+    """Extract just the Python-level signature line from help(fn)."""
     from io import StringIO
-    old_stdout = sys.stdout
+    old = sys.stdout
     s = StringIO()
     try:
         sys.stdout = s
         help(fn)
-        sys.stdout = old_stdout
+        sys.stdout = sys.__stdout__
         text = s.getvalue()
     except Exception:
-        sys.stdout = old_stdout
-        text = "help() unavailable"
-    return "```\n{}```".format(text.strip())
+        sys.stdout = old
+        return ""
+    sys.stdout = old
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped and "(" in stripped and ")" in stripped:
+            return "**`{}`**".format(stripped)
+    return ""
 
 
-def _run_example(examples_path):
+def _overloads_table(c2py_data, func_name):
+    """Build a markdown table from c_overloads entries for a function."""
+    functions = c2py_data.get("functions", [])
+    for f in functions:
+        py_sig = f.get("py_sig", "")
+        if py_sig.split("(")[0].strip() == func_name:
+            overloads = f.get("c_overloads", [])
+            if not overloads:
+                return None
+            lines = []
+            lines.append("## Overloads")
+            lines.append("")
+            lines.append("| C function | Condition |")
+            lines.append("|-----------|-----------|")
+            for ol in overloads:
+                sig = ol.get("sig", "")
+                when = ol.get("when", "")
+                # Extract just the function name from the sig
+                fn_match = re.match(r'^\w+\s+(\w+)\(', sig)
+                c_fn = fn_match.group(1) if fn_match else sig[:40]
+                # Simplify ISA conditions for readability
+                cond = _simplify_condition(when)
+                lines.append("| `{}` | {} |".format(c_fn, cond))
+            return "\n".join(lines)
+    return None
+
+
+def _load_c2py_data():
+    """Parse the assembled .c2py file and return the dict."""
+    c2py_path = os.path.join(HERE, "lib", "interface", "_cImageD11.c2py")
+    if not os.path.exists(c2py_path):
+        return {}
+    with open(c2py_path) as f:
+        text = f.read()
+    # Strip header comments
+    lines = text.split("\n")
+    while lines and lines[0].startswith("#"):
+        lines.pop(0)
+    content = "\n".join(lines)
+    try:
+        return ast.literal_eval(content)
+    except Exception:
+        return {}
+
+
+def _simplify_condition(when_expr):
+    """Convert a when: expression to a readable label."""
+    if not when_expr:
+        return "always"
+    parts = []
+    if "gv.format == 'd'" in when_expr or "gv.format == 'd'" in when_expr:
+        parts.append("f64")
+    if "gv.format == 'f'" in when_expr:
+        parts.append("f32")
+    if "gv.shape[1] == 3" in when_expr and "gv.shape[0]" not in when_expr:
+        parts.append("AoS")
+    if "gv.shape[0] == 3" in when_expr:
+        parts.append("SoA")
+    if "c2py_amd64_avx512f" in when_expr:
+        parts.append("AVX-512")
+    elif "c2py_amd64_avx2" in when_expr:
+        parts.append("AVX2")
+    elif "c2py_amd64_sse4_1" in when_expr:
+        parts.append("SSE4.1")
+    if "gb.format == 'd'" in when_expr:
+        parts.append("f64")
+    return " ".join(parts) if parts else "always"
     """Run an examples.py file and capture stdout. Returns (code, output) or None."""
     if not os.path.exists(examples_path):
         return None
@@ -261,13 +333,16 @@ def generate(dry_run=False):
                        and callable(getattr(mod, n, None)))
 
     source_map = _find_c_sources()
+    c2py_data = _load_c2py_data()
     pages = {}
 
     for name in functions:
         fn = getattr(mod, name)
+        sig_line = _format_help(name, fn)
         lines = ["# `{}`".format(name), ""]
-        lines.append(_format_help(name, fn))
-        lines.append("")
+        if sig_line:
+            lines.append(sig_line)
+            lines.append("")
 
         # Description and params from C2PY_BEGIN
         src_path = source_map.get(name)
@@ -292,6 +367,12 @@ def generate(dry_run=False):
                 for c in checks:
                     lines.append("- `{}`".format(c))
                 lines.append("")
+
+        # Overloads table from .c2py data
+        overloads = _overloads_table(c2py_data, name)
+        if overloads:
+            lines.append(overloads)
+            lines.append("")
 
         # Example section
         examples_path = os.path.join(FUNC_DIR, name, "examples.py")
