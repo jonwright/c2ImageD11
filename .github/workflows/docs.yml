@@ -1,19 +1,10 @@
 name: docs
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [master]
-    paths:
-      - 'docs/**'
-      - 'tools/generate_docs.py'
-      - 'tools/verify_docs.py'
-      - 'lib/functions/**/*.c'
-      - 'lib/functions/**/*.cpp'
-      - 'lib/functions/**/*.h'
-      - 'lib/interface/*.c2py'
-      - 'lib/interface/c2py.h'
-      - 'c2ImageD11/**'
-      - '.github/workflows/docs.yml'
 
 permissions:
   contents: read
@@ -26,6 +17,7 @@ concurrency:
 
 jobs:
   build-docs:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,21 +27,23 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install build dependencies
-        run: pip install numpy c2py23 meson ninja
+      - name: Download wheel from CI
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: CI
+          name: dist-linux
+          path: dist/
 
-      - name: Build c2ImageD11
-        run: |
-          meson setup build lib/
-          ninja -C build
-          cp build/_cImageD11.so c2ImageD11/
+      - name: Install c2ImageD11 wheel
+        run: pip install dist/*.whl
 
       - name: Install ImageD11 (for comparison section)
-        run: |
-          pip install ImageD11 --only-binary :all: --no-deps || echo "ImageD11 not available"
+        run: >
+          pip install ImageD11 --only-binary :all: --no-deps
+          || echo "ImageD11 not available"
 
       - name: Install doc deps
-        run: pip install mkdocs-material
+        run: pip install numpy c2py23 mkdocs-material
 
       - name: Generate docs
         run: python tools/generate_docs.py
