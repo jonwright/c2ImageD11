@@ -18,3 +18,5 @@ dist/
 *.h5
 *.lprof
 *.npz
+docs/api/
+site/

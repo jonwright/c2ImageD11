@@ -1,0 +1,76 @@
+name: docs
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - 'tools/generate_docs.py'
+      - 'tools/verify_docs.py'
+      - 'lib/functions/**/*.c'
+      - 'lib/functions/**/*.cpp'
+      - 'lib/functions/**/*.h'
+      - 'lib/interface/*.c2py'
+      - 'c2ImageD11/**'
+      - '.github/workflows/docs.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install c2ImageD11 build dependencies
+        run: |
+          pip install numpy c2py23
+          sudo apt-get update && sudo apt-get install -y libgomp1
+
+      - name: Install ImageD11 (for comparison section)
+        run: |
+          pip install ImageD11 || echo "ImageD11 install skipped (not blocking)"
+
+      - name: Build c2ImageD11
+        run: |
+          meson setup build lib/
+          ninja -C build
+          cp build/_cImageD11.so c2ImageD11/
+
+      - name: Generate docs
+        run: |
+          python tools/generate_docs.py
+
+      - name: Install mkdocs-material
+        run: pip install mkdocs-material
+
+      - name: Build site
+        run: mkdocs build -f docs/mkdocs.yml
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
