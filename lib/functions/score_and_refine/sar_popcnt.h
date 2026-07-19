@@ -2,7 +2,7 @@
 #ifndef SAR_POPCNT_H
 #define SAR_POPCNT_H
 
-static int popcnt32(unsigned int x) {
+static inline int popcnt32(unsigned int x) {
 #ifdef _MSC_VER
     return __popcnt(x);
 #else
