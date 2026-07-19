@@ -11,6 +11,7 @@ on:
       - 'lib/functions/**/*.cpp'
       - 'lib/functions/**/*.h'
       - 'lib/interface/*.c2py'
+      - 'lib/interface/c2py.h'
       - 'c2ImageD11/**'
       - '.github/workflows/docs.yml'
 
@@ -34,14 +35,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install c2ImageD11 build dependencies
-        run: |
-          pip install numpy c2py23
-          sudo apt-get update && sudo apt-get install -y libgomp1
-
-      - name: Install ImageD11 (for comparison section)
-        run: |
-          pip install ImageD11 || echo "ImageD11 install skipped (not blocking)"
+      - name: Install build dependencies
+        run: pip install numpy c2py23 meson ninja
 
       - name: Build c2ImageD11
         run: |
@@ -49,12 +44,14 @@ jobs:
           ninja -C build
           cp build/_cImageD11.so c2ImageD11/
 
-      - name: Generate docs
-        run: |
-          python tools/generate_docs.py
+      - name: Install ImageD11 (for comparison section)
+        run: pip install ImageD11 || echo "ImageD11 not available"
 
-      - name: Install mkdocs-material
+      - name: Install doc deps
         run: pip install mkdocs-material
+
+      - name: Generate docs
+        run: python tools/generate_docs.py
 
       - name: Build site
         run: mkdocs build -f docs/mkdocs.yml
