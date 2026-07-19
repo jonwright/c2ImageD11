@@ -156,19 +156,6 @@ def find_cpp_sources(src_dir):
     return sources
 
 
-def find_h_headers(src_dir):
-    """Find all .h files in src_dir recursively, sorted, skipping vendor dirs."""
-    headers = []
-    for root, dirs, files in os.walk(src_dir):
-        basename = os.path.basename(root)
-        if basename == "vendor":
-            continue
-        for f in sorted(files):
-            if f.endswith(".h") and not f.startswith("."):
-                headers.append(os.path.join(root, f))
-    return headers
-
-
 def block_to_func_entry(block):
     """Convert a C2PY_BLOCK dict to a c2py function entry dict."""
     entry = {
@@ -183,6 +170,8 @@ def block_to_func_entry(block):
         entry["gil_release"] = True
     if "c_overloads" in block:
         entry["c_overloads"] = block["c_overloads"]
+    if "headers" in block:
+        entry["headers"] = block["headers"]
     return entry
 
 
@@ -216,7 +205,6 @@ def assemble_c2py(src_dir, output_dir):
     """Assemble the complete c2py interface dict."""
     c_sources = find_c_sources(src_dir)
     cpp_sources = find_cpp_sources(src_dir)
-    h_headers = find_h_headers(src_dir)
 
     def _isa_priority(filepath):
         name = os.path.basename(filepath)
@@ -234,7 +222,7 @@ def assemble_c2py(src_dir, output_dir):
     func_entries = {}
     all_consts = {}
 
-    for filepath in all_sources + h_headers:
+    for filepath in all_sources:
         funcs, consts = extract_blocks_from_file(filepath)
         if consts:
             print("  %s: constants" % os.path.relpath(filepath, output_dir),
@@ -258,6 +246,11 @@ def assemble_c2py(src_dir, output_dir):
                 else:
                     func_entries[py_sig] = entry
 
+    # Collect headers from per-function C2PY_BEGIN blocks
+    all_headers = set()
+    for entry in func_entries.values():
+        all_headers.update(entry.get("headers", []))
+
     result = {
         "module": "_cImageD11",
         "timing": True,
@@ -272,9 +265,7 @@ def assemble_c2py(src_dir, output_dir):
         os.path.relpath(src, output_dir) for src in cpp_sources
     ]
 
-    result["headers"] = [
-        os.path.relpath(hdr, output_dir) for hdr in h_headers
-    ]
+    result["headers"] = sorted(all_headers)
 
     if all_consts:
         result["constants"] = all_consts

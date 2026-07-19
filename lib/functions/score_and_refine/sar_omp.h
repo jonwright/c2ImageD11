@@ -19,10 +19,6 @@
 #include <omp.h>
 
 /* Array offset helper: pointer + stride*start */
-static const void *sar_offset(const void *p, intptr_t start, int elem_size) {
-    return (const char *)p + start * elem_size;
-}
-
 /* Dispatch: split ng across threads, call kernel per thread, merge results.
  * ubi: 9-element double array (always f64, shared across threads)
  * gv0,gv1,gv2: three pointer args to the kernel (gv or gvx/gvy/gvz)
