@@ -73,21 +73,21 @@ DO NOT: invent Python code and paste it into a `.md` file.
 
 ### 4. How to add benchmark data
 
-DO: write a `bench.py` that supports `--md` mode:
+DO: run `bench.py --json` on a real machine and commit the output:
 
-```python
-# lib/functions/score/bench.py
-# ... benchmark logic ...
-if "--md" in sys.argv:
-    print("| ng | nthr | tier | M gv/s |")
-    print("|---|------|------|--------|")
-    print(f"| {n} | 1 | avx512 | {throughput:.0f} |")
+```bash
+# On a dedicated performance-testing machine:
+python lib/functions/score/bench.py --json > docs/bench/score.json
+git add docs/bench/score.json
+git commit -m "bench: update score performance data"
 ```
 
-The `generate_docs.py` script runs `python bench.py --md` and captures
-output. The benchmark data is always live, never stale.
+The `generate_docs.py` script reads `docs/bench/<name>.json` and formats
+it as a markdown table. Benchmarks are **never** run during CI doc builds
+— CI runners are shared, noisy, and useless for performance numbers.
 
 DO NOT: type "M gv/s: 1152" into a markdown file.
+DO NOT: include benchmark execution in `generate_docs.py` or `docs.yml`.
 
 ### 5. How to update a function's parameter docs
 
@@ -136,7 +136,7 @@ DO NOT: edit a parameter description in any `.md` file.
 | Change a function description | `lib/functions/<name>/<name>.c` (C2PY_BEGIN `"doc"`) | `tools/harvester.py`, `tools/generate_docs.py` |
 | Change a parameter description | `lib/functions/<name>/<name>.c` (C2PY_BEGIN `"params"`) | `tools/harvester.py`, `tools/generate_docs.py` |
 | Add a usage example | `lib/functions/<name>/examples.py` | Add test, run `tools/generate_docs.py` |
-| Add benchmark data | `lib/functions/<name>/bench.py` (add `--md`) | Run `tools/generate_docs.py` |
+| Add/update benchmark data | `lib/functions/<name>/bench.py` (run `--json`, commit to `docs/bench/`) | `tools/generate_docs.py` |
 | Change ISA variant descriptions | `lib/functions/<name>/<variant>.c` (C2PY_BEGIN `"doc"`) | `tools/harvester.py`, `tools/generate_docs.py` |
 | Update the project overview | `docs/index.md` | None (hand-written) |
 | Update the variants guide | `docs/guide/variants.md` | None (hand-written) |

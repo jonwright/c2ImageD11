@@ -170,6 +170,34 @@ def check_hand_written_no_api_data():
     return 0
 
 
+def check_bench_data():
+    """Verify benchmark JSON files exist and are valid JSON."""
+    bench_dir = os.path.join(HERE, "docs", "bench")
+    if not os.path.isdir(bench_dir):
+        print("  docs/bench/: no benchmark data yet (OK)")
+        return 0
+
+    import json as _json
+    ok = 0
+    failed = 0
+    for fn in sorted(os.listdir(bench_dir)):
+        if not fn.endswith(".json"):
+            continue
+        fp = os.path.join(bench_dir, fn)
+        try:
+            with open(fp) as f:
+                _json.load(f)
+            ok += 1
+        except Exception as e:
+            print("  FAIL: {} — {}".format(fp, e))
+            failed += 1
+
+    if failed:
+        return 1
+    print("  OK: {}/{} benchmark JSON files valid".format(ok, ok + failed))
+    return 0
+
+
 def main():
     print("Verifying documentation integrity...")
     print()
@@ -189,6 +217,10 @@ def main():
 
     print("## Hand-written guard files")
     rc |= check_hand_written_no_api_data()
+    print()
+
+    print("## Benchmark JSON data")
+    rc |= check_bench_data()
 
     if rc == 0:
         print()

@@ -148,19 +148,86 @@ def _run_example(examples_path):
 
 
 def _run_bench(bench_path):
-    """Run a bench.py --md and capture stdout. Returns markdown table or None."""
+    """Run a bench.py --json and capture stdout. Returns parsed JSON dict or None."""
     if not os.path.exists(bench_path):
         return None
     result = subprocess.run(
-        [sys.executable, bench_path, "--md"],
+        [sys.executable, bench_path, "--json"],
         capture_output=True, text=True, timeout=120,
         cwd=os.path.dirname(bench_path))
     if result.returncode != 0:
         return None
-    output = result.stdout.strip()
-    if not output:
+    try:
+        import json as _json
+        return _json.loads(result.stdout.strip())
+    except Exception:
         return None
-    return output
+
+
+BENCH_DIR = os.path.join(HERE, "docs", "bench")
+
+
+def _load_bench_data(name):
+    """Load committed benchmark JSON for a function. Returns dict or None."""
+    path = os.path.join(BENCH_DIR, "{}.json".format(name))
+    if not os.path.exists(path):
+        return None
+    try:
+        import json as _json
+        with open(path) as f:
+            return _json.load(f)
+    except (ValueError, IOError):
+        return None
+
+
+def _format_bench_table(data):
+    """Format benchmark JSON dict as a markdown table."""
+    if not data:
+        return None
+    lines = []
+    date = data.get("generated_at", "unknown date")
+    cpu = data.get("cpu_info", "unknown CPU")
+    lines.append("Measured on {} ({})".format(date, cpu))
+    lines.append("")
+
+    # Look for measurements table
+    measurements = data.get("measurements", {})
+    if not measurements:
+        # Try legacy format: flat keys
+        rows = []
+        for k, v in sorted(data.items()):
+            if k in ("function", "generated_at", "cpu_info", "f2py_baseline"):
+                continue
+            if isinstance(v, dict):
+                rows.append([k] + [str(v.get(rk, "")) for rk in sorted(v.keys())])
+        if rows:
+            lines.append("| Variant | " + " | ".join(rows[0][1:]) + " |")
+            lines.append("|---" + "|" * (len(rows[0]) - 1) + " |")
+            for row in rows:
+                lines.append("| " + " | ".join(row) + " |")
+        return "\n".join(lines) if rows else None
+
+    # Structured measurements
+    cols = set()
+    ng_val = None
+    for v in measurements.values():
+        if isinstance(v, dict):
+            cols.update(v.keys())
+            if v.get("ng"):
+                ng_val = v["ng"]
+    cols = sorted(c for c in cols if c != "ng")
+    col_headers = ["Variant"] + cols
+    header_line = "| " + " | ".join(col_headers) + " |"
+    sep_line = "|" + "---|" * len(col_headers)
+    lines.append(header_line)
+    lines.append(sep_line)
+    for variant, v in sorted(measurements.items()):
+        row = [variant]
+        for c in cols:
+            row.append(str(v.get(c, "")) if isinstance(v, dict) else str(v))
+        lines.append("| " + " | ".join(row) + " |")
+
+    return "\n".join(lines)
 
 
 def _build_module_toc(functions):
@@ -238,14 +305,14 @@ def generate(dry_run=False):
                 lines.append("```")
                 lines.append("")
 
-        # Benchmark section
-        bench_path = os.path.join(FUNC_DIR, name, "bench.py")
-        if os.path.exists(bench_path):
-            bench_output = _run_bench(bench_path)
-            if bench_output:
+        # Benchmark section (from committed JSON data, never from live bench run)
+        bench_data = _load_bench_data(name)
+        if bench_data:
+            bench_table = _format_bench_table(bench_data)
+            if bench_table:
                 lines.append("## Performance")
                 lines.append("")
-                lines.append(bench_output)
+                lines.append(bench_table)
                 lines.append("")
 
         pages[name] = "\n".join(lines)
