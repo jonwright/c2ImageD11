@@ -45,7 +45,8 @@ jobs:
           cp build/_cImageD11.so c2ImageD11/
 
       - name: Install ImageD11 (for comparison section)
-        run: pip install ImageD11 || echo "ImageD11 not available"
+        run: |
+          pip install ImageD11 --only-binary :all: --no-deps || echo "ImageD11 not available"
 
       - name: Install doc deps
         run: pip install mkdocs-material
