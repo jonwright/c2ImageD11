@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "tosparse_u16(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: int) -> int",
- *  "doc": "Convert dense uint16 image to sparse COO.",
+ *  "doc": "stores pixels from img into row/col/val.\nmsk determines whether pixels are masked (e.g. eiger mask)\nreturns the number of pixels found",
  *  "params": {"img": "Input uint16 2D.", "msk": "Mask (uint8, 0=include).", "row": "Output rows.", "col": "Output cols.", "val": "Output values.", "cut": "Threshold."},
  *  "checks": ["img.format == 'H' or img.itemsize == 2", "img.ndim == 2",
  *      "msk.format == 'B' or msk.format == 'b' or msk.format == '?'", "msk.n == img.n",

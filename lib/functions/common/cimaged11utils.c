@@ -12,7 +12,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "cimaged11_omp_set_num_threads(n: int) -> void",
- *     "doc": "Set the number of OpenMP threads used by all subsequent C calls.",
+ *     "doc": "Sets the openmp number of\nthreads to use.\nChange if you use multiprocessing or do not like\nos.environ['OMP_NUM_THREADS']\nsee also: multiprocessing.cpu_count(),\nsee also os.cpu_count()\nsee docs/sphx/parallel.rst",
  *     "params": {
  *         "n": "Number of OpenMP threads. Pass 1 for single-threaded execution.",
  *     },

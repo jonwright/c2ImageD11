@@ -6,7 +6,7 @@ int clean_mask(const int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf);
 
 /* C2PY_BEGIN
  * {"py_sig": "make_clean_mask(img: buffer, cut: float, msk: buffer, ret: buffer) -> int",
- *  "doc": "Generate mask from threshold then clean isolated pixels.",
+ *  "doc": "is a lot like clean msk but it generates\nthe msk using img and cut.\nBeware: work in progress",
  *  "params": {"img": "Input float32 2D.", "cut": "Threshold.", "msk": "Priority mask (int8).", "ret": "Output cleaned mask."},
  *  "checks": ["img.format == 'f'", "img.ndim == 2", "msk.format == 'b' or msk.format == 'B'", "msk.n == img.n",
  *      "ret.format == 'b' or ret.format == 'B'", "ret.n == img.n"],

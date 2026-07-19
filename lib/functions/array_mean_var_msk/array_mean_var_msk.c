@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "array_mean_var_msk(img: buffer, msk: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
- *  "doc": "Sigma-clipped mean/var with mask.",
+ *  "doc": "computes the mean and variance of an image\nwith pixels above the value mean+cut*stddev removed. This is iterated\nn times as the mean and variance change as pixels are removed.",
  *  "checks": ["img.format == 'f'", "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n"],
  *  "c_overloads": [{"sig": "void array_mean_var_msk(const float *img, uint8_t *msk, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
  *      "map": {"img": "img.ptr", "msk": "msk.ptr", "npx": "img.n", "n": "n", "cut": "cut", "verbose": "verbose"},

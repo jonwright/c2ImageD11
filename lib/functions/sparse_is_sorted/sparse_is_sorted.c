@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "sparse_is_sorted(i: buffer, j: buffer) -> int",
- *  "doc": "Check if sparse COO indices are in row-major order.",
+ *  "doc": "checks whether the indices in i and j of a sparse\ncoo format come in the order that they would appear inside an image\n*  @param i, j index arrays\n*  @param nnz dimension of i, j\n   returns 0 for all OK\n        k for first non-sorted element\n        -k for first duplicate",
  *  "params": {"i": "Row indices (uint16).", "j": "Col indices (uint16)."},
  *  "checks": ["i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2", "j.n == i.n"],
  *  "c_overloads": [{"sig": "int sparse_is_sorted(const uint16_t *i, const uint16_t *j, intptr_t nnz) -> int",

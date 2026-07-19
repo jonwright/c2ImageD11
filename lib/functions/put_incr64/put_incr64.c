@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "put_incr64(data: buffer, ind: buffer, vals: buffer, boundscheck: int = 0) -> void",
- *     "doc": "put_incr64 does the simple loop: data[ind] += vals, 64 bit addressing",
+ *     "doc": "does the simple loop : data[ind] += vals\nnot sure why this isn't in numpy\nuses 64 bit addressing",
  *     "params": {
  *         "data": "Destination array (float32). Updated in place with scatter-add.",
  *         "ind": "Indices array (int64).",

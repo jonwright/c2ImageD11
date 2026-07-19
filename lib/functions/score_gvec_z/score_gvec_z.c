@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "score_gvec_z(ubi: buffer, ub: buffer, gv: buffer, g0: buffer, g1: buffer, g2: buffer, e: buffer, recompute: int) -> void",
- *     "doc": "score_gvec_z computes error projections for g-vectors.",
+ *     "doc": "reads ubi, ub, gv and recompute\nif (recompute) it fills directions to project errors per peak:\n     g0 = gv / |gv|   = unit vector along g\n     g1 = gxy / |gxy| = unit vector perpendicular to z and g (omega)\n     g2 ... ought to be cross( g0, g1 ) ? (eta)\nFor all peaks it computes h = ubi.g, rounds to nearest ih = int(h)\nand then computes gcalc = ub.ih = dot( ub, ( round( dot( ubi, g) ) ) )\nThe error gv - gcalc is then projected into the co-ordinate system\ng0,g1,g2 for errors along g, z and the rhs\nBeware : work in progress. Is z always the right axis?",
  *     "params": {
  *         "ubi": "UBI matrix (9-element flattened double).",
  *         "ub": "UB matrix (9-element flattened double).",

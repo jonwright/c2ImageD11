@@ -5,7 +5,7 @@ static int NOISY = 0;
 
 /* C2PY_BEGIN
  * {"py_sig": "sparse_connectedpixels(v: buffer, i: buffer, j: buffer, threshold: float, labels: buffer) -> int",
- *  "doc": "Connected-component labeling on sparse image.",
+ *  "doc": "runs the connectedpixels algorithm on\na sparse image using a supplied threshold putting labels\ninto labels array and returning the number of blobs found",
  *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).", "threshold": "Threshold.", "labels": "Output labels (int32)."},
  *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
  *      "j.n == i.n", "v.n == i.n", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == i.n"],

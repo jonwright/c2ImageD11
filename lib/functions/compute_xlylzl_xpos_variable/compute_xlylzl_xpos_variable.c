@@ -5,7 +5,7 @@ static int NOISY = 0;
 /* C2PY_BEGIN
  * {
  *     "py_sig": "compute_xlylzl_xpos_variable(s: buffer, f: buffer, p: buffer, r: buffer, dist: buffer, xpos: buffer, xlylzl: buffer) -> void",
- *     "doc": "compute_xlylzl_xpos_variable like compute_xlylzl but with extra per-spot x-offset.",
+ *     "doc": "finds spot positions in the laboratory frame\nlike compute_xlylzl but with an extra per-spot x-offset xpos\ns    = slow pixel position\nf    = fast pixel position\np    = [s_cen, f_cen, s_size, f_size]\nr[9] = dot( transform.detector_rotation_matrix, flipmatrix )\ndist = [distancex, distancey, distancez]\nxpos = extra x-offset per spot, same length as s,f",
  *     "params": {
  *         "s": "Slow-scan pixel positions (double).",
  *         "f": "Fast-scan pixel positions (double).",

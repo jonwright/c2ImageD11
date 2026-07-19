@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "blobproperties(data: buffer, labels: buffer, np: int, results: buffer, omega: float = 0.0, verbose: int = 0) -> void",
- *  "doc": "Compute blob properties for each labelled object.",
+ *  "doc": "fills the array results with properties of each labelled\nobject described by data (pixel values) and labels. The omega value\nis the angle for this frame.\nresults are FIXME",
  *  "params": {"data": "Input float32 2D.", "labels": "Input int32 labels.", "np": "Number of objects.",
  *      "results": "Output array (np, 36).", "omega": "Omega angle.", "verbose": "Print diagnostics."},
  *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n",

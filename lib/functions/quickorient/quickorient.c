@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "quickorient(ubi: buffer, bt: buffer) -> void",
- *     "doc": "quickorient takes two g-vectors in UBI and overwrites with UBI orientation using cache in bt.",
+ *     "doc": "takes two g-vectors in UBI[0] and UBI[1]\nand overwrites with UBI orientation using cache in bt (from h1,h2)\n... computes cross product 0x1 = ubi[0]xubi[1]\n... normalises u0=ubi0 and u2=0x1 and computes u1=u0xu2\n... returns in UBI BT.(u1,u2,u3)\nalgorithm was due to Busing and Levy",
  *     "params": {
  *         "ubi": "Orientation matrix (9-element). First 2 rows are g-vectors on entry; overwritten with UBI on exit.",
  *         "bt": "Busing-Levy cache (9-element).",

@@ -4,7 +4,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "bloboverlaps(labels1: buffer, npk1: int, results1: buffer, labels2: buffer, npk2: int, results2: buffer, verbose: int = 0) -> int",
- *  "doc": "Determine overlaps between two frames label images.",
+ *  "doc": "determines the overlaps between labels1 and labels2\nfor an image series. Peaks in labels2 may be merged if they were\njoined by a peak on labels1. Results in results1 are accumulated\ninto results2 if peaks are overlapped.",
  *  "params": {"labels1": "First frame labels (int32 2D).", "npk1": "Objects in first frame.",
  *      "results1": "First frame properties.", "labels2": "Second frame labels.", "npk2": "Objects in second frame.",
  *      "results2": "Second frame properties.", "verbose": "Print diagnostics."},

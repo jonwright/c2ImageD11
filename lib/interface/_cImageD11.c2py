@@ -42,7 +42,7 @@
                 "img.format == 'f'",
                 "( hist.format == 'i' or hist.format == 'l' )",
             ],
-            "doc": "Compute histogram of float array.",
+            "doc": "computes the histogram for an image\nGo through the data to compute a histogram of the values\n Previous call of array_stats would help to set up this call\n  compare to np.bincount - this does not gain much\n  better implementations can be done\nimg[]  Input data array  (1D or 2D.ravel(), so sparse or dense)\nnpx    length of data array (contiguous)\nlow    Lower edge of first bin\nhigh   Upper edge of last bin\nhist[] Histogram to be output\nnhist  Number of bins in the histogram",
             "py_sig": "array_histogram(img: buffer, low: float, high: float, hist: buffer) -> void",
         },
         {
@@ -63,7 +63,7 @@
                 },
             ],
             "checks": ["img.format == 'f'"],
-            "doc": "Sigma-clipped mean/var.",
+            "doc": "computes the mean and variance of an image\nwith pixels above the value mean+cut*stddev removed. This is iterated\nn times as the mean and variance change as pixels are removed.",
             "py_sig": "array_mean_var_cut(img: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
         },
         {
@@ -89,7 +89,7 @@
                 "msk.format == 'B' or msk.format == 'b'",
                 "msk.n == img.n",
             ],
-            "doc": "Sigma-clipped mean/var with mask.",
+            "doc": "computes the mean and variance of an image\nwith pixels above the value mean+cut*stddev removed. This is iterated\nn times as the mean and variance change as pixels are removed.",
             "py_sig": "array_mean_var_msk(img: buffer, msk: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
         },
         {
@@ -109,7 +109,7 @@
                 },
             ],
             "checks": ["img.format == 'f'"],
-            "doc": "Compute min, max, mean, variance.",
+            "doc": "computes statistics for an image.\n img Input data array  (1D or 2D.ravel(), so sparse or dense)\nnpx length of data array (contiguous)\n*minval minimum of the pixels\n*maxval maximum of the pixels\ns1  Sum of all pixel\ns2  Sum of pixel^2",
             "py_sig": "array_stats(img: buffer) -> void",
         },
         {
@@ -136,7 +136,7 @@
                 "msk.format == 'B' or msk.format == 'b'",
                 "msk.n == img.n",
             ],
-            "doc": "Recursive background filter.",
+            "doc": "computes a background on a 1d signal where gain\nand sp and st are defined by:\n    diff = difference to neighbors or bg estimate\n    sigmap = weight for abs background value\n    sigmat = constant weight\n    gain for b += diff * gain\nimg - source data\nbg  - computed background\nmsk - mask",
             "py_sig": "bgcalc(img: buffer, bg: buffer, msk: buffer, gain: float, sp: float, st: float) -> void",
         },
         {
@@ -154,7 +154,7 @@
                 "results.ndim == 2",
                 "results.shape[1] == 36",
             ],
-            "doc": "Fill reduced moments from raw blob properties.",
+            "doc": "fills in the reduced moments in results array.\n... FIXME - this would be clearer in python, fast anyway.",
             "params": {
                 "results": "I/O array (np, 36). Raw moments in, reduced out.",
             },
@@ -189,7 +189,7 @@
                 "results2.shape[0] == npk2",
                 "results2.shape[1] == 36",
             ],
-            "doc": "Determine overlaps between two frames label images.",
+            "doc": "determines the overlaps between labels1 and labels2\nfor an image series. Peaks in labels2 may be merged if they were\njoined by a peak on labels1. Results in results1 are accumulated\ninto results2 if peaks are overlapped.",
             "params": {
                 "labels1": "First frame labels (int32 2D).",
                 "labels2": "Second frame labels.",
@@ -226,7 +226,7 @@
                 "results.shape[0] == np",
                 "results.shape[1] == 36",
             ],
-            "doc": "Compute blob properties for each labelled object.",
+            "doc": "fills the array results with properties of each labelled\nobject described by data (pixel values) and labels. The omega value\nis the angle for this frame.\nresults are FIXME",
             "gil_release": True,
             "params": {
                 "data": "Input float32 2D.",
@@ -256,7 +256,7 @@
                 "ret.format == 'b' or ret.format == 'B'",
                 "ret.n == msk.n",
             ],
-            "doc": "Remove isolated pixels (no 4-connected neighbor).",
+            "doc": "removes pixels which are not 4 connected from msk\nwhile copying into ret.",
             "params": {
                 "msk": "Input int8 2D mask.",
                 "ret": "Output cleaned int8 mask.",
@@ -284,7 +284,7 @@
                 "x.format == 'd'",
                 "v.format == 'd'",
             ],
-            "doc": "closest finds the value and index in x closest to a value in v.",
+            "doc": "finds the value and index in x closest to a value in v.\ne.g. x = cosine of angles between pairs of peaks\n     v = idealised values based on hkl geometry\n  ibest set to the x[i] matching to a v[j] with diff \"best\"",
             "params": {
                 "v": "Array of values to search for (e.g. experimental cosines).",
                 "x": "Array of candidate values to search (e.g. ideal cosines from hkl geometry).",
@@ -310,7 +310,7 @@
                 "( ic.format == 'i' or ic.format == 'l' )",
                 "ic.n == x.shape[0]",
             ],
-            "doc": "closest_vec finds the closest neighbors for each row of X ignoring the self.",
+            "doc": "finds the closest neighbors for each row of X\nignoring the self. Treated as a X=[v1,v2,v3,...], computes\nsum{(vi-vj)**2} for all i!=j and places minimum in ic.",
             "params": {
                 "ic": "Output array of shape (nv,). For each row i, ic[i] = index j of the nearest neighbor (j != i).",
                 "x": "2D array of feature vectors, shape (nv, dim). Each row is a vector.",
@@ -343,7 +343,7 @@
                 "avgs.format == 'd'",
                 "avgs.n == ar.n",
             ],
-            "doc": "cluster1d is used to find clusters of peaks.",
+            "doc": "is used in sandbox/friedel.py to find clusters of peaks\nwork in progress",
             "params": {
                 "ar": "Array of values to cluster.",
                 "avgs": "Output: average value of each cluster.",
@@ -362,7 +362,7 @@
                     "sig": "void cimaged11_omp_set_num_threads(int n)",
                 },
             ],
-            "doc": "Set the number of OpenMP threads used by all subsequent C calls.",
+            "doc": "Sets the openmp number of\nthreads to use.\nChange if you use multiprocessing or do not like\nos.environ['OMP_NUM_THREADS']\nsee also: multiprocessing.cpu_count(),\nsee also os.cpu_count()\nsee docs/sphx/parallel.rst",
             "params": {
                 "n": "Number of OpenMP threads. Pass 1 for single-threaded execution.",
             },
@@ -594,7 +594,7 @@
                 "oj.n == i.n",
                 "( tmp.format == 'i' or tmp.format == 'l' )",
             ],
-            "doc": "Remove duplicate (i,j) pairs via counting sort.",
+            "doc": "removes duplicate i,j labels. On entry then\ni and j are set as the labels from two images. They are sorted\nand on exit i,j hold the unique pairs and oi holds the count\nfor the number of overlaps. oj and tmp are temporaries.",
             "params": {
                 "i": "I/O int32 col 0.",
                 "j": "I/O int32 col 1.",
@@ -635,7 +635,7 @@
                 "out.shape[0] == xlylzl.shape[0]",
                 "out.shape[1] == 6",
             ],
-            "doc": "compute_geometry is for the updateGeometry method of columnfiles. From xlylzl it will compute tth, eta, ds, gve into out.",
+            "doc": "is for the \"updateGeometry\" method of columnfiles\nfrom xlylzl it will compute tth, eta, ds, gve into out\nin the laboratory in xlylzl[npks], the omega rotation[npks], and\nthe rest of the parameters (wedge,wvln,chi,t[3] and omegasign)\nout should contain : (tth, eta, ds, gx, gy, gz)",
             "gil_release": True,
             "params": {
                 "chi": "Chi angle (radians).",
@@ -680,7 +680,7 @@
                 "gv.shape[0] == xlylzl.shape[0]",
                 "gv.shape[1] == 3",
             ],
-            "doc": "compute_gv computes scattering vectors given spot positions in the laboratory frame.",
+            "doc": "computes scattering vectors given thr positions of the spot\nin the laboratory in xlylzl[npks], the omega rotation[npks], and\nthe rest of the parameters (wedge,wvln,chi,t[3] and omegasign)",
             "gil_release": True,
             "params": {
                 "chi": "Chi angle (radians).",
@@ -767,7 +767,7 @@
                 "xlylzl.format == 'd'",
                 "xlylzl.ndim >= 1",
             ],
-            "doc": "compute_xlylzl_xpos_variable like compute_xlylzl but with extra per-spot x-offset.",
+            "doc": "finds spot positions in the laboratory frame\nlike compute_xlylzl but with an extra per-spot x-offset xpos\ns    = slow pixel position\nf    = fast pixel position\np    = [s_cen, f_cen, s_size, f_size]\nr[9] = dot( transform.detector_rotation_matrix, flipmatrix )\ndist = [distancex, distancey, distancez]\nxpos = extra x-offset per spot, same length as s,f",
             "gil_release": True,
             "params": {
                 "dist": "Detector distance (3).",
@@ -801,7 +801,7 @@
                 "( labels.format == 'i' or labels.format == 'l' )",
                 "labels.n == data.n",
             ],
-            "doc": "Connected-component labeling above threshold.",
+            "doc": "Determines which pixels in data are above the\nuser supplied threshold and assigns them into connected objects\nwhich are output in labels. Connectivity is 3x3 box (8) by default\nand reduces to a +(4) is con8==0",
             "params": {
                 "con8": "8-connected (1) or 4-connected (0).",
                 "data": "Input float32 2D.",
@@ -827,7 +827,7 @@
                 "( pi.format == 'i' or pi.format == 'l' )",
                 "( pj.format == 'i' or pj.format == 'l' )",
             ],
-            "doc": "count_shared takes two sorted arrays and counts collisions.",
+            "doc": "takes two sorted arrays in pi and pj and counts\nhow many collisions there are. Useful to compare two lists of\npeak to grain assignments, or pixel to peak assignments, etc",
             "params": {
                 "pi": "First sorted array of integer labels.",
                 "pj": "Second sorted array of integer labels.",
@@ -944,7 +944,7 @@
                 "wrk.format == 'B' or wrk.format == 'b'",
                 "wrk.n == data.n",
             ],
-            "doc": "Label each pixel to its local maximum.",
+            "doc": "assigns a label for each pixel so they are grouped\nto the local maximum. Equal values choose to assign towards the earlier\nvalue in memory.\ncpu arg (1)0=C, (1)1=SSE2, (1)2=AVX2; if > 9 prints timing",
             "params": {
                 "data": "Input float32 2D.",
                 "labels": "Output int32 labels.",
@@ -974,7 +974,7 @@
                 "ret.format == 'b' or ret.format == 'B'",
                 "ret.n == img.n",
             ],
-            "doc": "Generate mask from threshold then clean isolated pixels.",
+            "doc": "is a lot like clean msk but it generates\nthe msk using img and cut.\nBeware: work in progress",
             "params": {
                 "cut": "Threshold.",
                 "img": "Input float32 2D.",
@@ -1007,7 +1007,7 @@
                 "( w.format == 'i' or w.format == 'l' )",
                 "w.n == msk.shape[0]",
             ],
-            "doc": "Convert mask to sparse COO coordinates.",
+            "doc": "takes a mask and converts it to a list\nof i,j coordinates in a sparse array coo format\nreturns :\n   0 => success\n   1 => ns out of range ; 2 => nf out of range\n   3 => nnz < 1 empty mask\n   4 => nnz did not match this mask",
             "params": {
                 "i": "Output row indices (uint16).",
                 "j": "Output col indices (uint16).",
@@ -1032,7 +1032,7 @@
                 "u2.format == 'd'",
                 "u2.n == 9",
             ],
-            "doc": "misori_cubic computes the smallest misorientation for cubic symmetry.",
+            "doc": "computes the trace of the smallest misorientation\n for cubic symmetry\n u1 and u2 are both orientation matrices \"U\"\n     compute u1. u2.T  to get the rotation from one to the other\n     find the permutation that will maximise the trace\n       one of six...\n          xyz   yxz   zxy\n          xzy   yzx   zyx\nBeware : work in progress. Which point group is this?",
             "params": {
                 "u1": "Orientation matrix U (9-element flattened double).",
                 "u2": "Orientation matrix U (9-element flattened double).",
@@ -1055,7 +1055,7 @@
                 "u2.format == 'd'",
                 "u2.n == 9",
             ],
-            "doc": "misori_monoclinic assumes a unique b axis and only checks the flip of b -> -b.",
+            "doc": "assumes a unique b axis and only checks\nthe flip of b -> -b\nNot sure about the point group here. Is is 2/m  ??\n Beware: work in progress",
             "params": {
                 "u1": "Orientation matrix U (9-element flattened double).",
                 "u2": "Orientation matrix U (9-element flattened double).",
@@ -1078,7 +1078,7 @@
                 "u2.format == 'd'",
                 "u2.n == 9",
             ],
-            "doc": "misori_orthorhombic computes the smallest misorientation for orthorhombic symmetry.",
+            "doc": "computes the trace of the smallest misorientation\n u1 and u2 are both orientation matrices \"U\"\n     compute u1. u2.T  to get the rotation from one to the other\n     find the flips that will maximise the trace:\n       abs( trace(dot(u1,u2.T) ))\n Looks like point group mmm. Not sure why this is in C?\n Beware: work in progress",
             "params": {
                 "u1": "Orientation matrix U (9-element flattened double).",
                 "u2": "Orientation matrix U (9-element flattened double).",
@@ -1101,7 +1101,7 @@
                 "u2.format == 'd'",
                 "u2.n == 9",
             ],
-            "doc": "misori_tetragonal computes the smallest misorientation for tetragonal symmetry.",
+            "doc": "computes the trace of the smallest misorientation\n u1 and u2 are both orientation matrices \"U\"\n     compute u1. u2.T  to get the rotation from one to the other\n     finds the flips a/b and c->-c that will maximise the trace:\n       abs( trace(dot(u1,u2.T) ))\n Looks like point group 4/mmm. What about 4/m ?\n Beware: work in progress",
             "params": {
                 "u1": "Orientation matrix U (9-element flattened double).",
                 "u2": "Orientation matrix U (9-element flattened double).",
@@ -1129,7 +1129,7 @@
                 "ind.n == vals.n",
                 "vals.format == 'f'",
             ],
-            "doc": "put_incr32 does the simple loop: data[ind] += vals, 32 bit addressing",
+            "doc": "does the simple loop : data[ind] += vals\nnot sure why this isn't in numpy\nuses 32 bit addressing",
             "gil_release": True,
             "params": {
                 "boundscheck": "If non-zero, enables bounds checking on ind.",
@@ -1160,7 +1160,7 @@
                 "ind.n == vals.n",
                 "vals.format == 'f'",
             ],
-            "doc": "put_incr64 does the simple loop: data[ind] += vals, 64 bit addressing",
+            "doc": "does the simple loop : data[ind] += vals\nnot sure why this isn't in numpy\nuses 64 bit addressing",
             "gil_release": True,
             "params": {
                 "boundscheck": "If non-zero, enables bounds checking on ind. Default 0 (no check).",
@@ -1190,7 +1190,7 @@
                 "bt.shape[0] == 3",
                 "bt.shape[1] == 3",
             ],
-            "doc": "quickorient takes two g-vectors in UBI and overwrites with UBI orientation using cache in bt.",
+            "doc": "takes two g-vectors in UBI[0] and UBI[1]\nand overwrites with UBI orientation using cache in bt (from h1,h2)\n... computes cross product 0x1 = ubi[0]xubi[1]\n... normalises u0=ubi0 and u2=0x1 and computes u1=u0xu2\n... returns in UBI BT.(u1,u2,u3)\nalgorithm was due to Busing and Levy",
             "params": {
                 "bt": "Busing-Levy cache (9-element).",
                 "ubi": "Orientation matrix (9-element). First 2 rows are g-vectors on entry; overwritten with UBI on exit.",
@@ -1221,7 +1221,7 @@
                 "( labels.format == 'i' or labels.format == 'l' )",
                 "labels.n == gv.shape[0]",
             ],
-            "doc": "refine_assigned fits a ubi matrix to a set of g-vectors and assignments in labels.",
+            "doc": "fits a ubi matrix to a set of g-vectors and assignments\nin labels. e.g. where(labels==label) it uses the peaks.\n  ... perhaps this is not what you want for overlapping peaks in twins!",
             "params": {
                 "gv": "G-vectors array, shape (ng, 3) flattened.",
                 "label": "Grain label to refine.",
@@ -1250,7 +1250,7 @@
                 "out.format == 'f'",
                 "out.n >= data.n",
             ],
-            "doc": "out[adr[i]] = data[i].",
+            "doc": "called in sandbox/fazit.py simple\nloop with openmp saying out[adr[i]] in data[i]\ne.g. semi-random writing",
             "gil_release": True,
             "py_sig": "reorder_f32_a32(data: buffer, adr: buffer, out: buffer) -> void",
         },
@@ -1274,7 +1274,7 @@
                 "out.format == 'H' or out.itemsize == 2",
                 "out.n >= data.n",
             ],
-            "doc": "out[adr[i]] = data[i].",
+            "doc": "called in sandbox/fazit.py simple\nloop with openmp saying out[adr[i]] in data[i]\ne.g. semi-random writing",
             "gil_release": True,
             "py_sig": "reorder_u16_a32(data: buffer, adr: buffer, out: buffer) -> void",
         },
@@ -1325,7 +1325,7 @@
                 "out.format == 'f'",
                 "out.n == data.n",
             ],
-            "doc": "out[i] = data[adr[i]].",
+            "doc": "lut called in sandbox/fazit.py simple\nloop with openmp saying out[i] in data[adr[i]]\ne.g. semi-random reading",
             "gil_release": True,
             "py_sig": "reorderlut_f32_a32(data: buffer, adr: buffer, out: buffer) -> void",
         },
@@ -1461,7 +1461,7 @@
                 "ubi.n == 9",
                 "gv.ndim == 2",
             ],
-            "doc": "Count g-vectors indexed by ubi matrix within tol.",
+            "doc": "takes a ubi matrix and list of g-vectors and computes\nhkl = dot(ubi, gv), then rounds these g-vectors to integer\nand computes drlv2 = (h-int(h))**2 + (k-int(k))**2 + (l-int(l))**2\nIf drlv2 is less than tol*tol then the peak is considered to\nbe indexed. Returns the number of peaks found.",
             "gil_release": True,
             "params": {
                 "gv": "G-vectors array, shape (ng, 3) flattened.",
@@ -1495,7 +1495,7 @@
                 "( labels.format == 'i' or labels.format == 'l' )",
                 "labels.n == gv.shape[0]",
             ],
-            "doc": "score_and_assign assigns peaks to this ubi only if they fit the data better.",
+            "doc": "is similar to score but it assigns peaks to this\nubi only if they fit the data better than the current UBI.\nIt updates drlv2 and labels to use best fitting grain for each peak.\n ... perhaps this is not what you want for overlapping peaks in twins!",
             "gil_release": True,
             "params": {
                 "drlv2": "Input/output array (ng). Current best squared residuals per peak.",
@@ -1753,7 +1753,7 @@
                 "ubi.n == 9",
                 "gv.ndim == 2",
             ],
-            "doc": "score_and_refine also refines the UB matrix using the assigned peaks.",
+            "doc": "is very similar to score but it also refines the UB\nmatrix using the assigned peaks and overwrite the argument.\nIt returns the number of peaks and fit prior to refinement.",
             "gil_release": True,
             "params": {
                 "gv": "G-vectors array, shape (ng, 3) flattened.",
@@ -1791,7 +1791,7 @@
                 "g2.format == 'd'",
                 "e.format == 'd'",
             ],
-            "doc": "score_gvec_z computes error projections for g-vectors.",
+            "doc": "reads ubi, ub, gv and recompute\nif (recompute) it fills directions to project errors per peak:\n     g0 = gv / |gv|   = unit vector along g\n     g1 = gxy / |gxy| = unit vector perpendicular to z and g (omega)\n     g2 ... ought to be cross( g0, g1 ) ? (eta)\nFor all peaks it computes h = ubi.g, rounds to nearest ih = int(h)\nand then computes gcalc = ub.ih = dot( ub, ( round( dot( ubi, g) ) ) )\nThe error gv - gcalc is then projected into the co-ordinate system\ng0,g1,g2 for errors along g, z and the rhs\nBeware : work in progress. Is z always the right axis?",
             "params": {
                 "e": "Output error array.",
                 "g0": "Error along g component.",
@@ -1831,7 +1831,7 @@
                 "results.shape[0] == npk",
                 "results.shape[1] == 11",
             ],
-            "doc": "Compute blob properties for sparse labels.",
+            "doc": "fills the array results with properties of\neach labelled object described by v and labels (pixel values and blob)\nand positions i,j in the image.\nresults are:\n  results[ipk,s2D_1]   = sum(1), number of pixels\n  results[ipk,s2D_I]   = sum (I), total intensity\n  results[ipk,s2D_fI]  = sum (f*I), intensity weighted fast index\n  results[ipk,s2D_sI]  = sum (s*I), intensity weighted slow index\n  results[ipk,s2D_ffI] = sum (f*f*I), intensity weighted fast^2 index\n  results[ipk,s2D_sfI] = sum (s*f*I), intensity weighted slow*fast index\n  results[ipk,s2D_ssI] = sum (s*s*I), intensity weighted slow^2 index",
             "params": {
                 "i": "Rows (uint16).",
                 "j": "Cols (uint16).",
@@ -1865,7 +1865,7 @@
                 "( labels.format == 'i' or labels.format == 'l' )",
                 "labels.n == i.n",
             ],
-            "doc": "Connected-component labeling on sparse image.",
+            "doc": "runs the connectedpixels algorithm on\na sparse image using a supplied threshold putting labels\ninto labels array and returning the number of blobs found",
             "params": {
                 "i": "Rows (uint16).",
                 "j": "Cols (uint16).",
@@ -1902,7 +1902,7 @@
                 "lbl.n == i.n",
                 "( Z.format == 'i' or Z.format == 'l' )",
             ],
-            "doc": "Splat sparse to dense then run connectedpixels.",
+            "doc": "is for debugging/timing. It splats\nthe sparse array into a dense array and runs the old connectedpixels\ncode on that.",
             "params": {
                 "Z": "Temp buffer.",
                 "i": "Rows (uint16).",
@@ -1931,7 +1931,7 @@
                 "j.format == 'H' or j.itemsize == 2",
                 "j.n == i.n",
             ],
-            "doc": "Check if sparse COO indices are in row-major order.",
+            "doc": "checks whether the indices in i and j of a sparse\ncoo format come in the order that they would appear inside an image\n*  @param i, j index arrays\n*  @param nnz dimension of i, j\n   returns 0 for all OK\n        k for first non-sorted element\n        -k for first duplicate",
             "params": {
                 "i": "Row indices (uint16).",
                 "j": "Col indices (uint16).",
@@ -1966,7 +1966,7 @@
                 "( labels.format == 'i' or labels.format == 'l' )",
                 "labels.n == i.n",
             ],
-            "doc": "Label sparse COO pixels to local maximum.",
+            "doc": "assigns labels to sparse array in sorted coo format\nsupplied in (v,(i,j)). MV and iMV are temporaries.\nsingle threaded",
             "params": {
                 "MV": "Temp float32.",
                 "i": "Rows (uint16).",
@@ -2005,7 +2005,7 @@
                 "k2.format == 'i' or k2.format == 'l'",
                 "k2.n == i2.n",
             ],
-            "doc": "Find overlapping pixels between two sparse arrays.",
+            "doc": "identifies the pixels in i1,j1 which overlap i2,j2.\nThe list of overlaps is returned in k1/k2 such that i1[k1]==i2[k2]\nand j1[k1]==j2[k2]. Probably assumes that sparse_is_sorted was true.",
             "params": {
                 "i1": "Rows 1 (uint16).",
                 "i2": "Rows 2 (uint16).",
@@ -2038,7 +2038,7 @@
                 "s.format == 'f'",
                 "s.n == i.n",
             ],
-            "doc": "Smooth sparse image (avoid equal-pixel tails in peak detection).",
+            "doc": "smooths data in coo format. Workaround for avoiding\nequal pixels on peak tails for localmaxlabel\nsingle threaded",
             "params": {
                 "i": "Rows (uint16).",
                 "j": "Cols (uint16).",
@@ -2073,7 +2073,7 @@
                 "gve.ndim == 2",
                 "gve.shape[1] == 3",
             ],
-            "doc": "Draw g-vectors into RGBA image.",
+            "doc": "draws gvectors into an rgba image. The horror of maintaining plot3d\nover the years motivated this code. See test/demo/tksplat\n* set the color and markersize per peak\n* perhaps also a draw order (back to front, top to bottom) ?",
             "params": {
                 "gve": "G-vectors (ng, 3).",
                 "npx": "Marker half-size.",
@@ -2143,7 +2143,7 @@
                 "col.format == 'H' or col.itemsize == 2",
                 "val.format == 'H' or val.itemsize == 2",
             ],
-            "doc": "Convert dense uint16 image to sparse COO.",
+            "doc": "stores pixels from img into row/col/val.\nmsk determines whether pixels are masked (e.g. eiger mask)\nreturns the number of pixels found",
             "params": {
                 "col": "Output cols.",
                 "cut": "Threshold.",
@@ -2213,7 +2213,7 @@
                 "data.format == 'H' or data.itemsize == 2",
                 "data.n == img.n",
             ],
-            "doc": "Dark subtract, flat-field multiply: img = (data - drk) * flm.",
+            "doc": "subtracts image drk(float32) from\nraw data in data (uint16), multiples by flm(float32) and returns in img.",
             "gil_release": True,
             "py_sig": "uint16_to_float_darkflm(img: buffer, drk: buffer, flm: buffer, data: buffer) -> void",
         },
@@ -2237,7 +2237,7 @@
                 "data.format == 'H' or data.itemsize == 2",
                 "data.n == img.n",
             ],
-            "doc": "Subtract dark current from uint16 data, result in float32 img.",
+            "doc": "subtracts image drk(float32) from\nraw data in data (uint16) and returns in img.",
             "gil_release": True,
             "py_sig": "uint16_to_float_darksub(img: buffer, drk: buffer, data: buffer) -> void",
         },

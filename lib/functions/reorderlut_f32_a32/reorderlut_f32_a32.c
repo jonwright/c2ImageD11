@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "reorderlut_f32_a32(data: buffer, adr: buffer, out: buffer) -> void",
- *  "doc": "out[i] = data[adr[i]].",
+ *  "doc": "lut called in sandbox/fazit.py simple\nloop with openmp saying out[i] in data[adr[i]]\ne.g. semi-random reading",
  *  "checks": ["data.format == 'f'", "adr.format == 'I' or adr.itemsize == 4",
  *      "adr.n == data.n", "out.format == 'f'", "out.n == data.n"],
  *  "gil_release": true,

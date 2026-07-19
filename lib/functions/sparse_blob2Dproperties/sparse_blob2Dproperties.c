@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "sparse_blob2Dproperties(v: buffer, i: buffer, j: buffer, labels: buffer, npk: int, results: buffer) -> void",
- *  "doc": "Compute blob properties for sparse labels.",
+ *  "doc": "fills the array results with properties of\neach labelled object described by v and labels (pixel values and blob)\nand positions i,j in the image.\nresults are:\n  results[ipk,s2D_1]   = sum(1), number of pixels\n  results[ipk,s2D_I]   = sum (I), total intensity\n  results[ipk,s2D_fI]  = sum (f*I), intensity weighted fast index\n  results[ipk,s2D_sI]  = sum (s*I), intensity weighted slow index\n  results[ipk,s2D_ffI] = sum (f*f*I), intensity weighted fast^2 index\n  results[ipk,s2D_sfI] = sum (s*f*I), intensity weighted slow*fast index\n  results[ipk,s2D_ssI] = sum (s*s*I), intensity weighted slow^2 index",
  *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).",
  *      "labels": "Labels (int32).", "npk": "Number of objects.", "results": "Output (npk, 11)."},
  *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",

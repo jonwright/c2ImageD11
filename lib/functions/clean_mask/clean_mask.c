@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "clean_mask(msk: buffer, ret: buffer) -> int",
- *  "doc": "Remove isolated pixels (no 4-connected neighbor).",
+ *  "doc": "removes pixels which are not 4 connected from msk\nwhile copying into ret.",
  *  "params": {"msk": "Input int8 2D mask.", "ret": "Output cleaned int8 mask."},
  *  "checks": ["msk.format == 'b' or msk.format == 'B'", "msk.ndim == 2",
  *      "ret.format == 'b' or ret.format == 'B'", "ret.n == msk.n"],

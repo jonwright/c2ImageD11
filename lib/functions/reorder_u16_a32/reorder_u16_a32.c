@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "reorder_u16_a32(data: buffer, adr: buffer, out: buffer) -> void",
- *  "doc": "out[adr[i]] = data[i].",
+ *  "doc": "called in sandbox/fazit.py simple\nloop with openmp saying out[adr[i]] in data[i]\ne.g. semi-random writing",
  *  "checks": ["data.format == 'H' or data.itemsize == 2", "adr.format == 'I' or adr.itemsize == 4",
  *      "adr.n == data.n", "out.format == 'H' or out.itemsize == 2", "out.n >= data.n"],
  *  "gil_release": true,

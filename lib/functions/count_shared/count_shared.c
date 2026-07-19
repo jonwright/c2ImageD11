@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "count_shared(pi: buffer, pj: buffer) -> int",
- *     "doc": "count_shared takes two sorted arrays and counts collisions.",
+ *     "doc": "takes two sorted arrays in pi and pj and counts\nhow many collisions there are. Useful to compare two lists of\npeak to grain assignments, or pixel to peak assignments, etc",
  *     "params": {
  *         "pi": "First sorted array of integer labels.",
  *         "pj": "Second sorted array of integer labels.",

@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "uint16_to_float_darksub(img: buffer, drk: buffer, data: buffer) -> void",
- *  "doc": "Subtract dark current from uint16 data, result in float32 img.",
+ *  "doc": "subtracts image drk(float32) from\nraw data in data (uint16) and returns in img.",
  *  "checks": ["img.format == 'f'", "drk.format == 'f'", "drk.n == img.n",
  *      "data.format == 'H' or data.itemsize == 2", "data.n == img.n"],
  *  "gil_release": true,

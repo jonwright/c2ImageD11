@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "array_stats(img: buffer) -> void",
- *  "doc": "Compute min, max, mean, variance.",
+ *  "doc": "computes statistics for an image.\n img Input data array  (1D or 2D.ravel(), so sparse or dense)\nnpx length of data array (contiguous)\n*minval minimum of the pixels\n*maxval maximum of the pixels\ns1  Sum of all pixel\ns2  Sum of pixel^2",
  *  "checks": ["img.format == 'f'"],
  *  "c_overloads": [{"sig": "void array_stats(const float *img, intptr_t npx, float *minval, float *maxval, float *mean, float *var)",
  *      "map": {"img": "img.ptr", "npx": "img.n"},

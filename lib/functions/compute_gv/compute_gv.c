@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "compute_gv(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, gv: buffer) -> void",
- *     "doc": "compute_gv computes scattering vectors given spot positions in the laboratory frame.",
+ *     "doc": "computes scattering vectors given thr positions of the spot\nin the laboratory in xlylzl[npks], the omega rotation[npks], and\nthe rest of the parameters (wedge,wvln,chi,t[3] and omegasign)",
  *     "params": {
  *         "xlylzl": "Spot positions in laboratory frame, shape (n, 3).",
  *         "omega": "Omega rotation per spot (radians), shape (n,).",

@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "misori_cubic(u1: buffer, u2: buffer) -> float",
- *     "doc": "misori_cubic computes the smallest misorientation for cubic symmetry.",
+ *     "doc": "computes the trace of the smallest misorientation\n for cubic symmetry\n u1 and u2 are both orientation matrices \"U\"\n     compute u1. u2.T  to get the rotation from one to the other\n     find the permutation that will maximise the trace\n       one of six...\n          xyz   yxz   zxy\n          xzy   yzx   zyx\nBeware : work in progress. Which point group is this?",
  *     "params": {
  *         "u1": "Orientation matrix U (9-element flattened double).",
  *         "u2": "Orientation matrix U (9-element flattened double).",

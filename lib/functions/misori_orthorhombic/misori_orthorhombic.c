@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "misori_orthorhombic(u1: buffer, u2: buffer) -> float",
- *     "doc": "misori_orthorhombic computes the smallest misorientation for orthorhombic symmetry.",
+ *     "doc": "computes the trace of the smallest misorientation\n u1 and u2 are both orientation matrices \"U\"\n     compute u1. u2.T  to get the rotation from one to the other\n     find the flips that will maximise the trace:\n       abs( trace(dot(u1,u2.T) ))\n Looks like point group mmm. Not sure why this is in C?\n Beware: work in progress",
  *     "params": {
  *         "u1": "Orientation matrix U (9-element flattened double).",
  *         "u2": "Orientation matrix U (9-element flattened double).",

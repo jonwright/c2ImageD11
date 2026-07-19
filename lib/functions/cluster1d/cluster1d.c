@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "cluster1d(ar: buffer, order: buffer, tol: float, ids: buffer, avgs: buffer) -> void",
- *     "doc": "cluster1d is used to find clusters of peaks.",
+ *     "doc": "is used in sandbox/friedel.py to find clusters of peaks\nwork in progress",
  *     "params": {
  *         "ar": "Array of values to cluster.",
  *         "order": "Permutation that sorts ar ascending.",

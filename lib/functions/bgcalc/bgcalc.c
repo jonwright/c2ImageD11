@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "bgcalc(img: buffer, bg: buffer, msk: buffer, gain: float, sp: float, st: float) -> void",
- *  "doc": "Recursive background filter.",
+ *  "doc": "computes a background on a 1d signal where gain\nand sp and st are defined by:\n    diff = difference to neighbors or bg estimate\n    sigmap = weight for abs background value\n    sigmat = constant weight\n    gain for b += diff * gain\nimg - source data\nbg  - computed background\nmsk - mask",
  *  "checks": ["img.format == 'f'", "img.ndim == 2", "bg.format == 'f'", "bg.n == img.n",
  *      "msk.format == 'B' or msk.format == 'b'", "msk.n == img.n"],
  *  "c_overloads": [{"sig": "void bgcalc(const float *img, float *bg, uint8_t *msk, intptr_t ns, intptr_t nf, float gain, float sigmap, float sigmat)",

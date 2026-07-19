@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "mask_to_coo(msk: buffer, i: buffer, j: buffer, w: buffer) -> int",
- *  "doc": "Convert mask to sparse COO coordinates.",
+ *  "doc": "takes a mask and converts it to a list\nof i,j coordinates in a sparse array coo format\nreturns :\n   0 => success\n   1 => ns out of range ; 2 => nf out of range\n   3 => nnz < 1 empty mask\n   4 => nnz did not match this mask",
  *  "params": {"msk": "Input int8 2D mask.", "i": "Output row indices (uint16).",
  *      "j": "Output col indices (uint16).", "w": "Output per-row counts (int32)."},
  *  "checks": ["msk.format == 'b' or msk.format == 'B'", "msk.ndim == 2",

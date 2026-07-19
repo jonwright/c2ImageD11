@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "compute_geometry(xlylzl: buffer, omega: buffer, omegasign: float, wvln: float, wedge: float, chi: float, t: buffer, out: buffer) -> void",
- *     "doc": "compute_geometry is for the updateGeometry method of columnfiles. From xlylzl it will compute tth, eta, ds, gve into out.",
+ *     "doc": "is for the \"updateGeometry\" method of columnfiles\nfrom xlylzl it will compute tth, eta, ds, gve into out\nin the laboratory in xlylzl[npks], the omega rotation[npks], and\nthe rest of the parameters (wedge,wvln,chi,t[3] and omegasign)\nout should contain : (tth, eta, ds, gx, gy, gz)",
  *     "params": {
  *         "xlylzl": "Spot positions in laboratory frame, shape (n, 3).",
  *         "omega": "Omega rotation per spot (radians), shape (n,).",

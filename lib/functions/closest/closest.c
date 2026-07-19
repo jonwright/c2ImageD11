@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "closest(x: buffer, v: buffer) -> void",
- *     "doc": "closest finds the value and index in x closest to a value in v.",
+ *     "doc": "finds the value and index in x closest to a value in v.\ne.g. x = cosine of angles between pairs of peaks\n     v = idealised values based on hkl geometry\n  ibest set to the x[i] matching to a v[j] with diff \"best\"",
  *     "params": {
  *         "x": "Array of candidate values to search (e.g. ideal cosines from hkl geometry).",
  *         "v": "Array of values to search for (e.g. experimental cosines).",

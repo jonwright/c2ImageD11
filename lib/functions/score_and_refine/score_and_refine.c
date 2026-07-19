@@ -5,7 +5,7 @@
 /* C2PY_BEGIN
  * {
  *     "py_sig": "score_and_refine(ubi: buffer, gv: buffer, tol: float) -> int",
- *     "doc": "score_and_refine also refines the UB matrix using the assigned peaks.",
+ *     "doc": "is very similar to score but it also refines the UB\nmatrix using the assigned peaks and overwrite the argument.\nIt returns the number of peaks and fit prior to refinement.",
  *     "params": {
  *         "ubi": "Orientation matrix UBI (9-element flattened double).",
  *         "gv": "G-vectors array, shape (ng, 3) flattened.",

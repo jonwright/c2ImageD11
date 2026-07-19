@@ -4,7 +4,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "localmaxlabel(data: buffer, labels: buffer, wrk: buffer) -> int",
- *  "doc": "Label each pixel to its local maximum.",
+ *  "doc": "assigns a label for each pixel so they are grouped\nto the local maximum. Equal values choose to assign towards the earlier\nvalue in memory.\ncpu arg (1)0=C, (1)1=SSE2, (1)2=AVX2; if > 9 prints timing",
  *  "params": {"data": "Input float32 2D.", "labels": "Output int32 labels.", "wrk": "Temp uint8 workspace."},
  *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n",
  *      "wrk.format == 'B' or wrk.format == 'b'", "wrk.n == data.n"],

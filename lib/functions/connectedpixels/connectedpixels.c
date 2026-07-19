@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "connectedpixels(data: buffer, labels: buffer, threshold: float, verbose: int = 0, con8: int = 1) -> int",
- *  "doc": "Connected-component labeling above threshold.",
+ *  "doc": "Determines which pixels in data are above the\nuser supplied threshold and assigns them into connected objects\nwhich are output in labels. Connectivity is 3x3 box (8) by default\nand reduces to a +(4) is con8==0",
  *  "params": {"data": "Input float32 2D.", "labels": "Output int32 labels.", "threshold": "Threshold.",
  *      "verbose": "Print diagnostics.", "con8": "8-connected (1) or 4-connected (0)."},
  *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n"],

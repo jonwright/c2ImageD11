@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "sparse_smooth(v: buffer, i: buffer, j: buffer, s: buffer) -> void",
- *  "doc": "Smooth sparse image (avoid equal-pixel tails in peak detection).",
+ *  "doc": "smooths data in coo format. Workaround for avoiding\nequal pixels on peak tails for localmaxlabel\nsingle threaded",
  *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).", "s": "Output smoothed (float32)."},
  *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
  *      "j.n == i.n", "v.n == i.n", "s.format == 'f'", "s.n == i.n"],

@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "array_mean_var_cut(img: buffer, n: int = 3, cut: float = 3.0, verbose: int = 0) -> void",
- *  "doc": "Sigma-clipped mean/var.",
+ *  "doc": "computes the mean and variance of an image\nwith pixels above the value mean+cut*stddev removed. This is iterated\nn times as the mean and variance change as pixels are removed.",
  *  "checks": ["img.format == 'f'"],
  *  "c_overloads": [{"sig": "void array_mean_var_cut(const float *img, intptr_t npx, float *mean, float *std, int n, float cut, int verbose)",
  *      "map": {"img": "img.ptr", "npx": "img.n", "n": "n", "cut": "cut", "verbose": "verbose"},

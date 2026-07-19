@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "sparse_overlaps(i1: buffer, j1: buffer, k1: buffer, i2: buffer, j2: buffer, k2: buffer) -> int",
- *  "doc": "Find overlapping pixels between two sparse arrays.",
+ *  "doc": "identifies the pixels in i1,j1 which overlap i2,j2.\nThe list of overlaps is returned in k1/k2 such that i1[k1]==i2[k2]\nand j1[k1]==j2[k2]. Probably assumes that sparse_is_sorted was true.",
  *  "params": {"i1": "Rows 1 (uint16).", "j1": "Cols 1 (uint16).", "k1": "Output indices into 1.",
  *      "i2": "Rows 2 (uint16).", "j2": "Cols 2 (uint16).", "k2": "Output indices into 2."},
  *  "checks": ["i1.format == 'H' or i1.itemsize == 2", "j1.format == 'H' or j1.itemsize == 2", "j1.n == i1.n",

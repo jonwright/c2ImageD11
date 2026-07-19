@@ -3,7 +3,7 @@
 
 /* C2PY_BEGIN
  * {"py_sig": "splat(rgba: buffer, gve: buffer, u: buffer, npx: int) -> void",
- *  "doc": "Draw g-vectors into RGBA image.",
+ *  "doc": "draws gvectors into an rgba image. The horror of maintaining plot3d\nover the years motivated this code. See test/demo/tksplat\n* set the color and markersize per peak\n* perhaps also a draw order (back to front, top to bottom) ?",
  *  "params": {"rgba": "Output uint8 RGBA (h, w, 4).",
  *      "gve": "G-vectors (ng, 3).",
  *      "u": "Projection matrix (9).", "npx": "Marker half-size."},
