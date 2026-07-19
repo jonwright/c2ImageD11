@@ -1,0 +1,78 @@
+site_name: c2ImageD11
+site_description: Standalone C extensions for ImageD11 (c2py23 binding)
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - search.highlight
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Guide:
+    - ISA Variants: guide/variants.md
+    - Compiler Selection: guide/compiler.md
+  - API Reference:
+    - API Index: api/index.md
+    - CPU Features: api/cpu.md
+    - array_histogram: api/array_histogram.md
+    - array_mean_var_cut: api/array_mean_var_cut.md
+    - array_mean_var_msk: api/array_mean_var_msk.md
+    - array_stats: api/array_stats.md
+    - bgcalc: api/bgcalc.md
+    - blob_moments: api/blob_moments.md
+    - bloboverlaps: api/bloboverlaps.md
+    - blobproperties: api/blobproperties.md
+    - cimaged11_omp_get_max_threads: api/cimaged11_omp_get_max_threads.md
+    - cimaged11_omp_set_num_threads: api/cimaged11_omp_set_num_threads.md
+    - clean_mask: api/clean_mask.md
+    - closest: api/closest.md
+    - closest_vec: api/closest_vec.md
+    - cluster1d: api/cluster1d.md
+    - compress_duplicates: api/compress_duplicates.md
+    - compute_geometry: api/compute_geometry.md
+    - compute_gv: api/compute_gv.md
+    - compute_xlylzl: api/compute_xlylzl.md
+    - compute_xlylzl_xpos_variable: api/compute_xlylzl_xpos_variable.md
+    - connectedpixels: api/connectedpixels.md
+    - count_shared: api/count_shared.md
+    - coverlaps: api/coverlaps.md
+    - frelon_lines: api/frelon_lines.md
+    - frelon_lines_sub: api/frelon_lines_sub.md
+    - localmaxlabel: api/localmaxlabel.md
+    - make_clean_mask: api/make_clean_mask.md
+    - mask_to_coo: api/mask_to_coo.md
+    - misori_cubic: api/misori_cubic.md
+    - misori_monoclinic: api/misori_monoclinic.md
+    - misori_orthorhombic: api/misori_orthorhombic.md
+    - misori_tetragonal: api/misori_tetragonal.md
+    - put_incr32: api/put_incr32.md
+    - put_incr64: api/put_incr64.md
+    - quickorient: api/quickorient.md
+    - refine_assigned: api/refine_assigned.md
+    - reorder_f32_a32: api/reorder_f32_a32.md
+    - reorder_u16_a32: api/reorder_u16_a32.md
+    - reorder_u16_a32_a16: api/reorder_u16_a32_a16.md
+    - reorderlut_f32_a32: api/reorderlut_f32_a32.md
+    - reorderlut_u16_a32: api/reorderlut_u16_a32.md
+    - score: api/score.md
+    - score_and_assign: api/score_and_assign.md
+    - score_and_refine: api/score_and_refine.md
+    - score_gvec_z: api/score_gvec_z.md
+    - sparse_blob2Dproperties: api/sparse_blob2Dproperties.md
+    - sparse_connectedpixels: api/sparse_connectedpixels.md
+    - sparse_connectedpixels_splat: api/sparse_connectedpixels_splat.md
+    - sparse_is_sorted: api/sparse_is_sorted.md
+    - sparse_localmaxlabel: api/sparse_localmaxlabel.md
+    - sparse_overlaps: api/sparse_overlaps.md
+    - sparse_smooth: api/sparse_smooth.md
+    - splat: api/splat.md
+    - tosparse_f32: api/tosparse_f32.md
+    - tosparse_u16: api/tosparse_u16.md
+    - tosparse_u32: api/tosparse_u32.md
+    - uint16_to_float_darkflm: api/uint16_to_float_darkflm.md
+    - uint16_to_float_darksub: api/uint16_to_float_darksub.md
+    - verify_rounding: api/verify_rounding.md

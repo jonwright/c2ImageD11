@@ -80,6 +80,11 @@ jobs:
         run: |
           cd "$(mktemp -d)" && python -m pytest "$GITHUB_WORKSPACE/tests/" -v
 
+      - name: Verify docs integrity
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          python tools/verify_docs.py
+
   windows-wheel:
     runs-on: windows-latest
     defaults:

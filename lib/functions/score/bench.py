@@ -48,3 +48,21 @@ for gv_arr in [gv, gv_soa, gv_f32, gv_soa_f32]:
     row_nt += "  %8.0fM" % tn
 print(row_1t)
 print(row_nt)
+
+if "--json" in sys.argv:
+    import json
+    data = {
+        "function": "score",
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "cpu_info": os.popen("cat /proc/cpuinfo | grep 'model name' | head -1 | cut -d: -f2-").read().strip(),
+        "measurements": {
+            "AoS_f64_1T": {"ng": ng, "M_gv_per_s": int(measure(c2ImageD11.score, ubi, gv, tol, 1))},
+            "AoS_f64_nT": {"ng": ng, "M_gv_per_s": int(measure(c2ImageD11.score, ubi, gv, tol, n_cores))},
+            "SoA_f64_1T": {"ng": ng, "M_gv_per_s": int(measure(c2ImageD11.score, ubi, gv_soa, tol, 1))},
+            "SoA_f64_nT": {"ng": ng, "M_gv_per_s": int(measure(c2ImageD11.score, ubi, gv_soa, tol, n_cores))},
+            "AoS_f32_1T": {"ng": ng, "M_gv_per_s": int(measure(c2ImageD11.score, ubi, gv_f32, tol, 1))},
+            "SoA_f32_1T": {"ng": ng, "M_gv_per_s": int(measure(c2ImageD11.score, ubi, gv_soa_f32, tol, 1))},
+        },
+        "f2py_baseline": {"M_gv_per_s": int(f2py_1t)} if have_f2py else None,
+    }
+    print(json.dumps(data))
