@@ -447,6 +447,182 @@
         {
             "c_overloads": [
                 {
+                    "map": {},
+                    "sig": "int _c2py_has_sse4_1() -> int",
+                },
+            ],
+            "doc": "Returns 1 if the CPU supports SSE4.1, 0 otherwise.",
+            "py_sig": "_c2py_has_sse4_1() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "val": "val",
+                    },
+                    "sig": "int _c2py_set_sse4_1(int val) -> int",
+                },
+            ],
+            "doc": "Set c2py_amd64_sse4_1 (0=off, 1=on). Returns old value.",
+            "py_sig": "_c2py_set_sse4_1(val: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {},
+                    "sig": "int _c2py_has_avx2() -> int",
+                },
+            ],
+            "doc": "Returns 1 if the CPU supports AVX2, 0 otherwise.",
+            "py_sig": "_c2py_has_avx2() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "val": "val",
+                    },
+                    "sig": "int _c2py_set_avx2(int val) -> int",
+                },
+            ],
+            "doc": "Set c2py_amd64_avx2 (0=off, 1=on). Returns old value.",
+            "py_sig": "_c2py_set_avx2(val: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {},
+                    "sig": "int _c2py_has_avx512f() -> int",
+                },
+            ],
+            "doc": "Returns 1 if the CPU supports AVX-512F, 0 otherwise.",
+            "py_sig": "_c2py_has_avx512f() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "val": "val",
+                    },
+                    "sig": "int _c2py_set_avx512f(int val) -> int",
+                },
+            ],
+            "doc": "Set c2py_amd64_avx512f (0=off, 1=on). Returns old value.",
+            "py_sig": "_c2py_set_avx512f(val: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {},
+                    "sig": "int _c2py_has_asimd() -> int",
+                },
+            ],
+            "doc": "Returns 1 if the CPU supports ASIMD (NEON), 0 otherwise.",
+            "py_sig": "_c2py_has_asimd() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "val": "val",
+                    },
+                    "sig": "int _c2py_set_asimd(int val) -> int",
+                },
+            ],
+            "doc": "Set c2py_arm64_asimd (0=off, 1=on). Returns old value.",
+            "py_sig": "_c2py_set_asimd(val: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {},
+                    "sig": "int _c2py_has_sve() -> int",
+                },
+            ],
+            "doc": "Returns 1 if the CPU supports SVE, 0 otherwise.",
+            "py_sig": "_c2py_has_sve() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "val": "val",
+                    },
+                    "sig": "int _c2py_set_sve(int val) -> int",
+                },
+            ],
+            "doc": "Set c2py_arm64_sve (0=off, 1=on). Returns old value.",
+            "py_sig": "_c2py_set_sve(val: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {},
+                    "sig": "int _c2py_has_sve2() -> int",
+                },
+            ],
+            "doc": "Returns 1 if the CPU supports SVE2, 0 otherwise.",
+            "py_sig": "_c2py_has_sve2() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "val": "val",
+                    },
+                    "sig": "int _c2py_set_sve2(int val) -> int",
+                },
+            ],
+            "doc": "Set c2py_arm64_sve2 (0=off, 1=on). Returns old value.",
+            "py_sig": "_c2py_set_sve2(val: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {},
+                    "sig": "int _c2py_has_altivec() -> int",
+                },
+            ],
+            "doc": "Returns 1 if the CPU supports AltiVec, 0 otherwise.",
+            "py_sig": "_c2py_has_altivec() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "val": "val",
+                    },
+                    "sig": "int _c2py_set_altivec(int val) -> int",
+                },
+            ],
+            "doc": "Set c2py_ppc64_altivec (0=off, 1=on). Returns old value.",
+            "py_sig": "_c2py_set_altivec(val: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {},
+                    "sig": "int _c2py_has_vsx() -> int",
+                },
+            ],
+            "doc": "Returns 1 if the CPU supports VSX, 0 otherwise.",
+            "py_sig": "_c2py_has_vsx() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "val": "val",
+                    },
+                    "sig": "int _c2py_set_vsx(int val) -> int",
+                },
+            ],
+            "doc": "Set c2py_ppc64_vsx (0=off, 1=on). Returns old value.",
+            "py_sig": "_c2py_set_vsx(val: int) -> int",
+        },
+        {
+            "c_overloads": [
+                {
                     "map": {
                         "i": "i.ptr",
                         "j": "j.ptr",
@@ -2142,6 +2318,7 @@
         "../functions/cluster1d/cluster1d.c",
         "../functions/common/blobs.c",
         "../functions/common/cimaged11utils.c",
+        "../functions/common/config.c",
         "../functions/compress_duplicates/compress_duplicates.c",
         "../functions/compute_geometry/compute_geometry.c",
         "../functions/compute_gv/compute_gv.c",
