@@ -31,8 +31,8 @@ jobs:
       - name: Download wheel from CI
         uses: dawidd6/action-download-artifact@v6
         with:
-          workflow: CI
-          workflow_conclusion: success
+          workflow: test.yml
+          run_id: ${{ github.event.workflow_run.id }}
           name: dist-linux
           path: dist/
           github_token: ${{ secrets.GITHUB_TOKEN }}
