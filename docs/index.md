@@ -8,14 +8,14 @@ ported from f2py to **[c2py23](https://github.com/jonwright/c2py23)**.
 A shared library (`_cImageD11.so`) that exposes the same 58 C functions as
 `ImageD11._cImageD11`, with no ctypes, no f2py, no Python.h dependency.
 
-One `.so` file works on Python 2.7 through 3.14 — just copy it into the
+One `.so` file works on Python 2.7 through 3.14 -- just copy it into the
 Python package directory.
 
 ## Key improvements over ImageD11.cImageD11
 
 - **SoA without copies**: `score` and `score_and_refine` accept g-vectors
   in both row-major (N,3) and column-major (3,N) layouts. No `.T.copy()`
-  needed — the C dispatch detects the shape and selects the right kernel.
+  needed -- the C dispatch detects the shape and selects the right kernel.
 
 - **Automatic ISA dispatch**: AVX-512, AVX2, and SSE4.1 variants are
   compiled with per-ISA compiler flags and selected at runtime based on
@@ -53,9 +53,9 @@ The full API reference (58 C functions + CPU feature probes) is at the
 
 ## Documentation
 
-- [API Reference](api/index.md) — auto-generated from C2PY_BEGIN blocks
-- [ISA Variants](guide/variants.md) — CPU dispatch, compiler flags, tier selection
-- [Compiler Selection](guide/compiler.md) — GCC vs Clang/zig cc drag race
+- [API Reference](api/index.md) -- auto-generated from C2PY_BEGIN blocks
+- [ISA Variants](guide/variants.md) -- CPU dispatch, compiler flags, tier selection
+- [Compiler Selection](guide/compiler.md) -- GCC vs Clang/zig cc drag race
 
 ## Links
 

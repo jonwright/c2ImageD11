@@ -31,9 +31,9 @@ ISA-sorted overloads (highest tier first) ensure the best kernel is chosen.
 
 | Function | AoS | SoA | f64 | f32 | SSE4.1 | AVX2 | AVX-512 |
 |---|---|---|---|---|---|---|---|
-| `score` | ✓ | ✓ | ✓ | ✓ | - | ✓ | ✓ |
-| `score_and_refine` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `score_and_assign` | ✓ | ✓ | ✓ | ✓ | - | ✓ | ✓ |
+| `score` | yes | yes | yes | yes | - | yes | yes |
+| `score_and_refine` | yes | yes | yes | yes | yes | yes | yes |
+| `score_and_assign` | yes | yes | yes | yes | - | yes | yes |
 
 ## Compiler flags per variant
 
@@ -54,11 +54,11 @@ with baseline flags and use stub symbols that delegate to scalar loops.
 
 g-vectors can be passed in either layout:
 
-- **AoS** (Array of Structures): shape `(ng, 3)` — row-major, slow_axis=0
-- **SoA** (Structure of Arrays): shape `(3, ng)` — column-major, slow_axis=0
+- **AoS** (Array of Structures): shape `(ng, 3)` -- row-major, slow_axis=0
+- **SoA** (Structure of Arrays): shape `(3, ng)` -- column-major, slow_axis=0
 
 The wrapper detects the layout from shape at call time and dispatches to
-the appropriate kernel. No `.T.copy()` needed — pass the buffer as-is.
+the appropriate kernel. No `.T.copy()` needed -- pass the buffer as-is.
 
 ## Runtime ISA introspection
 
@@ -73,5 +73,5 @@ Python-callable functions on `c2ImageD11._cImageD11`:
 1
 ```
 
-See the [CPU Features](api/cpu.md) page for the full list across x86_64,
+See the [CPU Features](../api/cpu.md) page for the full list across x86_64,
 arm64, and ppc64.
