@@ -1,0 +1,66 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  attach-wheels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download dist-linux (x86_64)
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: test.yml
+          workflow_conclusion: success
+          commit: ${{ github.sha }}
+          name: dist-linux
+          path: dist/
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download dist-linux-aarch64
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: test-aarch64.yml
+          workflow_conclusion: success
+          commit: ${{ github.sha }}
+          name: dist-linux-aarch64
+          path: dist/
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download dist-windows
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: test.yml
+          workflow_conclusion: success
+          commit: ${{ github.sha }}
+          name: dist-windows
+          path: dist/
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload wheels to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.whl
+
+  pypi-publish:
+    needs: attach-wheels
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: dist/
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
