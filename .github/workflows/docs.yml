@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -31,8 +32,10 @@ jobs:
         uses: dawidd6/action-download-artifact@v6
         with:
           workflow: CI
+          workflow_conclusion: success
           name: dist-linux
           path: dist/
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install c2ImageD11 wheel
         run: pip install dist/*.whl
