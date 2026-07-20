@@ -83,8 +83,7 @@ if "bdist_wheel" in sys.argv:
             _bdist_wheel = None
 
     if _bdist_wheel is not None:
-        python_tag = str(os.environ.get("C2IMAGED11_PYTHON_TAG") or (
-            "py2" if sys.version_info[0] == 2 else "py3"))
+        python_tag = str(os.environ.get("C2IMAGED11_PYTHON_TAG") or "py2.py3")
 
         class bdist_wheel_override(_bdist_wheel):
             def finalize_options(self):
