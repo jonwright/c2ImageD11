@@ -1,5 +1,5 @@
 site_name: c2ImageD11
-site_description: Standalone C extensions for ImageD11 (c2py23 binding) -- v0.4.0 (6c99d46)
+site_description: Standalone C extensions for ImageD11 (c2py23 binding) -- v0.4.0 (461fe48)
 repo_url: https://github.com/jonwright/c2ImageD11
 repo_name: jonwright/c2ImageD11
 docs_dir: .
@@ -29,6 +29,8 @@ theme:
 
 plugins:
   - search
+
+copyright: Built from commit <code>461fe48322bcbfefcbd2e2b165c8f0f093cb2a5a</code> (v0.4.0) using <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>
 
 markdown_extensions:
   - pymdownx.highlight
