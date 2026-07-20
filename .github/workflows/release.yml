@@ -16,38 +16,45 @@ jobs:
 
       - name: Download dist-linux (x86_64)
         uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
         with:
           workflow: test.yml
           workflow_conclusion: success
           commit: ${{ github.sha }}
           name: dist-linux
           path: dist/
+          if_no_artifact_found: warn
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download dist-linux-aarch64
         uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
         with:
           workflow: test-aarch64.yml
           workflow_conclusion: success
           commit: ${{ github.sha }}
           name: dist-linux-aarch64
           path: dist/
+          if_no_artifact_found: warn
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download dist-windows
         uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
         with:
           workflow: test.yml
           workflow_conclusion: success
           commit: ${{ github.sha }}
           name: dist-windows
           path: dist/
+          if_no_artifact_found: warn
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload wheels to release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.whl
+          fail_on_unmatched_files: false
 
   pypi-publish:
     needs: attach-wheels
@@ -57,7 +64,8 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download all dist artifacts
+        uses: actions/download-artifact@v4
         with:
           pattern: dist-*
           path: dist/
