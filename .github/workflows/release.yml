@@ -53,7 +53,13 @@ jobs:
           if_no_artifact_found: warn
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload wheels to release
+      - name: Re-upload as artifact (bridge to pypi-publish)
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-wheels
+          path: dist/
+
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.whl
@@ -67,11 +73,10 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - name: Download all dist artifacts
+      - name: Download release wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: dist-*
+          name: release-wheels
           path: dist/
-          merge-multiple: true
 
       - uses: pypa/gh-action-pypi-publish@release/v1
