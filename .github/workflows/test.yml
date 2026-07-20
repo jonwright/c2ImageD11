@@ -38,6 +38,10 @@ jobs:
           rm -f dist/*.whl
           mv /tmp/wheelhouse/*.whl dist/
 
+      - name: Build sdist
+        run: |
+          python setup.py sdist
+
       - uses: actions/upload-artifact@v4
         with:
           name: dist-linux

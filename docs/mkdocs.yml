@@ -1,5 +1,5 @@
 site_name: c2ImageD11
-site_description: Standalone C extensions for ImageD11 (c2py23 binding) -- v0.4.3 (9fbd16a)
+site_description: Standalone C extensions for ImageD11 (c2py23 binding) -- v0.4.0 (841d25f)
 repo_url: https://github.com/jonwright/c2ImageD11
 repo_name: jonwright/c2ImageD11
 docs_dir: .
@@ -30,7 +30,7 @@ theme:
 plugins:
   - search
 
-copyright: Built from commit <a href="https://github.com/jonwright/c2ImageD11/commit/9fbd16a9176e268d6ceed07922a541b6d4c6c7d6"><code>9fbd16a</code></a> (v0.4.3)
+copyright: Built from commit <a href="https://github.com/jonwright/c2ImageD11/commit/841d25fdb0f677bd0dadca2982fd78c6b5a42845"><code>841d25f</code></a> (v0.4.0)
 
 markdown_extensions:
   - pymdownx.highlight

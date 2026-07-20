@@ -12,7 +12,7 @@
 project('c2ImageD11', 'c', 'cpp',
   default_options: ['c_std=c11', 'warning_level=1', 'buildtype=release', 'optimization=2', 'strip=true'],
   # Keep in sync with c2ImageD11/__init__.py __version__ (single source of truth)
-  version: '0.4.3')
+  version: '0.4.0')
 
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')

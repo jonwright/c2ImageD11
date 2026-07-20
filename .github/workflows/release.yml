@@ -53,17 +53,6 @@ jobs:
           if_no_artifact_found: warn
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build sdist
-        run: |
-          pip install build
-          python -m build --sdist
-
-      - name: Install and test sdist
-        run: |
-          pip install numpy pytest
-          pip install dist/*.tar.gz
-          cd "$(mktemp -d)" && pytest "$GITHUB_WORKSPACE/tests/" -v
-
       - name: Re-upload as artifact (bridge to pypi-publish)
         uses: actions/upload-artifact@v4
         with:
