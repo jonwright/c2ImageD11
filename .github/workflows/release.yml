@@ -20,9 +20,10 @@ jobs:
         with:
           workflow: test.yml
           workflow_conclusion: success
-          commit: ${{ github.sha }}
+          branch: master
           name: dist-linux
           path: dist/
+          workflow_search: true
           if_no_artifact_found: warn
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -32,9 +33,10 @@ jobs:
         with:
           workflow: test-aarch64.yml
           workflow_conclusion: success
-          commit: ${{ github.sha }}
+          branch: master
           name: dist-linux-aarch64
           path: dist/
+          workflow_search: true
           if_no_artifact_found: warn
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -44,9 +46,10 @@ jobs:
         with:
           workflow: test.yml
           workflow_conclusion: success
-          commit: ${{ github.sha }}
+          branch: master
           name: dist-windows
           path: dist/
+          workflow_search: true
           if_no_artifact_found: warn
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
