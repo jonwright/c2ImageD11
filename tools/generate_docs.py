@@ -468,13 +468,35 @@ def write_mkdocs_nav(functions):
 
     nav = """site_name: c2ImageD11
 site_description: Standalone C extensions for ImageD11 (c2py23 binding) -- v{} ({})
+repo_url: https://github.com/jonwright/c2ImageD11
+repo_name: jonwright/c2ImageD11
 docs_dir: .
 site_dir: ../site
 theme:
   name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
   features:
     - content.code.copy
+    - navigation.instant
+    - navigation.sections
     - search.highlight
+
+plugins:
+  - search
 
 markdown_extensions:
   - pymdownx.highlight
