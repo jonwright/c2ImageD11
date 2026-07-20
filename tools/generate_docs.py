@@ -501,7 +501,7 @@ theme:
 plugins:
   - search
 
-copyright: Built from commit <code>{}</code> (v{}) using <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>
+copyright: Built from commit <a href="https://github.com/jonwright/c2ImageD11/commit/{}"><code>{}</code></a> (v{})
 
 markdown_extensions:
   - pymdownx.highlight
@@ -514,7 +514,7 @@ nav:
     - Compiler Selection: guide/compiler.md
   - API Reference:
 {}
-    """.format(version, short_sha, full_sha, version, "\n".join("    " + p for p in api_pages))
+    """.format(version, short_sha, full_sha, short_sha, version, "\n".join("    " + p for p in api_pages))
 
     mkdocs_path = os.path.join(HERE, "docs", "mkdocs.yml")
     with open(mkdocs_path, "w") as f:
