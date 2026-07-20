@@ -19,8 +19,9 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-API_DIR = os.path.join(HERE, "docs", "api")
 FUNC_DIR = os.path.join(HERE, "lib", "functions")
+API_DIR = os.path.join(HERE, "docs", "api")
+BENCH_DIR = os.path.join(HERE, "docs", "bench")
 
 
 def _find_c2py_begin_doc(source_path):
@@ -302,6 +303,29 @@ def _format_bench_table(data):
     return "\n".join(lines)
 
 
+def _get_version():
+    """Return (version, short_sha) from the project."""
+    version = "unknown"
+    sha = "unknown"
+    init_path = os.path.join(HERE, "c2ImageD11", "__init__.py")
+    try:
+        with open(init_path) as f:
+            for line in f:
+                m = re.match(r'^__version__\s*=\s*"(.+)"\s*$', line)
+                if m:
+                    version = m.group(1)
+                    break
+    except IOError:
+        pass
+    try:
+        sha = subprocess.check_output(
+            ["git", "-C", HERE, "rev-parse", "--short", "HEAD"],
+            text=True, timeout=5).strip()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+        pass
+    return version, sha
+
+
 def _build_module_toc(functions):
     """Return a markdown table-of-contents listing all functions."""
     lines = ["# API Index", ""]
@@ -334,6 +358,7 @@ def generate(dry_run=False):
 
     source_map = _find_c_sources()
     c2py_data = _load_c2py_data()
+    version, git_sha = _get_version()
     pages = {}
 
     for name in functions:
@@ -399,15 +424,17 @@ def generate(dry_run=False):
         pages[name] = "\n".join(lines)
 
     # Write pages
+    version_line = "v{} ({})".format(version, git_sha)
     if dry_run:
-        print("  Dry run: would write {} API pages".format(len(pages)))
+        print("  Dry run: would write {} API pages (version {})".format(len(pages), version_line))
     else:
         os.makedirs(API_DIR, exist_ok=True)
         for name, content in sorted(pages.items()):
             path = os.path.join(API_DIR, "{}.md".format(name))
+            content += "\n\n---\n*v{}* ({})".format(version, git_sha)
             with open(path, "w") as f:
                 f.write(content)
-        print("  Wrote {} function pages to {}".format(len(pages), API_DIR))
+        print("  Wrote {} function pages to {} (version {})".format(len(pages), API_DIR, version_line))
 
     # API index
     index_content = _build_module_toc(functions)
@@ -415,6 +442,7 @@ def generate(dry_run=False):
         print("  Dry run: would write API index")
     else:
         path = os.path.join(API_DIR, "index.md")
+        index_content += "\n\n---\n*v{}* ({})".format(version, git_sha)
         with open(path, "w") as f:
             f.write(index_content)
 
@@ -432,13 +460,14 @@ def generate(dry_run=False):
 
 def write_mkdocs_nav(functions):
     """Write docs/mkdocs.yml with proper nav from function list."""
+    version, git_sha = _get_version()
     api_pages = ["- API Index: api/index.md"]
     api_pages.append("- CPU Features: api/cpu.md")
     for name in sorted(functions):
         api_pages.append("- {}: api/{}.md".format(name, name))
 
     nav = """site_name: c2ImageD11
-site_description: Standalone C extensions for ImageD11 (c2py23 binding)
+site_description: Standalone C extensions for ImageD11 (c2py23 binding) -- v{} ({})
 docs_dir: .
 site_dir: ../site
 theme:
@@ -458,7 +487,7 @@ nav:
     - Compiler Selection: guide/compiler.md
   - API Reference:
 {}
-""".format("\n".join("    " + p for p in api_pages))
+    """.format(version, git_sha, "\n".join("    " + p for p in api_pages))
 
     mkdocs_path = os.path.join(HERE, "docs", "mkdocs.yml")
     with open(mkdocs_path, "w") as f:

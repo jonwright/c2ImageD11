@@ -1,5 +1,5 @@
 site_name: c2ImageD11
-site_description: Standalone C extensions for ImageD11 (c2py23 binding)
+site_description: Standalone C extensions for ImageD11 (c2py23 binding) -- v0.4.0 (ae6dfcc)
 docs_dir: .
 site_dir: ../site
 theme:
@@ -78,3 +78,4 @@ nav:
     - uint16_to_float_darkflm: api/uint16_to_float_darkflm.md
     - uint16_to_float_darksub: api/uint16_to_float_darksub.md
     - verify_rounding: api/verify_rounding.md
+    
