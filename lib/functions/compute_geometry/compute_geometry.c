@@ -72,19 +72,14 @@ void compute_geometry(const double xlylzl[][3], const double omega[], double ome
         matvec(mat, u, o);
         // d is difference vector
         vec3sub(xlylzl[i], o, d);
-        {
-            double R = d[1]*d[1] + d[2]*d[2];
-            double norm = sqrt(d[0]*d[0] + R);
-            modyz = 1. / norm;
-            // two theta
-            out[i][0] = DEG * atan2(sqrt(R), d[0]);
-            //     ! k-vector
-            ds = 1. / wvln;
-            // k[0] via sin2(theta) to avoid cos(2theta)-1 cancellation
-            k[0] = -ds * R / (norm * (norm + d[0]));
-            k[1] = ds * d[1] * modyz;
-            k[2] = ds * d[2] * modyz;
-        }
+        modyz = 1. / sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+        // two theta
+        out[i][0] = DEG * atan2(sqrt(d[1] * d[1] + d[2] * d[2]), d[0]);
+        //     ! k-vector
+        ds = 1. / wvln;
+        k[0] = ds * (d[0] * modyz - 1.);
+        k[1] = ds * d[1] * modyz;
+        k[2] = ds * d[2] * modyz;
         // eta
         out[i][1] = DEG * atan2(-d[1], d[2]);
         // dstar
