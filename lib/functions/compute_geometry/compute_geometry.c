@@ -72,14 +72,40 @@ void compute_geometry(const double xlylzl[][3], const double omega[], double ome
         matvec(mat, u, o);
         // d is difference vector
         vec3sub(xlylzl[i], o, d);
-        modyz = 1. / sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
-        // two theta
-        out[i][0] = DEG * atan2(sqrt(d[1] * d[1] + d[2] * d[2]), d[0]);
-        //     ! k-vector
-        ds = 1. / wvln;
-        k[0] = ds * (d[0] * modyz - 1.);
-        k[1] = ds * d[1] * modyz;
-        k[2] = ds * d[2] * modyz;
+        {
+            double R = d[1]*d[1] + d[2]*d[2];
+            double norm = sqrt(d[0]*d[0] + R);
+            modyz = 1. / norm;
+            // two theta
+            out[i][0] = DEG * atan2(sqrt(R), d[0]);
+            //     ! k-vector
+            ds = 1. / wvln;
+            /*
+             * k[0] = ds * (d[0]/|d| - 1) = ds * (cos(2theta) - 1)
+             *
+             * cos(2theta) ~ 1 for small 2theta; subtraction loses
+             * significant digits (catastrophic cancellation).
+             *
+             * Reformulation (matching transform.compute_sinsqth_from_xyz):
+             *   let R = d[1]^2 + d[2]^2,   N = |d|
+             *
+             *   ds * (d[0]/N - 1)
+             *     = ds * (d[0] - N) / N
+             *     = ds * (d[0] - N) * (d[0] + N) / (N * (d[0] + N))
+             *     = ds * (d[0]^2 - N^2) / (N * (d[0] + N))
+             *     = ds * (-R) / (N * (d[0] + N))
+             *     = -ds * R / (N * (d[0] + N))
+             *     = -ds * R * modyz / (d[0] + N)
+             *     = -ds * R * modyz / (d[0] + 1/modyz)
+             *
+             * Numerator is R = d[1]^2 + d[2]^2 (small transverse
+             * offset squared) -- no subtraction of near-equal
+             * numbers.  Denominator is large and always additive.
+             */
+            k[0] = -ds * R * modyz / (d[0] + 1./modyz);
+            k[1] = ds * d[1] * modyz;
+            k[2] = ds * d[2] * modyz;
+        }
         // eta
         out[i][1] = DEG * atan2(-d[1], d[2]);
         // dstar
