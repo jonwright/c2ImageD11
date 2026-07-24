@@ -6,6 +6,7 @@
  *  "doc": "removes pixels which are not 4 connected from msk\nwhile copying into ret.",
  *  "params": {"msk": "Input int8 2D mask.", "ret": "Output cleaned int8 mask."},
  *  "checks": ["msk.format == 'b' or msk.format == 'B'", "msk.ndim == 2",
+ *         "msk.slow_axis == 0",
  *      "ret.format == 'b' or ret.format == 'B'", "ret.n == msk.n"],
  *  "c_overloads": [{"sig": "int clean_mask(const int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int",
  *      "map": {"msk": "msk.ptr", "ret": "ret.ptr", "ns": "msk.shape[0]", "nf": "msk.shape[1]"}}]}

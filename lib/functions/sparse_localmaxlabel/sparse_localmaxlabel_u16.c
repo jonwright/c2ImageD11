@@ -13,12 +13,12 @@ static int NOISY = 0;
  *  "checks": ["v.slow_axis == 0", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
  *      "j.n == i.n", "v.n == i.n", "MV.format == 'f'", "MV.n == i.n",
  *      "( iMV.format == 'i' or iMV.format == 'l' )", "iMV.n == i.n", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == i.n"],
- *  "c_overloads": [{"when": "v.format == 'f' and v.slow_axis == 0",
- *         "sig": "int sparse_localmaxlabel(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV, int32_t *labels) -> int",
+ *  "c_overloads": [{"when": "v.format == 'H' and v.slow_axis == 0",
+ *         "sig": "int sparse_localmaxlabel_u16(const uint16_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV, int32_t *labels) -> int",
  *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "MV": "MV.ptr", "iMV": "iMV.ptr", "labels": "labels.ptr"}}]}
 C2PY_END */
 
-int sparse_localmaxlabel(float *restrict v, uint16_t *restrict i,
+int sparse_localmaxlabel_u16(float *restrict v, uint16_t *restrict i,
                          uint16_t *restrict j, intptr_t nnz,
                          float *restrict MV, // neighbor Max Val (of 3x3 square)
                          int32_t *restrict iMV,   // Which neighbor is higher?

@@ -6,6 +6,7 @@
  *  "doc": "Convert dense float32 image to sparse COO.",
  *  "params": {"img": "Input float32 2D.", "msk": "Mask (uint8).", "row": "Output rows.", "col": "Output cols.", "val": "Output values.", "cut": "Threshold."},
  *  "checks": ["img.format == 'f'", "img.ndim == 2",
+ *         "img.slow_axis == 0",
  *      "msk.format == 'B' or msk.format == 'b' or msk.format == '?'", "msk.n == img.n",
  *      "row.format == 'H' or row.itemsize == 2", "col.format == 'H' or col.itemsize == 2",
  *      "val.format == 'f'"],

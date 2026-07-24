@@ -6,6 +6,7 @@
  *  "doc": "stores pixels from img into row/col/val.\nmsk determines whether pixels are masked (e.g. eiger mask)\nreturns the number of pixels found",
  *  "params": {"img": "Input uint16 2D.", "msk": "Mask (uint8, 0=include).", "row": "Output rows.", "col": "Output cols.", "val": "Output values.", "cut": "Threshold."},
  *  "checks": ["img.format == 'H' or img.itemsize == 2", "img.ndim == 2",
+ *         "img.slow_axis == 0",
  *      "msk.format == 'B' or msk.format == 'b' or msk.format == '?'", "msk.n == img.n",
  *      "row.format == 'H' or row.itemsize == 2", "col.format == 'H' or col.itemsize == 2",
  *      "val.format == 'H' or val.itemsize == 2"],

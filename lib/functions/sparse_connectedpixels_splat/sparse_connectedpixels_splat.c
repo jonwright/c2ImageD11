@@ -8,7 +8,8 @@ static int NOISY = 0;
  *  "doc": "is for debugging/timing. It splats\nthe sparse array into a dense array and runs the old connectedpixels\ncode on that.",
  *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).",
  *      "th": "Threshold.", "lbl": "Output labels.", "Z": "Temp buffer.", "ni": "Rows.", "nj": "Cols."},
- *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
+ *  "checks": ["v.slow_axis == 0",
+ *         "v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
  *      "j.n == i.n", "v.n == i.n", "( lbl.format == 'i' or lbl.format == 'l' )", "lbl.n == i.n", "( Z.format == 'i' or Z.format == 'l' )"],
  *  "c_overloads": [{"sig": "int sparse_connectedpixels_splat(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t *labels, int32_t *Z, intptr_t imax, intptr_t jmax) -> int",
  *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "threshold": "th", "labels": "lbl.ptr", "Z": "Z.ptr", "imax": "ni", "jmax": "nj"}}]}

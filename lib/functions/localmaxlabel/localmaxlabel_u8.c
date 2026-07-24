@@ -9,12 +9,12 @@
  *  "checks": ["data.ndim == 2",
  *         "data.slow_axis == 0", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n",
  *      "wrk.format == 'B' or wrk.format == 'b'", "wrk.n == data.n"],
- *  "c_overloads": [{"when": "data.format == 'f' and data.ndim == 2 and data.slow_axis == 0",
- *         "sig": "int localmaxlabel(const float *im, int32_t *lout, uint8_t *l, intptr_t dim0, intptr_t dim1) -> int",
+ *  "c_overloads": [{"when": "data.format == 'B' and data.ndim == 2 and data.slow_axis == 0",
+ *         "sig": "int localmaxlabel_u8(const uint8_t *im, int32_t *lout, uint8_t *l, intptr_t dim0, intptr_t dim1) -> int",
  *      "map": {"im": "data.ptr", "lout": "labels.ptr", "l": "wrk.ptr", "dim0": "data.shape[0]", "dim1": "data.shape[1]"}}]}
 C2PY_END */
 
-int localmaxlabel(const float *restrict im, // input
+int localmaxlabel_u8(const uint8_t *restrict im, // input
                   int32_t *restrict lout,   // output
                   uint8_t *restrict l,      // workspace temporary
                   intptr_t dim0,                 // Image dimensions

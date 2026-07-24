@@ -4,7 +4,8 @@
 /* C2PY_BEGIN
  * {"py_sig": "frelon_lines_sub(img: buffer, drk: buffer, cut: float) -> void",
  *  "doc": "Dark subtract then per-row baseline removal.",
- *  "checks": ["img.format == 'f'", "img.ndim == 2", "drk.format == 'f'", "drk.n == img.n"],
+ *  "checks": ["img.format == 'f'", "img.ndim == 2",
+ *         "img.slow_axis == 0", "drk.format == 'f'", "drk.n == img.n"],
  *  "c_overloads": [{"sig": "void frelon_lines_sub(float *img, const float *drk, intptr_t ns, intptr_t nf, float cut)",
  *      "map": {"img": "img.ptr", "drk": "drk.ptr", "ns": "img.shape[0]", "nf": "img.shape[1]", "cut": "cut"}}]}
 C2PY_END */

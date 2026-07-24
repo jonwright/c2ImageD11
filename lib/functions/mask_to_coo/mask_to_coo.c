@@ -7,6 +7,7 @@
  *  "params": {"msk": "Input int8 2D mask.", "i": "Output row indices (uint16).",
  *      "j": "Output col indices (uint16).", "w": "Output per-row counts (int32)."},
  *  "checks": ["msk.format == 'b' or msk.format == 'B'", "msk.ndim == 2",
+ *         "msk.slow_axis == 0",
  *      "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2", "j.n == i.n",
  *      "( w.format == 'i' or w.format == 'l' )", "w.n == msk.shape[0]"],
  *  "c_overloads": [{"sig": "int mask_to_coo(const int8_t *msk, intptr_t ns, intptr_t nf, uint16_t *i, uint16_t *j, intptr_t nnz, int *nrow) -> int",
