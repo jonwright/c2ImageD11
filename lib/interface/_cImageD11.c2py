@@ -233,7 +233,7 @@
                         "verbose": "verbose",
                     },
                     "sig": "void blobproperties_u32(const uint32_t *data, const int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf, double *res)",
-                    "when": "(data.format == 'I' or data.format == 'L') and data.ndim == 2 and data.slow_axis == 0",
+                    "when": "(data.format == 'I' or data.format == 'L') and data.itemsize == 4 and data.ndim == 2 and data.slow_axis == 0",
                 },
                 {
                     "map": {
@@ -928,7 +928,7 @@
                         "verbose": "verbose",
                     },
                     "sig": "int connectedpixels_u32(const uint32_t *data, int32_t *labels, uint32_t threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
-                    "when": "(data.format == 'I' or data.format == 'L') and data.ndim == 2 and data.slow_axis == 0",
+                    "when": "(data.format == 'I' or data.format == 'L') and data.itemsize == 4 and data.ndim == 2 and data.slow_axis == 0",
                 },
                 {
                     "map": {
@@ -1109,7 +1109,7 @@
                         "lout": "labels.ptr",
                     },
                     "sig": "int localmaxlabel_u32(const uint32_t *im, int32_t *lout, uint8_t *l, intptr_t dim0, intptr_t dim1) -> int",
-                    "when": "(data.format == 'I' or data.format == 'L') and data.ndim == 2 and data.slow_axis == 0",
+                    "when": "(data.format == 'I' or data.format == 'L') and data.itemsize == 4 and data.ndim == 2 and data.slow_axis == 0",
                 },
                 {
                     "map": {
@@ -1174,7 +1174,7 @@
                         "ret": "ret.ptr",
                     },
                     "sig": "int make_clean_mask_u32(const uint32_t *img, double cut, int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int",
-                    "when": "(img.format == 'I' or img.format == 'L') and img.ndim == 2 and img.slow_axis == 0",
+                    "when": "(img.format == 'I' or img.format == 'L') and img.itemsize == 4 and img.ndim == 2 and img.slow_axis == 0",
                 },
                 {
                     "map": {
@@ -2103,7 +2103,7 @@
                         "v": "v.ptr",
                     },
                     "sig": "int sparse_connectedpixels_u32(const uint32_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) -> int",
-                    "when": "(v.format == 'I' or v.format == 'L') and v.slow_axis == 0",
+                    "when": "(v.format == 'I' or v.format == 'L') and v.itemsize == 4 and v.slow_axis == 0",
                 },
                 {
                     "map": {
@@ -2240,7 +2240,7 @@
                         "v": "v.ptr",
                     },
                     "sig": "int sparse_localmaxlabel_u32(const uint32_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV, int32_t *labels) -> int",
-                    "when": "(v.format == 'I' or v.format == 'L') and v.slow_axis == 0",
+                    "when": "(v.format == 'I' or v.format == 'L') and v.itemsize == 4 and v.slow_axis == 0",
                 },
                 {
                     "map": {
@@ -2491,7 +2491,7 @@
                 },
             ],
             "checks": [
-                "(img.format == 'I' or img.format == 'L') or img.itemsize == 4",
+                "(img.format == 'I' or img.format == 'L') and img.itemsize == 4 and img.itemsize == 4 or img.itemsize == 4",
                 "img.ndim == 2",
                 "img.slow_axis == 0",
                 "msk.format == 'B' or msk.format == 'b' or msk.format == '?'",

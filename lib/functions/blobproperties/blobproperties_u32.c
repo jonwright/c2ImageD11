@@ -10,7 +10,7 @@
  *         "data.slow_axis == 0", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n",
  *      "results.format == 'd'", "results.shape[0] == np", "results.shape[1] == 36"],
  *  "gil_release": true,
- *  "c_overloads": [{"when": "(data.format == 'I' or data.format == 'L') and data.ndim == 2 and data.slow_axis == 0",
+ *  "c_overloads": [{"when": "(data.format == 'I' or data.format == 'L') and data.itemsize == 4 and data.ndim == 2 and data.slow_axis == 0",
  *         "sig": "void blobproperties_u32(const uint32_t *data, const int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf, double *res)",
  *      "map": {"data": "data.ptr", "labels": "labels.ptr", "npk": "np", "omega": "omega", "verbose": "verbose", "ns": "data.shape[0]", "nf": "data.shape[1]", "res": "results.ptr"}}]}
 C2PY_END */

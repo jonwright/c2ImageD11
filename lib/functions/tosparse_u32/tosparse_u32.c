@@ -5,7 +5,7 @@
  * {"py_sig": "tosparse_u32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int",
  *  "doc": "Convert dense uint32 image to sparse COO.",
  *  "params": {"img": "Input uint32 2D.", "msk": "Mask (uint8).", "row": "Output rows.", "col": "Output cols.", "val": "Output values.", "cut": "Threshold (float)."},
- *  "checks": ["(img.format == 'I' or img.format == 'L') or img.itemsize == 4", "img.ndim == 2",
+ *  "checks": ["(img.format == 'I' or img.format == 'L') and img.itemsize == 4 and img.itemsize == 4 or img.itemsize == 4", "img.ndim == 2",
  *         "img.slow_axis == 0",
  *      "msk.format == 'B' or msk.format == 'b' or msk.format == '?'", "msk.n == img.n",
  *      "row.format == 'H' or row.itemsize == 2", "col.format == 'H' or col.itemsize == 2",

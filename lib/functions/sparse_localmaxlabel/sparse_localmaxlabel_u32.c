@@ -13,7 +13,7 @@ static int NOISY = 0;
  *  "checks": ["v.slow_axis == 0", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
  *      "j.n == i.n", "v.n == i.n", "MV.format == 'f'", "MV.n == i.n",
  *      "( iMV.format == 'i' or iMV.format == 'l' )", "iMV.n == i.n", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == i.n"],
- *  "c_overloads": [{"when": "(v.format == 'I' or v.format == 'L') and v.slow_axis == 0",
+ *  "c_overloads": [{"when": "(v.format == 'I' or v.format == 'L') and v.itemsize == 4 and v.slow_axis == 0",
  *         "sig": "int sparse_localmaxlabel_u32(const uint32_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *MV, int32_t *iMV, int32_t *labels) -> int",
  *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "MV": "MV.ptr", "iMV": "iMV.ptr", "labels": "labels.ptr"}}]}
 C2PY_END */
