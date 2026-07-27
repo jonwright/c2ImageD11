@@ -4,7 +4,7 @@
 /* C2PY_BEGIN
  * {"py_sig": "make_clean_mask(img: buffer, cut: float, msk: buffer, ret: buffer) -> int",
  *  "c_overloads": [{
- *    "when": "img.format == 'I' and img.ndim == 2 and img.slow_axis == 0",
+ *    "when": "(img.format == 'I' or img.format == 'L') and img.ndim == 2 and img.slow_axis == 0",
  *    "sig": "int make_clean_mask_u32(const uint32_t *img, double cut, int8_t *msk, int8_t *ret, intptr_t ns, intptr_t nf) -> int",
  *    "map": {"img": "img.ptr", "cut": "cut", "msk": "msk.ptr", "ret": "ret.ptr", "ns": "img.shape[0]", "nf": "img.shape[1]"}
  *  }]}
