@@ -942,7 +942,7 @@
                         "threshold": "threshold",
                         "verbose": "verbose",
                     },
-                    "sig": "int connectedpixels_u8(const uint8_t *data, int32_t *labels, int threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
+                    "sig": "int connectedpixels_u8(const uint8_t *data, int32_t *labels, double threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
                     "when": "data.format == 'B' and data.ndim == 2 and data.slow_axis == 0",
                 },
                 {
@@ -955,7 +955,7 @@
                         "threshold": "threshold",
                         "verbose": "verbose",
                     },
-                    "sig": "int connectedpixels_u32(const uint32_t *data, int32_t *labels, uint32_t threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
+                    "sig": "int connectedpixels_u32(const uint32_t *data, int32_t *labels, double threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
                     "when": "(data.format == 'I' or data.format == 'L') and data.itemsize == 4 and data.ndim == 2 and data.slow_axis == 0",
                 },
                 {
@@ -968,7 +968,7 @@
                         "threshold": "threshold",
                         "verbose": "verbose",
                     },
-                    "sig": "int connectedpixels_u16(const uint16_t *data, int32_t *labels, int threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
+                    "sig": "int connectedpixels_u16(const uint16_t *data, int32_t *labels, double threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
                     "when": "data.format == 'H' and data.ndim == 2 and data.slow_axis == 0",
                 },
                 {
@@ -981,7 +981,7 @@
                         "threshold": "threshold",
                         "verbose": "verbose",
                     },
-                    "sig": "int connectedpixels(const float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
+                    "sig": "int connectedpixels(const float *data, int32_t *labels, double threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
                     "when": "data.format == 'f' and data.ndim == 2 and data.slow_axis == 0",
                 },
             ],
@@ -2158,7 +2158,7 @@
                         "threshold": "threshold",
                         "v": "v.ptr",
                     },
-                    "sig": "int sparse_connectedpixels_u8(const uint8_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) -> int",
+                    "sig": "int sparse_connectedpixels_u8(const uint8_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, double threshold, int32_t *labels) -> int",
                     "when": "v.format == 'B' and v.slow_axis == 0",
                 },
                 {
@@ -2170,7 +2170,7 @@
                         "threshold": "threshold",
                         "v": "v.ptr",
                     },
-                    "sig": "int sparse_connectedpixels_u32(const uint32_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) -> int",
+                    "sig": "int sparse_connectedpixels_u32(const uint32_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, double threshold, int32_t *labels) -> int",
                     "when": "(v.format == 'I' or v.format == 'L') and v.itemsize == 4 and v.slow_axis == 0",
                 },
                 {
@@ -2182,7 +2182,7 @@
                         "threshold": "threshold",
                         "v": "v.ptr",
                     },
-                    "sig": "int sparse_connectedpixels_u16(const uint16_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) -> int",
+                    "sig": "int sparse_connectedpixels_u16(const uint16_t *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, double threshold, int32_t *labels) -> int",
                     "when": "v.format == 'H' and v.slow_axis == 0",
                 },
                 {
@@ -2194,7 +2194,7 @@
                         "threshold": "threshold",
                         "v": "v.ptr",
                     },
-                    "sig": "int sparse_connectedpixels(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) -> int",
+                    "sig": "int sparse_connectedpixels(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, double threshold, int32_t *labels) -> int",
                     "when": "v.format == 'f' and v.slow_axis == 0",
                 },
             ],

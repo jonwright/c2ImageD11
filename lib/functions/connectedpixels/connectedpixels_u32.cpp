@@ -8,13 +8,13 @@
  *  "checks": ["data.ndim == 2",
  *         "data.slow_axis == 0", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n"],
  *  "c_overloads": [{"when": "(data.format == 'I' or data.format == 'L') and data.itemsize == 4 and data.ndim == 2 and data.slow_axis == 0",
- *         "sig": "int connectedpixels_u32(const uint32_t *data, int32_t *labels, uint32_t threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
+  *         "sig": "int connectedpixels_u32(const uint32_t *data, int32_t *labels, double threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
  *      "map": {"data": "data.ptr", "labels": "labels.ptr", "threshold": "threshold", "verbose": "verbose", "eightconnected": "con8", "ns": "data.shape[0]", "nf": "data.shape[1]"}}]}
 C2PY_END */
 
 extern "C" int connectedpixels_u32(const uint32_t *data, int32_t *labels,
-                                    uint32_t threshold, int verbose,
-                                    int eightconnected, intptr_t ns, intptr_t nf) {
-    return connectedpixels_impl<uint32_t>(data, labels, threshold,
+                                     double threshold, int verbose,
+                                     int eightconnected, intptr_t ns, intptr_t nf) {
+    return connectedpixels_impl<uint32_t>(data, labels, (uint32_t)threshold,
                                            verbose, eightconnected, ns, nf);
 }

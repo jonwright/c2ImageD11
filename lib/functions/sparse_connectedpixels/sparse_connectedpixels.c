@@ -10,12 +10,12 @@ static int NOISY = 0;
  *  "checks": ["v.slow_axis == 0", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
  *      "j.n == i.n", "v.n == i.n", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == i.n"],
  *  "c_overloads": [{"when": "v.format == 'f' and v.slow_axis == 0",
- *         "sig": "int sparse_connectedpixels(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float threshold, int32_t *labels) -> int",
+  *         "sig": "int sparse_connectedpixels(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, double threshold, int32_t *labels) -> int",
  *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "threshold": "threshold", "labels": "labels.ptr"}}]}
 C2PY_END */
 
 int sparse_connectedpixels(float *restrict v, uint16_t *restrict i,
-                           uint16_t *restrict j, intptr_t nnz, float threshold,
+                            uint16_t *restrict j, intptr_t nnz, double threshold,
                            int32_t *restrict labels /* nnz */
 ) {
     intptr_t k, p, pp; int ir;
