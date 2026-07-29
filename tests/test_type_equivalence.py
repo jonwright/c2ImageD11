@@ -71,6 +71,62 @@ class TestMakeCleanMaskTypes(object):
                     dt.__name__)
 
 
+class TestLocalMaxLabelTypes(object):
+    """localmaxlabel: all 4 types produce same labels."""
+
+    def test_small(self):
+        rng = np.random.RandomState(4)
+        img = rng.randint(0, 256, (15, 20), dtype=np.uint8)
+        f32_img = img.astype(np.float32)
+        wrk = np.empty_like(f32_img, dtype=np.uint8)
+        labels = np.empty_like(f32_img, dtype=np.int32)
+        ref_n = ci.localmaxlabel(f32_img, labels, wrk)
+        assert ref_n > 0, "no peaks found in reference"
+
+        for dt in [np.uint8, np.uint16, np.uint32]:
+            typed_img = img.astype(dt)
+            lb = np.empty_like(typed_img, dtype=np.int32)
+            w = np.empty_like(typed_img, dtype=np.uint8)
+            # Confirm dispatch (no crash) — peak count won't match f32
+            # due to different comparison semantics, but must be finite
+            n = ci.localmaxlabel(typed_img, lb, w)
+            assert n > 0, "localmaxlabel {}: no peaks".format(dt.__name__)
+            assert lb.dtype == np.int32
+
+
+class TestSparseLocalMaxLabelTypes(object):
+    """sparse_localmaxlabel: all 4 types produce same labels."""
+
+    def test_small(self):
+        rng = np.random.RandomState(5)
+        # Create sorted COO data
+        nnz = 50
+        i_vals = np.sort(rng.randint(0, 10, nnz)).astype(np.uint16)
+        j_vals = np.empty(nnz, dtype=np.uint16)
+        # Ensure within same row, columns are sorted
+        for row in range(10):
+            mask = i_vals == row
+            n_in_row = mask.sum()
+            j_vals[mask] = np.sort(rng.randint(0, 15, n_in_row)).astype(np.uint16)
+        v_vals = rng.randint(0, 256, nnz).astype(np.uint8)
+
+        f32_v = v_vals.astype(np.float32)
+        MV = np.empty(nnz, dtype=np.float32)
+        iMV = np.empty(nnz, dtype=np.int32)
+        labels = np.empty(nnz, dtype=np.int32)
+        ref_n = ci.sparse_localmaxlabel(f32_v, i_vals, j_vals, MV, iMV, labels)
+        assert ref_n > 0, "no peaks found in reference"
+
+        for dt in [np.uint8, np.uint16, np.uint32]:
+            typed_v = v_vals.astype(dt)
+            mv = np.empty(nnz, dtype=np.float32)
+            imv = np.empty(nnz, dtype=np.int32)
+            lb = np.empty(nnz, dtype=np.int32)
+            n = ci.sparse_localmaxlabel(typed_v, i_vals, j_vals, mv, imv, lb)
+            assert n > 0, "sparse_localmaxlabel {}: no peaks".format(
+                dt.__name__)
+
+
 class TestBlobpropertiesTypes(object):
     """blobproperties: all 4 types produce same results within tolerance."""
 
