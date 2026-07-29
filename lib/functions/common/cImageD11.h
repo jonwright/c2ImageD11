@@ -70,10 +70,16 @@ typedef unsigned __int64 uint64_t;
 typedef double vec[3];
 
 /* implemented in imaged11utils.c */
+#ifdef __cplusplus
+extern "C" {
+#endif
 void cimaged11_omp_set_num_threads(int);
-int cimaged11_omp_get_max_threads(void);
+int  cimaged11_omp_get_max_threads(void);
 DLL_LOCAL
 double my_get_time(void);
+#ifdef __cplusplus
+}
+#endif
 
 /* Rounding helper used by score/refine/misori functions
  * Magic integer trick: safe without -ffast-math (no libm call).

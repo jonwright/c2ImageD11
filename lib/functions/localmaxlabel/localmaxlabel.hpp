@@ -69,9 +69,10 @@ static int localmaxlabel_impl(const TPixel *restrict im, int32_t *restrict lout,
                                uint8_t *restrict l, intptr_t dim0, intptr_t dim1) {
     intptr_t i, j, p, q, nt, lo, hi; int k, npk, t, tid, npks;
 #define noisy 0
-    int o[10] = {0,
-                 -1 - dim1, -1,        -1 + dim1, -dim1,    0,
-                 +dim1,     +1 - dim1, +1,        +1 + dim1};
+    int o[10]; /* NOLINT */
+    o[0]=0; o[1]=(int)(-1 - dim1); o[2]= -1; o[3]=(int)(-1 + dim1);
+    o[4]=(int)(-dim1); o[5]=0; o[6]=(int)(+dim1);
+    o[7]=(int)(+1 - dim1); o[8]=+1; o[9]=(int)(+1 + dim1);
 
     if (noisy)
         printf("Not using intrinsics\n");
