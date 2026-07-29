@@ -1,5 +1,4 @@
-#include "cImageD11.h"
-#include "blobs.h"
+#include "tosparse_impl.hpp"
 
 /* C2PY_BEGIN
  * {"py_sig": "tosparse_f32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int",
@@ -14,19 +13,9 @@
  *      "map": {"img": "img.ptr", "msk": "msk.ptr", "row": "row.ptr", "col": "col.ptr", "val": "val.ptr", "cut": "cut", "ns": "img.shape[0]", "nf": "img.shape[1]"}}]}
 C2PY_END */
 
-int tosparse_f32(float *restrict img, uint8_t *restrict msk,
-                 uint16_t *restrict row, uint16_t *restrict col,
-                 float *restrict val, float cut, intptr_t ns, intptr_t nf) {
-    intptr_t i, j; int k = 0;
-    for (i = 0; i < ns; i++) {
-        for (j = 0; j < nf; j++) {
-            if ((msk[i * nf + j]) && (img[i * nf + j] > cut)) {
-                row[k] = i;
-                col[k] = j;
-                val[k] = img[i * nf + j];
-                k++;
-            }
-        }
-    }
-    return k;
+extern "C" int tosparse_f32(const float * img, const uint8_t * msk,
+                             uint16_t * row, uint16_t * col,
+                             float * val, float cut,
+                             intptr_t ns, intptr_t nf) {
+    return tosparse_impl<float>(img, msk, row, col, val, (double)cut, ns, nf);
 }

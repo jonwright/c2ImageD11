@@ -5,6 +5,8 @@
 
 {
     "cpp_source": [
+        "../functions/reorder/reorder_f32_a32.cpp",
+        "../functions/reorder/reorder_u16_a32.cpp",
         "../functions/score_and_refine/score_and_refine_f32.cpp",
         "../functions/score_and_refine/score_and_refine_f32_soa.cpp",
         "../functions/score_and_refine/score_and_refine_f64.cpp",
@@ -12,6 +14,9 @@
         "../functions/make_clean_mask/make_clean_mask_u16.cpp",
         "../functions/make_clean_mask/make_clean_mask_u32.cpp",
         "../functions/make_clean_mask/make_clean_mask_u8.cpp",
+        "../functions/compute_geometry/compute_geometry_f32.cpp",
+        "../functions/compute_geometry/compute_geometry_soa_f32.cpp",
+        "../functions/compute_geometry/compute_geometry_soa_f64.cpp",
         "../functions/connectedpixels/connectedpixels_u16.cpp",
         "../functions/connectedpixels/connectedpixels_u32.cpp",
         "../functions/connectedpixels/connectedpixels_u8.cpp",
@@ -24,9 +29,17 @@
         "../functions/localmaxlabel/localmaxlabel_u16.cpp",
         "../functions/localmaxlabel/localmaxlabel_u32.cpp",
         "../functions/localmaxlabel/localmaxlabel_u8.cpp",
+        "../functions/tosparse/tosparse_f32.cpp",
+        "../functions/tosparse/tosparse_u16.cpp",
+        "../functions/tosparse/tosparse_u32.cpp",
         "../functions/blobproperties/blobproperties_u16.cpp",
         "../functions/blobproperties/blobproperties_u32.cpp",
         "../functions/blobproperties/blobproperties_u8.cpp",
+        "../functions/reorderlut/reorderlut_f32_a32.cpp",
+        "../functions/reorderlut/reorderlut_u16_a32.cpp",
+        "../functions/compute_gv/compute_gv_f32.cpp",
+        "../functions/compute_gv/compute_gv_soa_f32.cpp",
+        "../functions/compute_gv/compute_gv_soa_f64.cpp",
         "../functions/score_and_refine/score_and_refine_f32_soa_sse41.cpp",
         "../functions/score_and_refine/score_and_refine_f32_sse41.cpp",
         "../functions/score_and_refine/score_and_refine_f64_soa_sse41.cpp",
@@ -1493,6 +1506,16 @@
                     "sig": "void reorder_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)",
                     "when": "data.format == 'f' and out.format == 'f'",
                 },
+                {
+                    "map": {
+                        "N": "data.n",
+                        "adr": "adr.ptr",
+                        "data": "data.ptr",
+                        "out": "out.ptr",
+                    },
+                    "sig": "void reorder_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)",
+                    "when": "data.format == 'f' and out.format == 'f'",
+                },
             ],
             "checks": [
                 "data.format == 'f'",
@@ -1507,6 +1530,16 @@
         },
         {
             "c_overloads": [
+                {
+                    "map": {
+                        "N": "data.n",
+                        "adr": "adr.ptr",
+                        "data": "data.ptr",
+                        "out": "out.ptr",
+                    },
+                    "sig": "void reorder_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)",
+                    "when": "adr.format == 'I' or adr.itemsize == 4",
+                },
                 {
                     "map": {
                         "N": "data.n",
@@ -1568,6 +1601,16 @@
                     "sig": "void reorderlut_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)",
                     "when": "data.format == 'f' and out.format == 'f'",
                 },
+                {
+                    "map": {
+                        "N": "data.n",
+                        "adr": "adr.ptr",
+                        "data": "data.ptr",
+                        "out": "out.ptr",
+                    },
+                    "sig": "void reorderlut_f32_a32(const float *data, const uint32_t *adr, float *out, intptr_t N)",
+                    "when": "data.format == 'f' and out.format == 'f'",
+                },
             ],
             "checks": [
                 "data.format == 'f'",
@@ -1582,6 +1625,16 @@
         },
         {
             "c_overloads": [
+                {
+                    "map": {
+                        "N": "data.n",
+                        "adr": "adr.ptr",
+                        "data": "data.ptr",
+                        "out": "out.ptr",
+                    },
+                    "sig": "void reorderlut_u16_a32(const uint16_t *data, const uint32_t *adr, uint16_t *out, intptr_t N)",
+                    "when": "adr.format == 'I' or adr.itemsize == 4",
+                },
                 {
                     "map": {
                         "N": "data.n",
@@ -2419,6 +2472,57 @@
             "c_overloads": [
                 {
                     "map": {
+                        "data": "data.ptr",
+                        "drk": "drk.ptr",
+                        "flm": "flm.ptr",
+                        "img": "img.ptr",
+                        "npx": "img.n",
+                    },
+                    "sig": "void uint16_to_float_darkflm(float *img, const float *drk, const float *flm, const uint16_t *data, intptr_t npx)",
+                    "when": "img.format == 'f' and drk.format == 'f' and flm.format == 'f'",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "drk.format == 'f'",
+                "drk.n == img.n",
+                "flm.format == 'f'",
+                "flm.n == img.n",
+                "data.format == 'H' or data.itemsize == 2",
+                "data.n == img.n",
+            ],
+            "doc": "subtracts image drk(float32) from\nraw data in data (uint16), multiples by flm(float32) and returns in img.",
+            "gil_release": True,
+            "py_sig": "uint16_to_float_darkflm(img: buffer, drk: buffer, flm: buffer, data: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "data": "data.ptr",
+                        "drk": "drk.ptr",
+                        "img": "img.ptr",
+                        "npx": "img.n",
+                    },
+                    "sig": "void uint16_to_float_darksub(float *img, const float *drk, const uint16_t *data, intptr_t npx)",
+                    "when": "img.format == 'f' and drk.format == 'f'",
+                },
+            ],
+            "checks": [
+                "img.format == 'f'",
+                "drk.format == 'f'",
+                "drk.n == img.n",
+                "data.format == 'H' or data.itemsize == 2",
+                "data.n == img.n",
+            ],
+            "doc": "subtracts image drk(float32) from\nraw data in data (uint16) and returns in img.",
+            "gil_release": True,
+            "py_sig": "uint16_to_float_darksub(img: buffer, drk: buffer, data: buffer) -> void",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
                         "col": "col.ptr",
                         "cut": "cut",
                         "img": "img.ptr",
@@ -2506,7 +2610,7 @@
                 },
             ],
             "checks": [
-                "(img.format == 'I' or img.format == 'L') and img.itemsize == 4 and img.itemsize == 4 or img.itemsize == 4",
+                "(img.format == 'I' or img.format == 'L') and img.itemsize == 4",
                 "img.ndim == 2",
                 "img.slow_axis == 0",
                 "msk.format == 'B' or msk.format == 'b' or msk.format == '?'",
@@ -2525,57 +2629,6 @@
                 "val": "Output values.",
             },
             "py_sig": "tosparse_u32(img: buffer, msk: buffer, row: buffer, col: buffer, val: buffer, cut: float) -> int",
-        },
-        {
-            "c_overloads": [
-                {
-                    "map": {
-                        "data": "data.ptr",
-                        "drk": "drk.ptr",
-                        "flm": "flm.ptr",
-                        "img": "img.ptr",
-                        "npx": "img.n",
-                    },
-                    "sig": "void uint16_to_float_darkflm(float *img, const float *drk, const float *flm, const uint16_t *data, intptr_t npx)",
-                    "when": "img.format == 'f' and drk.format == 'f' and flm.format == 'f'",
-                },
-            ],
-            "checks": [
-                "img.format == 'f'",
-                "drk.format == 'f'",
-                "drk.n == img.n",
-                "flm.format == 'f'",
-                "flm.n == img.n",
-                "data.format == 'H' or data.itemsize == 2",
-                "data.n == img.n",
-            ],
-            "doc": "subtracts image drk(float32) from\nraw data in data (uint16), multiples by flm(float32) and returns in img.",
-            "gil_release": True,
-            "py_sig": "uint16_to_float_darkflm(img: buffer, drk: buffer, flm: buffer, data: buffer) -> void",
-        },
-        {
-            "c_overloads": [
-                {
-                    "map": {
-                        "data": "data.ptr",
-                        "drk": "drk.ptr",
-                        "img": "img.ptr",
-                        "npx": "img.n",
-                    },
-                    "sig": "void uint16_to_float_darksub(float *img, const float *drk, const uint16_t *data, intptr_t npx)",
-                    "when": "img.format == 'f' and drk.format == 'f'",
-                },
-            ],
-            "checks": [
-                "img.format == 'f'",
-                "drk.format == 'f'",
-                "drk.n == img.n",
-                "data.format == 'H' or data.itemsize == 2",
-                "data.n == img.n",
-            ],
-            "doc": "subtracts image drk(float32) from\nraw data in data (uint16) and returns in img.",
-            "gil_release": True,
-            "py_sig": "uint16_to_float_darksub(img: buffer, drk: buffer, data: buffer) -> void",
         },
     ],
     "headers": [],
@@ -2598,13 +2651,7 @@
         "../functions/common/config.c",
         "../functions/compress_duplicates/compress_duplicates.c",
         "../functions/compute_geometry/compute_geometry.c",
-        "../functions/compute_geometry/compute_geometry_f32.c",
-        "../functions/compute_geometry/compute_geometry_soa_f32.c",
-        "../functions/compute_geometry/compute_geometry_soa_f64.c",
         "../functions/compute_gv/compute_gv.c",
-        "../functions/compute_gv/compute_gv_f32.c",
-        "../functions/compute_gv/compute_gv_soa_f32.c",
-        "../functions/compute_gv/compute_gv_soa_f64.c",
         "../functions/compute_xlylzl/compute_xlylzl.c",
         "../functions/compute_xlylzl_xpos_variable/compute_xlylzl_xpos_variable.c",
         "../functions/connectedpixels/connectedpixels.c",
@@ -2641,9 +2688,6 @@
         "../functions/sparse_overlaps/sparse_overlaps.c",
         "../functions/sparse_smooth/sparse_smooth.c",
         "../functions/splat/splat.c",
-        "../functions/tosparse_f32/tosparse_f32.c",
-        "../functions/tosparse_u16/tosparse_u16.c",
-        "../functions/tosparse_u32/tosparse_u32.c",
         "../functions/uint16_to_float_darkflm/uint16_to_float_darkflm.c",
         "../functions/uint16_to_float_darksub/uint16_to_float_darksub.c",
         "../functions/score/score_f32_avx2.c",
