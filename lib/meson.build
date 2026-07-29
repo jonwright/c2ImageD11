@@ -48,9 +48,6 @@ c2_sources = files(
   'functions/frelon_lines_sub/frelon_lines_sub.c',
   'functions/localmaxlabel/localmaxlabel.c',
   'functions/make_clean_mask/make_clean_mask.c',
-  'functions/make_clean_mask/make_clean_mask_u8.cpp',
-  'functions/make_clean_mask/make_clean_mask_u16.cpp',
-  'functions/make_clean_mask/make_clean_mask_u32.cpp',
   'functions/mask_to_coo/mask_to_coo.c',
   'functions/misori_cubic/misori_cubic.c',
   'functions/misori_monoclinic/misori_monoclinic.c',
@@ -73,9 +70,6 @@ c2_sources = files(
   'functions/sparse_overlaps/sparse_overlaps.c',
   'functions/sparse_smooth/sparse_smooth.c',
   'functions/splat/splat.c',
-  'functions/tosparse/tosparse_f32.cpp',
-  'functions/tosparse/tosparse_u16.cpp',
-  'functions/tosparse/tosparse_u32.cpp',
   'functions/uint16_to_float_darkflm/uint16_to_float_darkflm.c',
   'functions/uint16_to_float_darksub/uint16_to_float_darksub.c',
 )
@@ -110,6 +104,12 @@ c2_sources_cpp = files(
   'functions/reorder/reorder_u16_a32.cpp',
   'functions/reorderlut/reorderlut_f32_a32.cpp',
   'functions/reorderlut/reorderlut_u16_a32.cpp',
+  'functions/make_clean_mask/make_clean_mask_u8.cpp',
+  'functions/make_clean_mask/make_clean_mask_u16.cpp',
+  'functions/make_clean_mask/make_clean_mask_u32.cpp',
+  'functions/tosparse/tosparse_f32.cpp',
+  'functions/tosparse/tosparse_u16.cpp',
+  'functions/tosparse/tosparse_u32.cpp',
 )
 
 # Platform-specific compiler and link flags
