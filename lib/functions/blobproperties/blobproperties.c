@@ -6,10 +6,12 @@
  *  "doc": "fills the array results with properties of each labelled\nobject described by data (pixel values) and labels. The omega value\nis the angle for this frame.\nresults are FIXME",
  *  "params": {"data": "Input float32 2D.", "labels": "Input int32 labels.", "np": "Number of objects.",
  *      "results": "Output array (np, 36).", "omega": "Omega angle.", "verbose": "Print diagnostics."},
- *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n",
+ *  "checks": ["data.ndim == 2",
+ *         "data.slow_axis == 0", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n",
  *      "results.format == 'd'", "results.shape[0] == np", "results.shape[1] == 36"],
  *  "gil_release": true,
- *  "c_overloads": [{"sig": "void blobproperties(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf, double *res)",
+ *  "c_overloads": [{"when": "data.format == 'f' and data.ndim == 2 and data.slow_axis == 0",
+ *         "sig": "void blobproperties(const float *data, const int32_t *labels, int32_t npk, float omega, int verbose, intptr_t ns, intptr_t nf, double *res)",
  *      "map": {"data": "data.ptr", "labels": "labels.ptr", "npk": "np", "omega": "omega", "verbose": "verbose", "ns": "data.shape[0]", "nf": "data.shape[1]", "res": "results.ptr"}}]}
 C2PY_END */
 

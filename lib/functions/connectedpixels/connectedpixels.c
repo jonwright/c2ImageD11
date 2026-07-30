@@ -6,12 +6,14 @@
  *  "doc": "Determines which pixels in data are above the\nuser supplied threshold and assigns them into connected objects\nwhich are output in labels. Connectivity is 3x3 box (8) by default\nand reduces to a +(4) is con8==0",
  *  "params": {"data": "Input float32 2D.", "labels": "Output int32 labels.", "threshold": "Threshold.",
  *      "verbose": "Print diagnostics.", "con8": "8-connected (1) or 4-connected (0)."},
- *  "checks": ["data.format == 'f'", "data.ndim == 2", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n"],
- *  "c_overloads": [{"sig": "int connectedpixels(const float *data, int32_t *labels, float threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
+ *  "checks": ["data.ndim == 2",
+ *         "data.slow_axis == 0", "( labels.format == 'i' or labels.format == 'l' )", "labels.n == data.n"],
+ *  "c_overloads": [{"when": "data.format == 'f' and data.ndim == 2 and data.slow_axis == 0",
+  *         "sig": "int connectedpixels(const float *data, int32_t *labels, double threshold, int verbose, int eightconnected, intptr_t ns, intptr_t nf) -> int",
  *      "map": {"data": "data.ptr", "labels": "labels.ptr", "threshold": "threshold", "verbose": "verbose", "eightconnected": "con8", "ns": "data.shape[0]", "nf": "data.shape[1]"}}]}
 C2PY_END */
 
-int connectedpixels(const float *data, int32_t *labels, float threshold, int verbose,
+int connectedpixels(const float *data, int32_t *labels, double threshold, int verbose,
                     int eightconnected, intptr_t ns, intptr_t nf) {
 
     intptr_t i, j, irp, ir, ipx;

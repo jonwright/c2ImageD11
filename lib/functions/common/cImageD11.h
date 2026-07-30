@@ -47,7 +47,9 @@
 #define DLL_LOCAL
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
+#  if _MSC_VER < 1600
+/* MSVC 2008 (Python 2.7): no stdint.h, define manually */
 typedef __int8 int8_t;
 typedef __int16 int16_t;
 typedef __int32 int32_t;
@@ -56,20 +58,28 @@ typedef unsigned char uint8_t;
 typedef unsigned __int16 uint16_t;
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int64 uint64_t;
-
-#define inline __inline
+#  else
+#    include <stdint.h>
+#  endif
+#  define inline __inline
 #else
-#include <stdint.h>
+#  include <stdint.h>
 #endif
 
 /* 3-vector type used by geometry kernels (from ImageD11/src/closest.c) */
 typedef double vec[3];
 
 /* implemented in imaged11utils.c */
+#ifdef __cplusplus
+extern "C" {
+#endif
 void cimaged11_omp_set_num_threads(int);
-int cimaged11_omp_get_max_threads(void);
+int  cimaged11_omp_get_max_threads(void);
 DLL_LOCAL
 double my_get_time(void);
+#ifdef __cplusplus
+}
+#endif
 
 /* Rounding helper used by score/refine/misori functions
  * Magic integer trick: safe without -ffast-math (no libm call).

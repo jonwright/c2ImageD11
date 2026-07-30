@@ -5,7 +5,8 @@
  * {"py_sig": "sparse_smooth(v: buffer, i: buffer, j: buffer, s: buffer) -> void",
  *  "doc": "smooths data in coo format. Workaround for avoiding\nequal pixels on peak tails for localmaxlabel\nsingle threaded",
  *  "params": {"v": "Values (float32).", "i": "Rows (uint16).", "j": "Cols (uint16).", "s": "Output smoothed (float32)."},
- *  "checks": ["v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
+ *  "checks": ["v.slow_axis == 0",
+ *         "v.format == 'f'", "i.format == 'H' or i.itemsize == 2", "j.format == 'H' or j.itemsize == 2",
  *      "j.n == i.n", "v.n == i.n", "s.format == 'f'", "s.n == i.n"],
  *  "c_overloads": [{"sig": "void sparse_smooth(const float *v, const uint16_t *i, const uint16_t *j, intptr_t nnz, float *s)",
  *      "map": {"v": "v.ptr", "i": "i.ptr", "j": "j.ptr", "nnz": "i.n", "s": "s.ptr"}}]}

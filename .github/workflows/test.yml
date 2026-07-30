@@ -80,6 +80,10 @@ jobs:
         run: |
           pip install numpy pytest
 
+      - name: Format diagnostic
+        run: |
+          cd "$GITHUB_WORKSPACE" && python tests/diag_format.py
+
       - name: Run tests
         run: |
           cd "$(mktemp -d)" && python -m pytest "$GITHUB_WORKSPACE/tests/" -v
@@ -169,6 +173,10 @@ jobs:
       - name: Install test deps
         run: |
           pip install numpy pytest
+
+      - name: Format diagnostic
+        run: |
+          python %GITHUB_WORKSPACE%\tests\diag_format.py
 
       - name: Run tests
         run: |
