@@ -15,5 +15,7 @@ extern "C" void compute_gv_soa_f32(const float xlylzl[], const float omega[],
                                     double omegasign, double wvln,
                                     double wedge, double chi,
                                     const float t[3], float gv[], intptr_t n) {
-    compute_gv_soa_impl<float>(xlylzl, omega, omegasign, wvln, wedge, chi, t, gv, n);
+    compute_gv_soa_kernel<float>(xlylzl, xlylzl + n, xlylzl + 2*n,
+                                  omega, omegasign, wvln, wedge, chi, t,
+                                  gv, gv + n, gv + 2*n, n);
 }

@@ -6,15 +6,15 @@
 #include "ImageD11_cmath.h"
 
 template<typename T>
-static void compute_gv_soa_impl(const T xlylzl[], const T omega[],
-                                 double omegasign, double wvln,
-                                 double wedge, double chi,
-                                 const T t[3], T gv[], intptr_t n) {
+static void compute_gv_soa_kernel(const T *xl, const T *yl, const T *zl,
+                                   const T omega[],
+                                   double omegasign, double wvln,
+                                   double wedge, double chi,
+                                   const T t[3],
+                                   T *gx, T *gy, T *gz, intptr_t n) {
     T sw, cw, wmat[9], cmat[9], mat[9], u[3], d[3], v[3];
     T modyz, o[3], co, so, ds, k[3];
     intptr_t i;
-    const T *xl = xlylzl, *yl = xlylzl + n, *zl = xlylzl + 2*n;
-    T *gx = gv, *gy = gv + n, *gz = gv + 2*n;
     sw = std::sin(T(wedge * RAD));
     cw = std::cos(T(wedge * RAD));
     wmat[0] = cw;  wmat[1] = 0; wmat[2] = -sw;

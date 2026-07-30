@@ -15,5 +15,8 @@ extern "C" void compute_geometry_soa_f64(const double xlylzl[], const double ome
                                           double omegasign, double wvln,
                                           double wedge, double chi,
                                           const double t[3], double out[], intptr_t n) {
-    compute_geometry_soa_impl<double>(xlylzl, omega, omegasign, wvln, wedge, chi, t, out, n);
+    compute_geometry_soa_kernel<double>(xlylzl, xlylzl + n, xlylzl + 2*n,
+                                         omega, omegasign, wvln, wedge, chi, t,
+                                         out, out + n, out + 2*n,
+                                         out + 3*n, out + 4*n, out + 5*n, n);
 }
