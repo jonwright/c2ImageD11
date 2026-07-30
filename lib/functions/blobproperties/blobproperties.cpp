@@ -10,7 +10,7 @@
  *      "results.format == 'd'", "results.shape[0] == np", "results.shape[1] == 36"],
  *  "gil_release": true,
  *  "c_overloads": [{"when": "data.format == 'f' and data.ndim == 2 and data.slow_axis == 0",
- *         "sig": "void blobproperties(const float *data, const int32_t *labels, int32_t npk, double omega, int verbose, intptr_t ns, intptr_t nf, double *res)"
+ *         "sig": "void blobproperties(const float *data, const int32_t *labels, int32_t npk, double omega, int verbose, intptr_t ns, intptr_t nf, double *res)",
  *      "map": {"data": "data.ptr", "labels": "labels.ptr", "npk": "np", "omega": "omega", "verbose": "verbose", "ns": "data.shape[0]", "nf": "data.shape[1]", "res": "results.ptr"}}]}
 C2PY_END */
 
