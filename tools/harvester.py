@@ -112,7 +112,7 @@ def find_c_sources(src_dir):
     sources = []
     for root, dirs, files in os.walk(src_dir):
         for f in sorted(files):
-            if f.endswith(".c") and not f.startswith("."):
+            if f.endswith((".c", ".h")) and not f.startswith("."):
                 sources.append(os.path.join(root, f))
 
     def _isa_priority(filepath):
