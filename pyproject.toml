@@ -20,9 +20,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Scientific/Engineering :: Chemistry",
 ]
-dependencies = [
-    "numpy",
-]
+dependencies = []
+
+[project.optional-dependencies]
+test = ["numpy"]
 
 [project.urls]
 Homepage = "https://github.com/jonwright/c2ImageD11"
