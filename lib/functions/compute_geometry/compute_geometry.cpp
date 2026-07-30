@@ -22,7 +22,7 @@
  *     "c_overloads": [
  *         {
  *             "when": "xlylzl.format == 'd' and omega.format == 'd' and out.format == 'd' and xlylzl.shape[1] == 3 and xlylzl.slow_axis == 0",
- *             "sig": "void compute_geometry(const double xlylzl[], const double omega[], double omegasign, double wvln, double wedge, double chi, const double t[3], double out[], intptr_t n)"
+ *             "sig": "void compute_geometry(const double xlylzl[], const double omega[], double omegasign, double wvln, double wedge, double chi, const double t[3], double out[], intptr_t n)",
  *             "map": {"xlylzl": "xlylzl.ptr", "omega": "omega.ptr", "omegasign": "omegasign", "wvln": "wvln", "wedge": "wedge", "chi": "chi", "t": "t.ptr", "out": "out.ptr", "n": "xlylzl.shape[0]"},
  *         },
  *         {
