@@ -88,8 +88,11 @@ c2_sources_cpp = files(
 is_msvc = cc.get_id() == 'msvc'
 if is_msvc
   # /fp:fast contraction breaks (x+MAGIC)-MAGIC rounding trick used
-  # by the C code and baseline C++.  ISA variants with /arch:AVX2+
-  # use nearbyint() instead, which is safe.
+  # by the baseline C/C++.  The AVX2/AVX-512 ISA kernels use nearbyint()
+  # in their scalar tails (see omp_dispatch.h), which is safe under fast
+  # math.  On GCC/Clang, (x+MAGIC)-MAGIC survives because the baseline is
+  # compiled with -O2 (no -ffast-math); never add -ffast-math to the
+  # baseline flags or the trick is folded to identity.
   c2_c_args = ['/openmp', '/O2', '/D_DEFAULT_SOURCE']
   c2_cpp_args = ['/openmp', '/O2']
   c2_link_args = []

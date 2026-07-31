@@ -2758,7 +2758,7 @@
         "../functions/score/score_fallback.h",
         "../functions/score/score_stubs.c",
         "../functions/score_and_assign/score_and_assign.c",
-        "../functions/score_and_refine/sar_omp.h",
+        "../functions/common/omp_dispatch.h",
         "../functions/score_and_refine/sar_popcnt.h",
         "../functions/score_and_refine/score_and_refine.c",
         "../functions/score_gvec_z/score_gvec_z.c",

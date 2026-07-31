@@ -103,7 +103,29 @@ class TestScore:
             tol = 0.1 + 0.2 * np.random.random()
             n_o = OLD.score(ubi, gv, tol)
             n_n = NEW.score(ubi, gv, tol)
-            assert abs(n_o - n_n) <= 5, "n differ: %d vs %d" % (n_o, n_n)
+            assert n_o == n_n, "n differ: %d vs %d" % (n_o, n_n)
+
+    def test_tail_exact(self):
+        """Exact equality across tail-exercising sizes (ng %% 8 != 0) and the
+        OpenMP boundary, at 1 and 2 threads.  Regression for issue #33: under
+        -ffast-math the magic-number rounding in the SIMD scalar tails was
+        folded away, silently counting every tail row as indexed."""
+        np.random.seed(42)
+        ubi = np.random.randn(3, 3)
+        gv = np.random.randn(200011, 3)
+        tol = 0.05
+        try:
+            for nthr in (1, 2):
+                OLD.cimaged11_omp_set_num_threads(nthr)
+                NEW.cimaged11_omp_set_num_threads(nthr)
+                for ng in (1, 9999, 10000, 10001, 10007, 200011):
+                    n_o = OLD.score(ubi, gv[:ng], tol)
+                    n_n = NEW.score(ubi, gv[:ng], tol)
+                    assert n_o == n_n, "score mismatch at ng=%d nthr=%d: %d vs %d" % (
+                        ng, nthr, n_o, n_n)
+        finally:
+            OLD.cimaged11_omp_set_num_threads(1)
+            NEW.cimaged11_omp_set_num_threads(1)
 
 
 class TestScoreAndRefine:
@@ -118,10 +140,69 @@ class TestScoreAndRefine:
             n_o, s_o = OLD.score_and_refine(ubi_o, gv, tol)
             # c2py23 returns tuple directly via outputs
             n_n, s_n = NEW.score_and_refine(ubi_n, gv, tol)
-            assert abs(n_o - n_n) <= 2, "n differ: %d vs %d" % (n_o, n_n)
+            assert n_o == n_n, "n differ: %d vs %d" % (n_o, n_n)
             close(s_o * (n_o or 1), s_n * (n_n or 1))
-            if n_o == n_n:
-                close(ubi_o, ubi_n)
+            close(ubi_o, ubi_n)
+
+    def test_tail_exact(self):
+        """Same tail-exercising sizes as TestScore.test_tail_exact."""
+        np.random.seed(42)
+        ubi_o = np.random.randn(3, 3).copy()
+        ubi_n = ubi_o.copy()
+        gv = np.random.randn(200011, 3)
+        tol = 0.05
+        try:
+            for nthr in (1, 2):
+                OLD.cimaged11_omp_set_num_threads(nthr)
+                NEW.cimaged11_omp_set_num_threads(nthr)
+                for ng in (1, 10000, 10001, 200011):
+                    n_o, s_o = OLD.score_and_refine(ubi_o.copy(), gv[:ng], tol)
+                    n_n, s_n = NEW.score_and_refine(ubi_n.copy(), gv[:ng], tol)
+                    assert n_o == n_n, "sar mismatch at ng=%d nthr=%d: %d vs %d" % (
+                        ng, nthr, n_o, n_n)
+                    close(s_o * (n_o or 1), s_n * (n_n or 1))
+                    close(ubi_o, ubi_n)
+        finally:
+            OLD.cimaged11_omp_set_num_threads(1)
+            NEW.cimaged11_omp_set_num_threads(1)
+
+
+class TestScoreIssue33:
+    def test_realistic_ubi(self):
+        """Regression for issue #33: a valid UBI scored against real g-vectors.
+
+        Reproduces the reported bug shape (realistic UBI/gv, tol=0.05) without
+        scipy.  ng is not a multiple of 8 so the scalar tails run even
+        single-threaded; threaded at 2 so the per-chunk tails run too."""
+        np.random.seed(42)
+        B = np.eye(3) / 4.06
+
+        def rand_rotation(rng):
+            A = rng.randn(3, 3)
+            U, _ = np.linalg.qr(A)
+            if np.linalg.det(U) < 0:
+                U[:, 0] = -U[:, 0]
+            return U
+
+        rng = np.random.RandomState(42)
+        N = 1000
+        UBs = np.array([np.dot(rand_rotation(rng), B) for _ in range(N)])
+        hkls = np.mgrid[-5:6, -5:6, -5:6].reshape(3, -1)
+        gve = UBs.dot(hkls).transpose((2, 0, 1)).reshape(-1, 3).copy()
+        ubit = np.linalg.inv(UBs[N // 2])
+        tol = 0.05
+        try:
+            for nthr in (1, 2):
+                OLD.cimaged11_omp_set_num_threads(nthr)
+                NEW.cimaged11_omp_set_num_threads(nthr)
+                for sub in (gve, gve[:-3]):
+                    n_o = OLD.score(ubit, sub, tol)
+                    n_n = NEW.score(ubit, sub, tol)
+                    assert n_o == n_n, "issue#33 mismatch nthr=%d ng=%d: %d vs %d" % (
+                        nthr, sub.shape[0], n_o, n_n)
+        finally:
+            OLD.cimaged11_omp_set_num_threads(1)
+            NEW.cimaged11_omp_set_num_threads(1)
 
 
 class TestScoreAndAssign:

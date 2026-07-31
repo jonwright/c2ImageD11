@@ -13,11 +13,10 @@
  */
 
 #include <immintrin.h>
+#include <math.h>
 #include "../score_and_refine/sar_popcnt.h"
 #include <stdint.h>
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include "../common/omp_dispatch.h"
 
 static int
 score_f32_avx2_kernel(const double ubi[9], const float *gv, double tol, intptr_t ng)
@@ -56,15 +55,15 @@ score_f32_avx2_kernel(const double ubi[9], const float *gv, double tol, intptr_t
         if (mm) n += popcnt32(mm);
     }
 
-    double tol2 = tol * tol, magic = 6755399441055744.0;
+    double tol2 = tol * tol;
     for (; k < ng; k++) {
         double gx = gv[k*3], gy = gv[k*3+1], gz = gv[k*3+2];
         double hx_ = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz;
-        hx_ -= ((hx_ + magic) - magic);
+        hx_ -= nearbyint(hx_);
         double hy_ = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz;
-        hy_ -= ((hy_ + magic) - magic);
+        hy_ -= nearbyint(hy_);
         double hz_ = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz;
-        hz_ -= ((hz_ + magic) - magic);
+        hz_ -= nearbyint(hz_);
         if (hx_*hx_ + hy_*hy_ + hz_*hz_ < tol2) n++;
     }
     return n;
@@ -72,21 +71,7 @@ score_f32_avx2_kernel(const double ubi[9], const float *gv, double tol, intptr_t
 
 int score_f32_avx2(const double ubi[3][3], const float gv[], double tol, intptr_t ng)
 {
-    int n = 0;
-#ifdef _OPENMP
-    int nthr = omp_get_max_threads();
-    if (ng > 10000 && nthr > 1) {
-        #pragma omp parallel reduction(+:n)
-        {
-            int tid = omp_get_thread_num();
-            intptr_t chunk = (ng + nthr - 1) / nthr;
-            intptr_t start = tid * chunk;
-            intptr_t end = (start + chunk < ng) ? start + chunk : ng;
-            if (start < ng)
-                n = score_f32_avx2_kernel((const double *)ubi, gv + start*3, tol, end - start);
-        }
-        return n;
-    }
-#endif
-    return score_f32_avx2_kernel((const double *)ubi, gv, tol, ng);
+    int n;
+    OMP_DISPATCH_INT_AOS(score_f32_avx2_kernel, (const double *)ubi, gv, sizeof(float), ng, tol, n);
+    return n;
 }

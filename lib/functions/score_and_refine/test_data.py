@@ -76,3 +76,27 @@ def generate_single_ubi_data(ng, seed=42, tol=0.05):
     gv = np.dot(hkls, UB.T)
 
     return ubi, gv, tol
+
+
+def generate_single_ubi_data_perturbed(ng, seed=42, tol=0.05, angle_deg=0.5):
+    """Generate imperfect data for a single UBI.
+
+    The g-vectors are perfect projections of integer hkl for the unperturbed
+    UBI, but the returned UBI is rotated by angle_deg around a random axis, so
+    only a fraction of peaks index within tol -- like a real peak set.  This
+    is the shape of data that must be used for correctness checks: the perfect
+    data from generate_single_ubi_data matches every peak and hides miscounts.
+
+    Returns: (ubi_perturbed, gv, tol)
+    """
+    ubi, gv, tol = generate_single_ubi_data(ng, seed, tol)
+    rng = np.random.RandomState(seed + 2)
+    axis = rng.randn(3)
+    axis = axis / np.linalg.norm(axis)
+    c = np.cos(np.radians(angle_deg))
+    s = np.sin(np.radians(angle_deg))
+    K = np.array([[0, -axis[2], axis[1]],
+                  [axis[2], 0, -axis[0]],
+                  [-axis[1], axis[0], 0]])
+    dR = np.eye(3) + s * K + (1 - c) * np.dot(K, K)
+    return np.dot(dR, ubi), gv, tol
