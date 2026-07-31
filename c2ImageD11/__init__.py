@@ -90,13 +90,6 @@ if _mod is not None:
     _mod.blobproperties = blobproperties
     _mod.sparse_blob2Dproperties = sparse_blob2Dproperties
 
-    # -----------------------------------------------------------------------
-    # OpenMP minimum ng threshold.  Must match the `ng > 50000` guard in
-    # lib/functions/score_and_refine/score_and_refine.hpp.  Measured cutoff:
-    # ng <= 10000 | single-thread; ng > 10000 | ~2x speedup on x86_64.
-    # -----------------------------------------------------------------------
-    OMP_MIN_NG = 10000
-
 
     # -----------------------------------------------------------------------
     # OpenMP safety

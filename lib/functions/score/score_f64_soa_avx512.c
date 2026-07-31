@@ -1,8 +1,8 @@
 #include <immintrin.h>
-#include <math.h>
 #include "../score_and_refine/sar_popcnt.h"
 #include <stdint.h>
 #include "../common/omp_dispatch.h"
+#include "../common/score_tail.h"
 
 /* C2PY_BEGIN
  * {
@@ -36,13 +36,7 @@ static int score_f64_soa_avx512_kernel(const double ubi[9],
         __mmask8 mask=_mm512_cmp_pd_mask(sumsq,tvec,_CMP_LT_OS);
         if(mask)n+=popcnt32((unsigned)mask);
     }
-    double t2=tol*tol;
-    for(;k<ng;k++){double gx=gvx[k],gy=gvy[k],gz=gvz[k];
-        double hx_=ubi[0]*gx+ubi[1]*gy+ubi[2]*gz;hx_-=nearbyint(hx_);
-        double hy_=ubi[3]*gx+ubi[4]*gy+ubi[5]*gz;hy_-=nearbyint(hy_);
-        double hz_=ubi[6]*gx+ubi[7]*gy+ubi[8]*gz;hz_-=nearbyint(hz_);
-        if(hx_*hx_+hy_*hy_+hz_*hz_<t2)n++;}
-    return n;
+    return n + score_tail_soa_f64(ubi, gvx + k, gvy + k, gvz + k, tol, ng - k);
 }
 
 int score_f64_soa_avx512(const double ubi[3][3], const double gv[], double tol, intptr_t ng)

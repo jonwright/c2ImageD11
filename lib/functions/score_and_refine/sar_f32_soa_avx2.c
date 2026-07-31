@@ -15,19 +15,9 @@
 
 #include <immintrin.h>
 #include "sar_popcnt.h"
-/* Horizontal sum: 8 floats in ymm -> scalar */
-static float hsum8(__m256 v) {
-    __m128 lo = _mm256_castps256_ps128(v);
-    __m128 hi = _mm256_extractf128_ps(v, 1);
-    lo = _mm_add_ps(lo, hi);
-    lo = _mm_hadd_ps(lo, lo);
-    lo = _mm_hadd_ps(lo, lo);
-    return _mm_cvtss_f32(lo);
-}
-
 #include <stdint.h>
-#include <math.h>
 #include "../common/omp_dispatch.h"
+#include "../common/score_tail.h"
 
 extern int inverse3x3(double A[3][3]);
 
@@ -125,29 +115,7 @@ sar_f32_soa_avx2_kernel(const double ubi[9],
     *n_out = n_scalar;
     *sumdrlv2_out = (double)hsum8(s_vec);
 
-    /* Scalar tail */
-    double tol2 = tol * tol;
-    for (; k < ng; k++) {
-        double gx = gvx[k], gy = gvy[k], gz = gvz[k];
-        double hx_ = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz;
-        double hy_ = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz;
-        double hz_ = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz;
-        double ix = nearbyint(hx_);
-        double iy = nearbyint(hy_);
-        double iz = nearbyint(hz_);
-        double tx_ = hx_ - ix, ty_ = hy_ - iy, tz_ = hz_ - iz;
-        double s = tx_*tx_ + ty_*ty_ + tz_*tz_;
-        if (s < tol2) {
-            (*n_out)++;
-            *sumdrlv2_out += s;
-            H[0] += ix*ix; H[1] += ix*iy; H[2] += ix*iz;
-            H[3] += iy*ix; H[4] += iy*iy; H[5] += iy*iz;
-            H[6] += iz*ix; H[7] += iz*iy; H[8] += iz*iz;
-            R[0] += ix*gx; R[1] += iy*gx; R[2] += iz*gx;
-            R[3] += ix*gy; R[4] += iy*gy; R[5] += iz*gy;
-            R[6] += ix*gz; R[7] += iy*gz; R[8] += iz*gz;
-        }
-    }
+    sar_tail_soa_f32(ubi, gvx + k, gvy + k, gvz + k, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
 void score_and_refine_f32_soa_avx2(

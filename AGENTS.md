@@ -317,11 +317,14 @@ generated dispatch chain (first-match wins).
 
 OpenMP dispatch is shared, not per-file: `lib/functions/common/omp_dispatch.h`
 provides `OMP_DISPATCH_INT_AOS/SOA` (score) and `SAR_OMP_DISPATCH_AOS/SOA`
-(score_and_refine) plus the single `OMP_MIN_NG` threshold.  The AVX2/AVX-512
-kernels' scalar tails use `nearbyint()` (NOT the `(x+MAGIC)-MAGIC` trick):
-those files are compiled with `-ffast-math`, which folds the trick to identity
-and would silently count every tail row (issue #33).  The `-O2` baseline keeps
-the magic trick and is guarded by `verify_rounding()` on import.
+(score_and_refine).  The parallelization cutoff is a runtime value (default
+10000), settable from Python via `c2ImageD11.cimaged11_omp_set_min_ng()` /
+read via `cimaged11_omp_get_min_ng()`.  The AVX2/AVX-512 kernels' scalar
+tails and hsum helpers live in `lib/functions/common/score_tail.h` and use
+`nearbyint()` (NOT the `(x+MAGIC)-MAGIC` trick): those files are compiled
+with `-ffast-math`, which folds the trick to identity and would silently
+count every tail row (issue #33).  The `-O2` baseline keeps the magic trick
+and is guarded by `verify_rounding()` on import.
 
 Harvester now scans `.cpp` files and merges `C2PY_BEGIN` blocks with the
 same `py_sig` by prepending `c_overloads` from each variant.

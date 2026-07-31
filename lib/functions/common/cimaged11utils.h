@@ -3,6 +3,8 @@
 #include <stdint.h>
 void cimaged11_omp_set_num_threads(int n);
 int  cimaged11_omp_get_max_threads(void);
+int  cimaged11_omp_get_min_ng(void);
+void cimaged11_omp_set_min_ng(int n);
 int  verify_rounding(int n);
 int  inverse3x3(double A[3][3]);
 void boundscheck(int jpk, int n2, int ipk, int n1);

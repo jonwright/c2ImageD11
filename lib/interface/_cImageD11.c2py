@@ -408,6 +408,31 @@
         {
             "c_overloads": [
                 {
+                    "map": {},
+                    "sig": "int cimaged11_omp_get_min_ng()",
+                },
+            ],
+            "doc": "Return the minimum number of g-vectors before the score family\nparallelizes with OpenMP.",
+            "py_sig": "cimaged11_omp_get_min_ng() -> int",
+        },
+        {
+            "c_overloads": [
+                {
+                    "map": {
+                        "n": "n",
+                    },
+                    "sig": "void cimaged11_omp_set_min_ng(int n)",
+                },
+            ],
+            "doc": "Set the minimum number of g-vectors before the score family\nparallelizes with OpenMP.  Negative values are clamped to 0.",
+            "params": {
+                "n": "Minimum ng.  Pass 0 to always parallelize (with >1 thread);\npass a huge value to force single-threaded.",
+            },
+            "py_sig": "cimaged11_omp_set_min_ng(n: int) -> void",
+        },
+        {
+            "c_overloads": [
+                {
                     "map": {
                         "n": "n",
                     },
@@ -2737,6 +2762,8 @@
         "../functions/common/cimaged11utils.c",
         "../functions/common/cimaged11utils.h",
         "../functions/common/config.c",
+        "../functions/common/omp_dispatch.h",
+        "../functions/common/score_tail.h",
         "../functions/compress_duplicates/compress_duplicates.c",
         "../functions/compute_xlylzl/compute_xlylzl.c",
         "../functions/compute_xlylzl_xpos_variable/compute_xlylzl_xpos_variable.c",
@@ -2758,7 +2785,6 @@
         "../functions/score/score_fallback.h",
         "../functions/score/score_stubs.c",
         "../functions/score_and_assign/score_and_assign.c",
-        "../functions/common/omp_dispatch.h",
         "../functions/score_and_refine/sar_popcnt.h",
         "../functions/score_and_refine/score_and_refine.c",
         "../functions/score_gvec_z/score_gvec_z.c",

@@ -6,10 +6,9 @@
  * that picks a kernel and delegates the threading to these macros.
  *
  * Include AFTER the kernel function declaration.  The macros run the kernel
- * sequentially, or in parallel if ng > OMP_MIN_NG and OpenMP reports more
- * than one thread.  OMP_MIN_NG must match c2ImageD11.OMP_MIN_NG in
- * c2ImageD11/__init__.py (measured cutoff: ng <= 10000 single-thread;
- * ng > 10000 threads well on x86_64).
+ * sequentially, or in parallel if ng > cimaged11_omp_get_min_ng() and OpenMP
+ * reports more than one thread.  The threshold is a runtime value (default
+ * 10000) settable from Python via c2ImageD11.cimaged11_omp_set_min_ng().
  *
  * Four macros:
  *   OMP_DISPATCH_INT_AOS(fn, ubi, gv, sr, ng, tol, n_out)
@@ -28,16 +27,14 @@
 
 #include <stdint.h>
 
-#ifndef OMP_MIN_NG
-#define OMP_MIN_NG 10000
-#endif
+int cimaged11_omp_get_min_ng(void);
 
 #ifdef _OPENMP
 #include <omp.h>
 
 #define OMP_DISPATCH_INT_AOS(fn, ubi, gv, sr, ng, tol, n_out) do { \
     int _nthr = omp_get_max_threads(); \
-    if ((ng) > OMP_MIN_NG && _nthr > 1) { \
+    if ((ng) > cimaged11_omp_get_min_ng() && _nthr > 1) { \
         int _tid; intptr_t _start, _end, _chunk; \
         _chunk = ((ng) + _nthr - 1) / _nthr; \
         n_out = 0; \
@@ -61,7 +58,7 @@
 
 #define OMP_DISPATCH_INT_SOA(fn, ubi, gvx, gvy, gvz, sr, ng, tol, n_out) do { \
     int _nthr = omp_get_max_threads(); \
-    if ((ng) > OMP_MIN_NG && _nthr > 1) { \
+    if ((ng) > cimaged11_omp_get_min_ng() && _nthr > 1) { \
         int _tid; intptr_t _start, _end, _chunk; \
         _chunk = ((ng) + _nthr - 1) / _nthr; \
         n_out = 0; \
@@ -87,7 +84,7 @@
 
 #define SAR_OMP_DISPATCH_AOS(fn, ubi, gv, sr, ng, tol, H, R, n, sd) do { \
     int _nthr = omp_get_max_threads(); \
-    if ((ng) > OMP_MIN_NG && _nthr > 1) { \
+    if ((ng) > cimaged11_omp_get_min_ng() && _nthr > 1) { \
         int _tid, _i, _j; \
         intptr_t _start, _end, _chunk; \
         _chunk = ((ng) + _nthr - 1) / _nthr; \
@@ -123,7 +120,7 @@
 
 #define SAR_OMP_DISPATCH_SOA(fn, ubi, gvx, gvy, gvz, sr, ng, tol, H, R, n, sd) do { \
     int _nthr = omp_get_max_threads(); \
-    if ((ng) > OMP_MIN_NG && _nthr > 1) { \
+    if ((ng) > cimaged11_omp_get_min_ng() && _nthr > 1) { \
         int _tid, _i, _j; \
         intptr_t _start, _end, _chunk; \
         _chunk = ((ng) + _nthr - 1) / _nthr; \

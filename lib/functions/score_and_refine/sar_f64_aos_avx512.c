@@ -16,8 +16,8 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
-#include <math.h>
 #include "../common/omp_dispatch.h"
+#include "../common/score_tail.h"
 
 extern int inverse3x3(double A[3][3]);
 
@@ -76,14 +76,7 @@ sar_f64_aos_avx512_kernel(const double ubi[9], const double *__restrict gv,
     R[3]=_mm512_reduce_add_pd(R10);R[4]=_mm512_reduce_add_pd(R11);R[5]=_mm512_reduce_add_pd(R12);
     R[6]=_mm512_reduce_add_pd(R20);R[7]=_mm512_reduce_add_pd(R21);R[8]=_mm512_reduce_add_pd(R22);
     *n_out = n_scalar; *sumdrlv2_out = _mm512_reduce_add_pd(s_vec);
-    double tol2=tol*tol;
-    for(;k<ng;k++){double gx=gv[k*3],gy=gv[k*3+1],gz=gv[k*3+2];
-        double hx_=ubi[0]*gx+ubi[1]*gy+ubi[2]*gz,hy_=ubi[3]*gx+ubi[4]*gy+ubi[5]*gz,hz_=ubi[6]*gx+ubi[7]*gy+ubi[8]*gz;
-        double ix=nearbyint(hx_),iy=nearbyint(hy_),iz=nearbyint(hz_);
-        double tx_=hx_-ix,ty_=hy_-iy,tz_=hz_-iz,s=tx_*tx_+ty_*ty_+tz_*tz_;
-        if(s<tol2){(*n_out)++;*sumdrlv2_out+=s;
-            H[0]+=ix*ix;H[1]+=ix*iy;H[2]+=ix*iz;H[3]+=iy*ix;H[4]+=iy*iy;H[5]+=iy*iz;H[6]+=iz*ix;H[7]+=iz*iy;H[8]+=iz*iz;
-            R[0]+=ix*gx;R[1]+=iy*gx;R[2]+=iz*gx;R[3]+=ix*gy;R[4]+=iy*gy;R[5]+=iz*gy;R[6]+=ix*gz;R[7]+=iy*gz;R[8]+=iz*gz;}}
+    sar_tail_aos_f64(ubi, gv + k*3, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
 void score_and_refine_f64_avx512(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)

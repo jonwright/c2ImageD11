@@ -19,13 +19,8 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
-#include <math.h>
 #include "../common/omp_dispatch.h"
-
-static double hsum4(__m256d v) {
-    __m128d lo = _mm256_castpd256_pd128(v), hi = _mm256_extractf128_pd(v, 1);
-    lo = _mm_add_pd(lo, hi); lo = _mm_hadd_pd(lo, lo); return _mm_cvtsd_f64(lo);
-}
+#include "../common/score_tail.h"
 
 extern int inverse3x3(double A[3][3]);
 
@@ -77,14 +72,7 @@ static void sar_f64_aos_avx2_kernel(
     R[0]=hsum4(R00);R[1]=hsum4(R01);R[2]=hsum4(R02);R[3]=hsum4(R10);R[4]=hsum4(R11);R[5]=hsum4(R12);
     R[6]=hsum4(R20);R[7]=hsum4(R21);R[8]=hsum4(R22);
     *n_out=ns; *sumdrlv2_out=hsum4(s_vec);
-    double tol2=tol*tol;
-    for(;k<ng;k++){double gx=gv[k*3],gy=gv[k*3+1],gz=gv[k*3+2];
-        double hx_=ubi[0]*gx+ubi[1]*gy+ubi[2]*gz,hy_=ubi[3]*gx+ubi[4]*gy+ubi[5]*gz,hz_=ubi[6]*gx+ubi[7]*gy+ubi[8]*gz;
-        double ix=nearbyint(hx_),iy=nearbyint(hy_),iz=nearbyint(hz_);
-        double tx_=hx_-ix,ty_=hy_-iy,tz_=hz_-iz,s=tx_*tx_+ty_*ty_+tz_*tz_;
-        if(s<tol2){(*n_out)++;*sumdrlv2_out+=s;
-            H[0]+=ix*ix;H[1]+=ix*iy;H[2]+=ix*iz;H[3]+=iy*ix;H[4]+=iy*iy;H[5]+=iy*iz;H[6]+=iz*ix;H[7]+=iz*iy;H[8]+=iz*iz;
-            R[0]+=ix*gx;R[1]+=iy*gx;R[2]+=iz*gx;R[3]+=ix*gy;R[4]+=iy*gy;R[5]+=iz*gy;R[6]+=ix*gz;R[7]+=iy*gz;R[8]+=iz*gz;}}
+    sar_tail_aos_f64(ubi, gv + k*3, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
 void score_and_refine_f64_avx2(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)
