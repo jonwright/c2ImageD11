@@ -17,7 +17,8 @@ from score_and_refine.test_data import (
 import c2ImageD11
 
 ng = 200000
-niter = 30
+niter = 50
+n_warmup = 50
 n_cores = os.cpu_count() or 4
 
 ubi, gv, tol = generate_single_ubi_data(ng)
@@ -36,7 +37,11 @@ def numpy_score(ubi, gv, tol):
 
 def measure(fn, ubi, gv, tol, nthr):
     c2ImageD11.cimaged11_omp_set_num_threads(nthr)
-    for _ in range(5): fn(ubi.copy(), gv, tol)
+    # n_warmup must exceed ~10 calls: the first parallel region after
+    # omp_set_num_threads() lazily creates the libgomp thread pool, and
+    # those setup calls take 1-8ms each (otherwise the first nT column is
+    # dominated by pool setup and reads ~10x too slow).
+    for _ in range(n_warmup): fn(ubi.copy(), gv, tol)
     t0 = time.perf_counter()
     for _ in range(niter): fn(ubi.copy(), gv, tol)
     t1 = time.perf_counter()
