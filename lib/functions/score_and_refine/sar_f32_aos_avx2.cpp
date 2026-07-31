@@ -1,13 +1,13 @@
-/* sar_f32_soa_avx2.c -- f32 SoA AVX2 intrinsics variant
+/* sar_f32_aos_avx2.c -- f32 AoS AVX2 intrinsics variant
  *
  * C2PY_BEGIN
  * {
  *     "py_sig": "score_and_refine(ubi: buffer, gv: buffer, tol: float) -> int",
  *     "c_overloads": [{
- *         "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[0] == 3 and gv.slow_axis == 0 and gv.shape[1] != 3 and c2py_amd64_avx2",
- *         "sig": "void score_and_refine_f32_soa_avx2(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
+ *         "when": "ubi.format == 'd' and gv.format == 'f' and gv.shape[1] == 3 and gv.slow_axis == 0 and c2py_amd64_avx2",
+ *         "sig": "void score_and_refine_f32_avx2(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)",
  *         "outputs": {"n_arg": "int", "sumdrlv2_arg": "double"},
- *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[1]"},
+ *         "map": {"ubi": "ubi.ptr", "gv": "gv.ptr", "tol": "tol", "ng": "gv.shape[0]"},
  *     }],
  * }
  * C2PY_END
@@ -16,19 +16,16 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
-#include "../common/omp_dispatch.h"
-#include "../common/score_tail.h"
+#include "../common/omp_dispatch.hpp"
+#include "../common/score_tail.hpp"
 
-extern int inverse3x3(double A[3][3]);
+extern "C" int inverse3x3(double A[3][3]);
 
 static void
-sar_f32_soa_avx2_kernel(const double ubi[9],
-                         const float *__restrict gvx, const float *__restrict gvy, const float *__restrict gvz,
-                         double tol, intptr_t ng,
-                         double *__restrict H, double *__restrict R,
-                         int *__restrict n_out, double *__restrict sumdrlv2_out)
+sar_f32_aos_avx2_kernel(const double ubi[9], const float *__restrict gv,
+    double tol, intptr_t ng, double *__restrict H, double *__restrict R,
+    int *__restrict n_out, double *__restrict sumdrlv2_out)
 {
-    /* UBI is f64; cast to f32 for computation */
     __m256 u00 = _mm256_set1_ps((float)ubi[0]), u01 = _mm256_set1_ps((float)ubi[1]),
             u02 = _mm256_set1_ps((float)ubi[2]);
     __m256 u10 = _mm256_set1_ps((float)ubi[3]), u11 = _mm256_set1_ps((float)ubi[4]),
@@ -53,16 +50,27 @@ sar_f32_soa_avx2_kernel(const double ubi[9],
 
     intptr_t k;
     for (k = 0; k + 8 <= ng; k += 8) {
-        __m256 gvx_v = _mm256_loadu_ps(&gvx[k]);
-        __m256 gvy_v = _mm256_loadu_ps(&gvy[k]);
-        __m256 gvz_v = _mm256_loadu_ps(&gvz[k]);
+        /* AoS layout for floats: 8 g-vectors = 24 floats = 3 ymm loads */
+        /* AoS: scalar-gather loads below */
+        /* Actually f32 AoS shuffle is complex.  Do 2 g-vectors per xmm,
+         * then 4 per ymm.  Let me use scalar gather approach. */
+        /* For f32 AoS, the safe cross-platform approach: scalar loads */
+        __m256 gvx = _mm256_set_ps(
+            gv[k*3+21], gv[k*3+18], gv[k*3+15], gv[k*3+12],
+            gv[k*3+9],  gv[k*3+6],  gv[k*3+3],  gv[k*3+0]);
+        __m256 gvy = _mm256_set_ps(
+            gv[k*3+22], gv[k*3+19], gv[k*3+16], gv[k*3+13],
+            gv[k*3+10], gv[k*3+7],  gv[k*3+4],  gv[k*3+1]);
+        __m256 gvz = _mm256_set_ps(
+            gv[k*3+23], gv[k*3+20], gv[k*3+17], gv[k*3+14],
+            gv[k*3+11], gv[k*3+8],  gv[k*3+5],  gv[k*3+2]);
 
-        __m256 hx = _mm256_fmadd_ps(u00, gvx_v,
-                    _mm256_fmadd_ps(u01, gvy_v, _mm256_mul_ps(u02, gvz_v)));
-        __m256 hy = _mm256_fmadd_ps(u10, gvx_v,
-                    _mm256_fmadd_ps(u11, gvy_v, _mm256_mul_ps(u12, gvz_v)));
-        __m256 hz = _mm256_fmadd_ps(u20, gvx_v,
-                    _mm256_fmadd_ps(u21, gvy_v, _mm256_mul_ps(u22, gvz_v)));
+        __m256 hx = _mm256_fmadd_ps(u00, gvx,
+                    _mm256_fmadd_ps(u01, gvy, _mm256_mul_ps(u02, gvz)));
+        __m256 hy = _mm256_fmadd_ps(u10, gvx,
+                    _mm256_fmadd_ps(u11, gvy, _mm256_mul_ps(u12, gvz)));
+        __m256 hz = _mm256_fmadd_ps(u20, gvx,
+                    _mm256_fmadd_ps(u21, gvy, _mm256_mul_ps(u22, gvz)));
 
         __m256 ihx = _mm256_round_ps(hx, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
         __m256 ihy = _mm256_round_ps(hy, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
@@ -92,20 +100,18 @@ sar_f32_soa_avx2_kernel(const double ubi[9],
         MA(H21, _mm256_mul_ps(ihz, ihy));
         MA(H22, _mm256_mul_ps(ihz, ihz));
 
-        MA(R00, _mm256_mul_ps(ihx, gvx_v));
-        MA(R01, _mm256_mul_ps(ihy, gvx_v));
-        MA(R02, _mm256_mul_ps(ihz, gvx_v));
-        MA(R10, _mm256_mul_ps(ihx, gvy_v));
-        MA(R11, _mm256_mul_ps(ihy, gvy_v));
-        MA(R12, _mm256_mul_ps(ihz, gvy_v));
-        MA(R20, _mm256_mul_ps(ihx, gvz_v));
-        MA(R21, _mm256_mul_ps(ihy, gvz_v));
-        MA(R22, _mm256_mul_ps(ihz, gvz_v));
+        MA(R00, _mm256_mul_ps(ihx, gvx));
+        MA(R01, _mm256_mul_ps(ihy, gvx));
+        MA(R02, _mm256_mul_ps(ihz, gvx));
+        MA(R10, _mm256_mul_ps(ihx, gvy));
+        MA(R11, _mm256_mul_ps(ihy, gvy));
+        MA(R12, _mm256_mul_ps(ihz, gvy));
+        MA(R20, _mm256_mul_ps(ihx, gvz));
+        MA(R21, _mm256_mul_ps(ihy, gvz));
+        MA(R22, _mm256_mul_ps(ihz, gvz));
 #undef MA
     }
 
-    /* Horizontal reduction */
-    
     H[0] = hsum8(H00); H[1] = hsum8(H01); H[2] = hsum8(H02);
     H[3] = hsum8(H10); H[4] = hsum8(H11); H[5] = hsum8(H12);
     H[6] = hsum8(H20); H[7] = hsum8(H21); H[8] = hsum8(H22);
@@ -115,39 +121,26 @@ sar_f32_soa_avx2_kernel(const double ubi[9],
     *n_out = n_scalar;
     *sumdrlv2_out = (double)hsum8(s_vec);
 
-    sar_tail_soa_f32(ubi, gvx + k, gvy + k, gvz + k, tol, ng - k, H, R, n_out, sumdrlv2_out);
+    sar_tail_aos(ubi, gv + k*3, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
-void score_and_refine_f32_soa_avx2(
+extern "C" void score_and_refine_f32_avx2(
     double ubi[3][3], const float gv[], double tol,
     int *n_arg, double *sumdrlv2_arg, intptr_t ng)
 {
-    const float *gvx = gv;
-    const float *gvy = gv + ng;
-    const float *gvz = gv + 2 * ng;
-
     double H[3][3] = {{0}}, R[3][3] = {{0}}, UB[3][3] = {{0}};
-    int n;
-    double sumdrlv2;
-
-        SAR_OMP_DISPATCH_SOA(sar_f32_soa_avx2_kernel, (const double *)ubi, gvx, gvy, gvz, sizeof(float), ng, tol, H, R, &n, &sumdrlv2);
-
+    int n; double sumdrlv2;
+    dispatch_sar_aos(sar_f32_aos_avx2_kernel, (const double *)ubi, gv, ng, tol, H, R, &n, &sumdrlv2);
     if (n > 0) sumdrlv2 /= n;
-
     if (inverse3x3(H) == 0) {
         int i, j, l;
-        for (i = 0; i < 3; i++)
-            for (j = 0; j < 3; j++)
-                for (l = 0; l < 3; l++)
-                    UB[i][j] += R[i][l] * H[l][j];
+        for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) for (l = 0; l < 3; l++)
+            UB[i][j] += R[i][l] * H[l][j];
     }
     if (inverse3x3(UB) == 0) {
         int i, j;
-        for (i = 0; i < 3; i++)
-            for (j = 0; j < 3; j++)
-                ubi[i][j] = UB[i][j];
+        for (i = 0; i < 3; i++) for (j = 0; j < 3; j++)
+            ubi[i][j] = UB[i][j];
     }
-
-    *n_arg = n;
-    *sumdrlv2_arg = sumdrlv2;
+    *n_arg = n; *sumdrlv2_arg = sumdrlv2;
 }

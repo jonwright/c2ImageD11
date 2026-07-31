@@ -315,12 +315,14 @@ Variants share the same Python name `score_and_refine`. c2py23 dispatches via
 variant `.cpp` files are prepended before the `.c` baseline in the
 generated dispatch chain (first-match wins).
 
-OpenMP dispatch is shared, not per-file: `lib/functions/common/omp_dispatch.h`
-provides `OMP_DISPATCH_INT_AOS/SOA` (score) and `SAR_OMP_DISPATCH_AOS/SOA`
-(score_and_refine).  The parallelization cutoff is a runtime value (default
-10000), settable from Python via `c2ImageD11.cimaged11_omp_set_min_ng()` /
-read via `cimaged11_omp_get_min_ng()`.  The AVX2/AVX-512 kernels' scalar
-tails and hsum helpers live in `lib/functions/common/score_tail.h` and use
+OpenMP dispatch is shared, not per-file: `lib/functions/common/omp_dispatch.hpp`
+provides C++ templates `dispatch_score_aos/soa` (score) and
+`dispatch_sar_aos/soa` (score_and_refine), parameterized by the gv element
+type (float/double) and the kernel function.  The parallelization cutoff is a
+runtime value (default 10000), settable from Python via
+`c2ImageD11.cimaged11_omp_set_min_ng()` / read via
+`cimaged11_omp_get_min_ng()`.  The AVX2/AVX-512 kernels' scalar
+tails and hsum helpers live in `lib/functions/common/score_tail.hpp` and use
 `nearbyint()` (NOT the `(x+MAGIC)-MAGIC` trick): those files are compiled
 with `-ffast-math`, which folds the trick to identity and would silently
 count every tail row (issue #33).  The `-O2` baseline keeps the magic trick

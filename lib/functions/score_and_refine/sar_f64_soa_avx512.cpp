@@ -24,10 +24,10 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
-#include "../common/omp_dispatch.h"
-#include "../common/score_tail.h"
+#include "../common/omp_dispatch.hpp"
+#include "../common/score_tail.hpp"
 
-extern int inverse3x3(double A[3][3]);
+extern "C" int inverse3x3(double A[3][3]);
 
 /* ── f64 SoA AVX-512 kernel (8 doubles/zmm) ──────────────────────────
  * Uses __mmask8 for comparison results, _mm512_mask_add_pd for
@@ -135,10 +135,10 @@ sar_f64_soa_avx512_kernel(
     *n_out = n_scalar;
     *sumdrlv2_out = _mm512_reduce_add_pd(s_vec);
 
-    sar_tail_soa_f64(ubi, gvx + k, gvy + k, gvz + k, tol, ng - k, H, R, n_out, sumdrlv2_out);
+    sar_tail_soa(ubi, gvx + k, gvy + k, gvz + k, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
-void score_and_refine_f64_soa_avx512(
+extern "C" void score_and_refine_f64_soa_avx512(
     double ubi[3][3], const double gv[], double tol,
     int *n_arg, double *sumdrlv2_arg, intptr_t ng)
 {
@@ -150,7 +150,7 @@ void score_and_refine_f64_soa_avx512(
     int n;
     double sumdrlv2;
 
-        SAR_OMP_DISPATCH_SOA(sar_f64_soa_avx512_kernel, (const double *)ubi, gvx, gvy, gvz, sizeof(double), ng, tol, H, R, &n, &sumdrlv2);
+    dispatch_sar_soa(sar_f64_soa_avx512_kernel, (const double *)ubi, gvx, gvy, gvz, ng, tol, H, R, &n, &sumdrlv2);
 
     if (n > 0) sumdrlv2 /= n;
     if (sumdrlv2 > 0) {} /* suppress unused */

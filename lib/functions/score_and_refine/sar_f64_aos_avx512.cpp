@@ -16,10 +16,10 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
-#include "../common/omp_dispatch.h"
-#include "../common/score_tail.h"
+#include "../common/omp_dispatch.hpp"
+#include "../common/score_tail.hpp"
 
-extern int inverse3x3(double A[3][3]);
+extern "C" int inverse3x3(double A[3][3]);
 
 static void
 sar_f64_aos_avx512_kernel(const double ubi[9], const double *__restrict gv,
@@ -76,13 +76,13 @@ sar_f64_aos_avx512_kernel(const double ubi[9], const double *__restrict gv,
     R[3]=_mm512_reduce_add_pd(R10);R[4]=_mm512_reduce_add_pd(R11);R[5]=_mm512_reduce_add_pd(R12);
     R[6]=_mm512_reduce_add_pd(R20);R[7]=_mm512_reduce_add_pd(R21);R[8]=_mm512_reduce_add_pd(R22);
     *n_out = n_scalar; *sumdrlv2_out = _mm512_reduce_add_pd(s_vec);
-    sar_tail_aos_f64(ubi, gv + k*3, tol, ng - k, H, R, n_out, sumdrlv2_out);
+    sar_tail_aos(ubi, gv + k*3, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
-void score_and_refine_f64_avx512(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)
+extern "C" void score_and_refine_f64_avx512(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)
 {
     double H[3][3]={{0}},R[3][3]={{0}},UB[3][3]={{0}}; int n; double sd;
-        SAR_OMP_DISPATCH_AOS(sar_f64_aos_avx512_kernel, (const double *)ubi, gv, sizeof(double), ng, tol, H, R, &n, &sd);
+    dispatch_sar_aos(sar_f64_aos_avx512_kernel, (const double *)ubi, gv, ng, tol, H, R, &n, &sd);
     if(n>0)sd/=n;
     if(inverse3x3(H)==0){int i,j,l;for(i=0;i<3;i++)for(j=0;j<3;j++)for(l=0;l<3;l++)UB[i][j]+=R[i][l]*H[l][j];}
     if(inverse3x3(UB)==0){int i,j;for(i=0;i<3;i++)for(j=0;j<3;j++)ubi[i][j]=UB[i][j];}

@@ -15,8 +15,8 @@
 #include <immintrin.h>
 #include "../score_and_refine/sar_popcnt.h"
 #include <stdint.h>
-#include "../common/omp_dispatch.h"
-#include "../common/score_tail.h"
+#include "../common/omp_dispatch.hpp"
+#include "../common/score_tail.hpp"
 
 static int
 score_f32_avx2_kernel(const double ubi[9], const float *gv, double tol, intptr_t ng)
@@ -55,12 +55,10 @@ score_f32_avx2_kernel(const double ubi[9], const float *gv, double tol, intptr_t
         if (mm) n += popcnt32(mm);
     }
 
-    return n + score_tail_aos_f32(ubi, gv + k*3, tol, ng - k);
+    return n + score_tail_aos(ubi, gv + k*3, tol, ng - k);
 }
 
-int score_f32_avx2(const double ubi[3][3], const float gv[], double tol, intptr_t ng)
+extern "C" int score_f32_avx2(const double ubi[3][3], const float gv[], double tol, intptr_t ng)
 {
-    int n;
-    OMP_DISPATCH_INT_AOS(score_f32_avx2_kernel, (const double *)ubi, gv, sizeof(float), ng, tol, n);
-    return n;
+    return dispatch_score_aos(score_f32_avx2_kernel, (const double *)ubi, gv, ng, tol);
 }
