@@ -16,9 +16,10 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
-#include "sar_omp.h"
+#include "../common/omp_dispatch.hpp"
+#include "../common/score_tail.hpp"
 
-extern int inverse3x3(double A[3][3]);
+extern "C" int inverse3x3(double A[3][3]);
 
 static void
 sar_f32_aos_avx512_kernel(const double ubi[9], const float *__restrict gv,
@@ -74,20 +75,13 @@ sar_f32_aos_avx512_kernel(const double ubi[9], const float *__restrict gv,
     R[3]=_mm512_reduce_add_ps(R10);R[4]=_mm512_reduce_add_ps(R11);R[5]=_mm512_reduce_add_ps(R12);
     R[6]=_mm512_reduce_add_ps(R20);R[7]=_mm512_reduce_add_ps(R21);R[8]=_mm512_reduce_add_ps(R22);
     *n_out=n_scalar;*sumdrlv2_out=(double)_mm512_reduce_add_ps(s_vec);
-    double tol2=tol*tol;
-    for(;k<ng;k++){double gx=gv[k*3],gy=gv[k*3+1],gz=gv[k*3+2];
-        double hx_=ubi[0]*gx+ubi[1]*gy+ubi[2]*gz,hy_=ubi[3]*gx+ubi[4]*gy+ubi[5]*gz,hz_=ubi[6]*gx+ubi[7]*gy+ubi[8]*gz;
-        double magic=6755399441055744.0,ix=(hx_+magic)-magic,iy=(hy_+magic)-magic,iz=(hz_+magic)-magic;
-        double tx_=hx_-ix,ty_=hy_-iy,tz_=hz_-iz,s=tx_*tx_+ty_*ty_+tz_*tz_;
-        if(s<tol2){(*n_out)++;*sumdrlv2_out+=s;
-            H[0]+=ix*ix;H[1]+=ix*iy;H[2]+=ix*iz;H[3]+=iy*ix;H[4]+=iy*iy;H[5]+=iy*iz;H[6]+=iz*ix;H[7]+=iz*iy;H[8]+=iz*iz;
-            R[0]+=ix*gx;R[1]+=iy*gx;R[2]+=iz*gx;R[3]+=ix*gy;R[4]+=iy*gy;R[5]+=iz*gy;R[6]+=ix*gz;R[7]+=iy*gz;R[8]+=iz*gz;}}
+    sar_tail_aos(ubi, gv + k*3, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
-void score_and_refine_f32_avx512(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)
+extern "C" void score_and_refine_f32_avx512(double ubi[3][3], const float gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)
 {
     double H[3][3]={{0}},R[3][3]={{0}},UB[3][3]={{0}}; int n; double sd;
-        SAR_OMP_DISPATCH_AOS(sar_f32_aos_avx512_kernel, (const double *)ubi, gv, sizeof(float), ng, tol, H, R, &n, &sd);
+    dispatch_sar_aos(sar_f32_aos_avx512_kernel, (const double *)ubi, gv, ng, tol, H, R, &n, &sd);
     if(n>0)sd/=n;
     if(inverse3x3(H)==0){int i,j,l;for(i=0;i<3;i++)for(j=0;j<3;j++)for(l=0;l<3;l++)UB[i][j]+=R[i][l]*H[l][j];}
     if(inverse3x3(UB)==0){int i,j;for(i=0;i<3;i++)for(j=0;j<3;j++)ubi[i][j]=UB[i][j];}

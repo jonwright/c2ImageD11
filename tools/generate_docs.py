@@ -79,7 +79,7 @@ def _find_c_sources():
                 fp = os.path.join(root, f)
                 c_file = f.replace(".c", "")
                 # Map the directory name to the file that MATCHES the directory
-                # (e.g., score/score.c, not score/score_stubs.c or score/score_f64_avx2.c)
+                # (e.g., score/score.c, not score/score_stubs.c or score/score_f64_avx2.cpp)
                 if c_file == dir_name:
                     name_to_path[dir_name] = fp
     return name_to_path

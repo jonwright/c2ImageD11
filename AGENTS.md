@@ -302,6 +302,9 @@ Files live in `lib/functions/score_and_refine/`:
 - `score_and_refine_f32.cpp` — f32 instantiation (gv.type == float)
 - `bench.py` — benchmarks f64 vs f32 at multiple problem sizes
 - `test_data.py` — reproducible test data generator
+- `sar_f{32,64}_{aos,soa}_avx{2,512}.c` — hand-written AVX2/AVX-512 kernels
+  (`sar_*.c` for score_and_refine, `score_f*_avx*.c` in `lib/functions/score/`
+  for score())
 - `score_and_refine_f64_avx2.cpp` (future)
 - `score_and_refine_f64_avx512.cpp` (future)
 - `score_and_refine_f32_avx2.cpp` (future)
@@ -311,6 +314,19 @@ Variants share the same Python name `score_and_refine`. c2py23 dispatches via
 `when:` conditions on `gv.format` and CPU feature flags.  Overloads from
 variant `.cpp` files are prepended before the `.c` baseline in the
 generated dispatch chain (first-match wins).
+
+OpenMP dispatch is shared, not per-file: `lib/functions/common/omp_dispatch.hpp`
+provides C++ templates `dispatch_score_aos/soa` (score) and
+`dispatch_sar_aos/soa` (score_and_refine), parameterized by the gv element
+type (float/double) and the kernel function.  The parallelization cutoff is a
+runtime value (default 10000), settable from Python via
+`c2ImageD11.cimaged11_omp_set_min_ng()` / read via
+`cimaged11_omp_get_min_ng()`.  The AVX2/AVX-512 kernels' scalar
+tails and hsum helpers live in `lib/functions/common/score_tail.hpp` and use
+`nearbyint()` (NOT the `(x+MAGIC)-MAGIC` trick): those files are compiled
+with `-ffast-math`, which folds the trick to identity and would silently
+count every tail row (issue #33).  The `-O2` baseline keeps the magic trick
+and is guarded by `verify_rounding()` on import.
 
 Harvester now scans `.cpp` files and merges `C2PY_BEGIN` blocks with the
 same `py_sig` by prepending `c_overloads` from each variant.

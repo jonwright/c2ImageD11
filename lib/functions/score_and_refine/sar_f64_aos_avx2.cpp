@@ -19,14 +19,10 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
-#include "sar_omp.h"
+#include "../common/omp_dispatch.hpp"
+#include "../common/score_tail.hpp"
 
-static double hsum4(__m256d v) {
-    __m128d lo = _mm256_castpd256_pd128(v), hi = _mm256_extractf128_pd(v, 1);
-    lo = _mm_add_pd(lo, hi); lo = _mm_hadd_pd(lo, lo); return _mm_cvtsd_f64(lo);
-}
-
-extern int inverse3x3(double A[3][3]);
+extern "C" int inverse3x3(double A[3][3]);
 
 static void sar_f64_aos_avx2_kernel(
     const double ubi[9], const double *__restrict gv,
@@ -76,20 +72,13 @@ static void sar_f64_aos_avx2_kernel(
     R[0]=hsum4(R00);R[1]=hsum4(R01);R[2]=hsum4(R02);R[3]=hsum4(R10);R[4]=hsum4(R11);R[5]=hsum4(R12);
     R[6]=hsum4(R20);R[7]=hsum4(R21);R[8]=hsum4(R22);
     *n_out=ns; *sumdrlv2_out=hsum4(s_vec);
-    double tol2=tol*tol,magic=6755399441055744.0;
-    for(;k<ng;k++){double gx=gv[k*3],gy=gv[k*3+1],gz=gv[k*3+2];
-        double hx_=ubi[0]*gx+ubi[1]*gy+ubi[2]*gz,hy_=ubi[3]*gx+ubi[4]*gy+ubi[5]*gz,hz_=ubi[6]*gx+ubi[7]*gy+ubi[8]*gz;
-        double ix=(hx_+magic)-magic,iy=(hy_+magic)-magic,iz=(hz_+magic)-magic;
-        double tx_=hx_-ix,ty_=hy_-iy,tz_=hz_-iz,s=tx_*tx_+ty_*ty_+tz_*tz_;
-        if(s<tol2){(*n_out)++;*sumdrlv2_out+=s;
-            H[0]+=ix*ix;H[1]+=ix*iy;H[2]+=ix*iz;H[3]+=iy*ix;H[4]+=iy*iy;H[5]+=iy*iz;H[6]+=iz*ix;H[7]+=iz*iy;H[8]+=iz*iz;
-            R[0]+=ix*gx;R[1]+=iy*gx;R[2]+=iz*gx;R[3]+=ix*gy;R[4]+=iy*gy;R[5]+=iz*gy;R[6]+=ix*gz;R[7]+=iy*gz;R[8]+=iz*gz;}}
+    sar_tail_aos(ubi, gv + k*3, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
-void score_and_refine_f64_avx2(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)
+extern "C" void score_and_refine_f64_avx2(double ubi[3][3], const double gv[], double tol, int *n_arg, double *sumdrlv2_arg, intptr_t ng)
 {
     double H[3][3]={{0}},R[3][3]={{0}},UB[3][3]={{0}}; int n; double sd;
-    SAR_OMP_DISPATCH_AOS(sar_f64_aos_avx2_kernel, (const double *)ubi, gv, sizeof(double), ng, tol, H, R, &n, &sd);
+    dispatch_sar_aos(sar_f64_aos_avx2_kernel, (const double *)ubi, gv, ng, tol, H, R, &n, &sd);
     if(n>0)sd/=n;
     if(inverse3x3(H)==0){int i,j,l;for(i=0;i<3;i++)for(j=0;j<3;j++)for(l=0;l<3;l++)UB[i][j]+=R[i][l]*H[l][j];}
     if(inverse3x3(UB)==0){int i,j;for(i=0;i<3;i++)for(j=0;j<3;j++)ubi[i][j]=UB[i][j];}

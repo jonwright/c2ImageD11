@@ -143,7 +143,7 @@ def do_threads(args):
     sizes = [5000, 10000, 25000, 50000, 75000, 100000, 200000, 500000, 1000000]
 
     print("Threading scaling (%d cores, c2py23 dispatch)" % n_cores)
-    print("OMP_MIN_NG = %d" % c2ImageD11.OMP_MIN_NG)
+    print("OMP_MIN_NG = %d" % c2ImageD11.cimaged11_omp_get_min_ng())
     print()
     print("%8s  %8s  %8s  %6s  %8s  %8s  %6s  %8s  %8s  %6s  %8s  %8s  %6s" %
           ("ng", "A_f64_1T","A_f64_nT","x","S_f64_1T","S_f64_nT","x",

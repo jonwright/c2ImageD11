@@ -30,6 +30,7 @@
 extern "C" {
 #endif
 int inverse3x3(double A[3][3]);
+int cimaged11_omp_get_min_ng(void);
 #ifdef __cplusplus
 }
 #endif
@@ -98,13 +99,12 @@ void SAR_IMPL_NAME(
     T_gv tolsq = (T_gv)(tol * tol);
 
 #ifdef _OPENMP
-/* Threshold for OpenMP parallelization.  Must match c2ImageD11.OMP_MIN_NG.  Lower cutoff for MSVC
-   in ../../c2ImageD11/__init__.py.  Measured cutoff on x86_64 (4C Zen3):
-   ng <= 10000 | single-thread; ng > 10000 | threaded. */
+/* Parallelize only above the shared runtime threshold (default 10000,
+ * settable via c2ImageD11.cimaged11_omp_set_min_ng()). */
 #pragma omp parallel for reduction(+: n, sumdrlv2, \
     R_00, R_01, R_02, R_10, R_11, R_12, R_20, R_21, R_22, \
     H_00, H_01, H_02, H_10, H_11, H_12, H_20, H_21, H_22) \
-    if(ng > 10000 && omp_get_max_threads() > 1)
+    if(ng > cimaged11_omp_get_min_ng() && omp_get_max_threads() > 1)
 #endif
     for (k = 0; k < ng; k++) {
 #ifdef SAR_SOA

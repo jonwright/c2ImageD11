@@ -11,8 +11,9 @@ sys.path.insert(0,
                  "score_and_refine"))
 from test_data import generate_single_ubi_data
 
-from c2ImageD11 import score_and_refine, OMP_MIN_NG
+from c2ImageD11 import score_and_refine
 from c2ImageD11 import cimaged11_omp_set_num_threads
+from c2ImageD11 import cimaged11_omp_get_min_ng, cimaged11_omp_set_min_ng
 
 
 def test_basic():
@@ -110,15 +111,26 @@ def test_dispatch_f32_without_sse41():
 
 
 def test_omp_min_ng():
-    """OMP_MIN_NG is accessible and matches threading cutoff."""
-    assert isinstance(OMP_MIN_NG, int)
-    assert OMP_MIN_NG > 0
-    assert OMP_MIN_NG == 10000
+    """The OpenMP cutoff is readable and defaults to 10000."""
+    assert isinstance(cimaged11_omp_get_min_ng(), int)
+    assert cimaged11_omp_get_min_ng() > 0
+    assert cimaged11_omp_get_min_ng() == 10000
+
+
+def test_omp_min_ng_settable():
+    """set_min_ng round-trips and clamps negatives to 0."""
+    cimaged11_omp_set_min_ng(1234)
+    try:
+        assert cimaged11_omp_get_min_ng() == 1234
+        cimaged11_omp_set_min_ng(-5)
+        assert cimaged11_omp_get_min_ng() == 0
+    finally:
+        cimaged11_omp_set_min_ng(10000)
 
 
 def test_threading_correctness():
-    """Threaded path (ng > OMP_MIN_NG) produces correct results, 1T and nT."""
-    ng = OMP_MIN_NG + 10000  # ~60k, above cutoff
+    """Threaded path (ng > cutoff) produces correct results, 1T and nT."""
+    ng = cimaged11_omp_get_min_ng() + 10000  # ~60k, above cutoff
     rng = np.random.RandomState(42)
     B = np.eye(3) / 4.06
     U, _ = np.linalg.qr(rng.randn(3, 3))

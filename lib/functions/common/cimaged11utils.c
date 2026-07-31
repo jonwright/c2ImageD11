@@ -43,6 +43,41 @@ int cimaged11_omp_get_max_threads(void) { return 0; }
  * }
 C2PY_END */
 
+/* OpenMP minimum work size.  The ISA kernels (and score_and_refine.hpp)
+ * run single-threaded below this many g-vectors.  Runtime-settable so it
+ * can be tuned without recompiling; defaults to 10000. */
+static int _c2py_omp_min_ng = 10000;
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "cimaged11_omp_get_min_ng() -> int",
+ *     "doc": "Return the minimum number of g-vectors before the score family\nparallelizes with OpenMP.",
+ *     "c_overloads": [{
+ *         "sig": "int cimaged11_omp_get_min_ng()",
+ *         "map": {},
+ *     }],
+ * }
+C2PY_END */
+int cimaged11_omp_get_min_ng(void) { return _c2py_omp_min_ng; }
+
+/* C2PY_BEGIN
+ * {
+ *     "py_sig": "cimaged11_omp_set_min_ng(n: int) -> void",
+ *     "doc": "Set the minimum number of g-vectors before the score family\nparallelizes with OpenMP.  Negative values are clamped to 0.",
+ *     "params": {
+ *         "n": "Minimum ng.  Pass 0 to always parallelize (with >1 thread);\npass a huge value to force single-threaded.",
+ *     },
+ *     "c_overloads": [{
+ *         "sig": "void cimaged11_omp_set_min_ng(int n)",
+ *         "map": {"n": "n"},
+ *     }],
+ * }
+C2PY_END */
+void cimaged11_omp_set_min_ng(int n) {
+    if (n < 0) n = 0;
+    _c2py_omp_min_ng = n;
+}
+
 double my_get_time(void) {
 #if defined(_MSC_VER) || defined(__MINGW32__)
     LARGE_INTEGER t, f;

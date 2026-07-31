@@ -16,15 +16,10 @@
 #include <immintrin.h>
 #include "sar_popcnt.h"
 #include <stdint.h>
-#include "sar_omp.h"
+#include "../common/omp_dispatch.hpp"
+#include "../common/score_tail.hpp"
 
-static float hsum8(__m256 v) {
-    __m128 lo = _mm256_castps256_ps128(v), hi = _mm256_extractf128_ps(v, 1);
-    lo = _mm_add_ps(lo, hi); lo = _mm_hadd_ps(lo, lo);
-    lo = _mm_hadd_ps(lo, lo); return _mm_cvtss_f32(lo);
-}
-
-extern int inverse3x3(double A[3][3]);
+extern "C" int inverse3x3(double A[3][3]);
 
 static void
 sar_f32_aos_avx2_kernel(const double ubi[9], const float *__restrict gv,
@@ -126,38 +121,16 @@ sar_f32_aos_avx2_kernel(const double ubi[9], const float *__restrict gv,
     *n_out = n_scalar;
     *sumdrlv2_out = (double)hsum8(s_vec);
 
-    double tol2 = tol * tol;
-    for (; k < ng; k++) {
-        double gx = gv[k*3], gy = gv[k*3+1], gz = gv[k*3+2];
-        double hx_ = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz;
-        double hy_ = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz;
-        double hz_ = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz;
-        double magic = 6755399441055744.0;
-        double ix = (hx_ + magic) - magic;
-        double iy = (hy_ + magic) - magic;
-        double iz = (hz_ + magic) - magic;
-        double tx_ = hx_ - ix, ty_ = hy_ - iy, tz_ = hz_ - iz;
-        double s = tx_*tx_ + ty_*ty_ + tz_*tz_;
-        if (s < tol2) {
-            (*n_out)++;
-            *sumdrlv2_out += s;
-            H[0] += ix*ix; H[1] += ix*iy; H[2] += ix*iz;
-            H[3] += iy*ix; H[4] += iy*iy; H[5] += iy*iz;
-            H[6] += iz*ix; H[7] += iz*iy; H[8] += iz*iz;
-            R[0] += ix*gx; R[1] += iy*gx; R[2] += iz*gx;
-            R[3] += ix*gy; R[4] += iy*gy; R[5] += iz*gy;
-            R[6] += ix*gz; R[7] += iy*gz; R[8] += iz*gz;
-        }
-    }
+    sar_tail_aos(ubi, gv + k*3, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
-void score_and_refine_f32_avx2(
+extern "C" void score_and_refine_f32_avx2(
     double ubi[3][3], const float gv[], double tol,
     int *n_arg, double *sumdrlv2_arg, intptr_t ng)
 {
     double H[3][3] = {{0}}, R[3][3] = {{0}}, UB[3][3] = {{0}};
     int n; double sumdrlv2;
-        SAR_OMP_DISPATCH_AOS(sar_f32_aos_avx2_kernel, (const double *)ubi, gv, sizeof(float), ng, tol, H, R, &n, &sumdrlv2);
+    dispatch_sar_aos(sar_f32_aos_avx2_kernel, (const double *)ubi, gv, ng, tol, H, R, &n, &sumdrlv2);
     if (n > 0) sumdrlv2 /= n;
     if (inverse3x3(H) == 0) {
         int i, j, l;

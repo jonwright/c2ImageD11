@@ -18,19 +18,11 @@
 
 #include <immintrin.h>
 #include "sar_popcnt.h"
-/* Horizontal sum: 4 doubles in ymm -> scalar */
-static double hsum4(__m256d v) {
-    __m128d lo = _mm256_castpd256_pd128(v);
-    __m128d hi = _mm256_extractf128_pd(v, 1);
-    lo = _mm_add_pd(lo, hi);
-    lo = _mm_hadd_pd(lo, lo);
-    return _mm_cvtsd_f64(lo);
-}
-
 #include <stdint.h>
-#include "sar_omp.h"
+#include "../common/omp_dispatch.hpp"
+#include "../common/score_tail.hpp"
 
-extern int inverse3x3(double A[3][3]);
+extern "C" int inverse3x3(double A[3][3]);
 
 /* ── f64 SoA AVX2 kernel (4 doubles/ymm) ──────────────────────────── */
 static void
@@ -125,33 +117,11 @@ sar_f64_soa_avx2_kernel(const double ubi[9],
     *n_out = n_scalar;
     *sumdrlv2_out = hsum4(s_vec);
 
-    /* Scalar tail */
-    double tol2 = tol * tol, magic = 6755399441055744.0;
-    for (; k < ng; k++) {
-        double gx = gvx[k], gy = gvy[k], gz = gvz[k];
-        double hx_ = ubi[0]*gx + ubi[1]*gy + ubi[2]*gz;
-        double hy_ = ubi[3]*gx + ubi[4]*gy + ubi[5]*gz;
-        double hz_ = ubi[6]*gx + ubi[7]*gy + ubi[8]*gz;
-        double ix = (hx_ + magic) - magic;
-        double iy = (hy_ + magic) - magic;
-        double iz = (hz_ + magic) - magic;
-        double tx_ = hx_ - ix, ty_ = hy_ - iy, tz_ = hz_ - iz;
-        double s = tx_*tx_ + ty_*ty_ + tz_*tz_;
-        if (s < tol2) {
-            (*n_out)++;
-            *sumdrlv2_out += s;
-            H[0] += ix*ix; H[1] += ix*iy; H[2] += ix*iz;
-            H[3] += iy*ix; H[4] += iy*iy; H[5] += iy*iz;
-            H[6] += iz*ix; H[7] += iz*iy; H[8] += iz*iz;
-            R[0] += ix*gx; R[1] += iy*gx; R[2] += iz*gx;
-            R[3] += ix*gy; R[4] += iy*gy; R[5] += iz*gy;
-            R[6] += ix*gz; R[7] += iy*gz; R[8] += iz*gz;
-        }
-    }
+    sar_tail_soa(ubi, gvx + k, gvy + k, gvz + k, tol, ng - k, H, R, n_out, sumdrlv2_out);
 }
 
 /* ── extern "C" entry point ─────────────────────────────────────────── */
-void score_and_refine_f64_soa_avx2(
+extern "C" void score_and_refine_f64_soa_avx2(
     double ubi[3][3], const double gv[], double tol,
     int *n_arg, double *sumdrlv2_arg, intptr_t ng)
 {
@@ -163,7 +133,7 @@ void score_and_refine_f64_soa_avx2(
     int n;
     double sumdrlv2;
 
-        SAR_OMP_DISPATCH_SOA(sar_f64_soa_avx2_kernel, (const double *)ubi, gvx, gvy, gvz, sizeof(double), ng, tol, H, R, &n, &sumdrlv2);
+    dispatch_sar_soa(sar_f64_soa_avx2_kernel, (const double *)ubi, gvx, gvy, gvz, ng, tol, H, R, &n, &sumdrlv2);
 
     if (n > 0) sumdrlv2 /= n;
 
